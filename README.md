@@ -1,5 +1,4 @@
 # 🏥 Patient Management System – Frontend
-
 Frontend của hệ thống **Patient Management System**, xây dựng bằng **React + Vite**  
 Giao diện hiện đại, kết nối backend thông qua REST API & Supabase Auth.
 
@@ -29,20 +28,18 @@ src/
 
 
 ## ⚙️ Cài đặt & chạy project
-
 ### Cài dependency
-```bash
 npm install
-
 ### Chạy chương trình
 npm run dev
 👉 Truy cập: http://localhost:5173
 
-🔐 Xác thực
+
+## 🔐 Xác thực
 Supabase Authentication
 Lưu session phía client
 Gọi API thông qua Bearer Token
 
-👨‍💻 Nhóm phát triển
+## 👨‍💻 Nhóm phát triển
 Project môn SWP391
 Trường: FPT University
