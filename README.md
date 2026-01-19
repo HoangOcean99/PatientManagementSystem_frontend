@@ -32,6 +32,11 @@ src/
 npm install
 ```
 
+### Create .env file
+```bash
+cp .env.example .env
+```
+
 ### Run the application
 ```bash
 npm run dev
