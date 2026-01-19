@@ -29,6 +29,7 @@ src/
 
 
 ## ⚙️ Cài đặt & chạy project
+
 ### Cài dependency
 ```bash
 npm install
