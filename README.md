@@ -1,50 +1,52 @@
-# 🏥 Patient Management System – Frontend
-Frontend của hệ thống **Patient Management System**, xây dựng bằng **React + Vite**  
-Giao diện hiện đại, kết nối backend thông qua REST API & Supabase Auth.
+## 🏥 Patient Management System – Frontend
+The frontend of the Patient Management System, developed using React + Vite.
+It provides a modern user interface and communicates with the backend via REST APIs and Supabase Authentication.
 
----
-
-## 🚀 Công nghệ sử dụng
+## 🚀 Technologies Used
+``` bash
 - React + Vite
 - React Router DOM
 - Axios
-- Supabase Auth
+- Supabase Authentication
 - Tailwind CSS / Bootstrap
 - React Hook Form
 - React Toastify
+```
 
----
-
-## 📁 Cấu trúc thư mục
-```bash
+## 📁 Project Structure
+``` bash
 src/
-├─ api/ # Axios config, gọi API
-├─ components/ # Component dùng chung
-├─ pages/ # Các trang chính
-├─ routes/ # Routing
-├─ hooks/ # Custom hooks
-├─ utils/ # Helper functions
+├─ api/            # Axios configuration and API calls
+├─ components/     # Reusable components
+├─ pages/          # Main application pages
+├─ routes/         # Application routing
+├─ hooks/          # Custom React hooks
+├─ utils/          # Utility and helper functions
 ├─ App.jsx
 └─ main.jsx
 ```
 
-## ⚙️ Cài đặt & chạy project
-### Cài dependency
-```bash
+## ⚙️ Installation & Running the Project
+### Install dependencies
+``` bash
 npm install
 ```
-### Chạy chương trình
+
+### Run the application
 ```bash
 npm run dev
 ```
-👉 Truy cập: http://localhost:5173
+👉 Access the application at: http://localhost:5173
 
+## 🔐 Authentication
+``` bash
+- Supabase Authentication
+- Client-side session management
+- API requests using Bearer Token
+```
 
-## 🔐 Xác thực
-Supabase Authentication
-Lưu session phía client
-Gọi API thông qua Bearer Token
-
-## 👨‍💻 Nhóm phát triển
-Project môn SWP391
-Trường: FPT University
+## 👨‍💻 Development Team
+``` bash
+Course project: SWP391
+University: FPT University
+```
