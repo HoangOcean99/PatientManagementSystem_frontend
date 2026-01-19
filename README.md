@@ -16,6 +16,7 @@ Giao diện hiện đại, kết nối backend thông qua REST API & Supabase Au
 ---
 
 ## 📁 Cấu trúc thư mục
+```bash
 src/
 ├─ api/ # Axios config, gọi API
 ├─ components/ # Component dùng chung
@@ -25,13 +26,17 @@ src/
 ├─ utils/ # Helper functions
 ├─ App.jsx
 └─ main.jsx
-
+```
 
 ## ⚙️ Cài đặt & chạy project
 ### Cài dependency
+```bash
 npm install
+```
 ### Chạy chương trình
+```bash
 npm run dev
+```
 👉 Truy cập: http://localhost:5173
 
 
