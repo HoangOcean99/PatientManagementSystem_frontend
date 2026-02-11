@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { HiOutlineChatAlt2, HiOutlineCursorClick, HiOutlineLogin, HiOutlineSparkles, HiX } from 'react-icons/hi';
+import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const navigate = useNavigate();
 
     return (
         <div className="font-sans text-gray-700 antialiased overflow-x-hidden bg-white">
@@ -14,24 +17,27 @@ const LandingPage = () => {
                             </div>
                             <span className="text-2xl font-bold text-gray-900 tracking-tight">MedCare<span className="text-blue-600">.</span></span>
                         </div>
-                        
+
                         <div className="hidden md:flex space-x-8 text-sm font-medium text-gray-600 items-center">
                             <a href="#features" className="hover:text-blue-600 transition">Tính năng</a>
                             <a href="#how-it-works" className="hover:text-blue-600 transition">Quy trình</a>
                             <a href="#testimonials" className="hover:text-blue-600 transition">Đánh giá</a>
                             <a href="#app" className="hover:text-blue-600 transition">Ứng dụng</a>
-                            
+
                             <div className="flex items-center gap-4 pl-4 border-l border-gray-200">
-                                <a href="#" className="text-sm font-semibold text-gray-600 hover:text-blue-600">Đăng nhập</a>
-                                <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-0.5">
+                                <a onClick={() => navigate('/login')} className="text-sm font-semibold text-gray-600 hover:text-blue-600 cursor-pointer">Đăng nhập</a>
+                                <button
+                                    onClick={() => navigate('/login')}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-0.5"
+                                >
                                     Đặt lịch ngay
                                 </button>
                             </div>
                         </div>
 
                         <div className="md:hidden flex items-center z-50">
-                            <button 
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+                            <button
+                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 className="text-gray-900 focus:outline-none"
                             >
                                 {isMobileMenuOpen ? (
@@ -44,14 +50,67 @@ const LandingPage = () => {
                     </div>
                 </div>
 
-                <div className={`fixed inset-0 bg-white z-40 flex flex-col items-center justify-center space-y-8 transition-transform duration-300 ease-in-out md:hidden ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                    <a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-gray-900 hover:text-blue-600">Tính năng</a>
-                    <a href="#how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-gray-900 hover:text-blue-600">Quy trình</a>
-                    <a href="#testimonials" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-gray-900 hover:text-blue-600">Đánh giá</a>
-                    <a href="#" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-gray-900 hover:text-blue-600">Đăng nhập</a>
-                    <button className="bg-blue-600 text-white px-8 py-3 rounded-xl text-lg font-bold shadow-lg">
-                        Đặt lịch ngay
-                    </button>
+                {/* Nav cho mobile */}
+                <div className={`fixed inset-0 z-50 transition-all duration-500 ease-in-out md:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                    }`}>
+
+                    <div
+                        className="absolute inset-0 bg-white/90 backdrop-blur-3xl shadow-2xl border-white/20" style={{ height: '100vh' }}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    />
+                    <div className={`relative h-full w-full flex flex-col p-8 transition-transform duration-500 ${isMobileMenuOpen ? 'translate-y-0' : 'translate-y-10'
+                        }`}>
+
+                        <div className="flex justify-end mb-12">
+                            <button
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="p-3 bg-gray-100 rounded-full text-gray-600 active:scale-90 transition-all"
+                            >
+                                <HiX size={24} />
+                            </button>
+                        </div>
+
+                        <nav className="flex flex-col space-y-6 flex-1">
+                            {[
+                                { href: "#features", label: "Tính năng", icon: <HiOutlineSparkles /> },
+                                { href: "#how-it-works", label: "Quy trình", icon: <HiOutlineCursorClick /> },
+                                { href: "#testimonials", label: "Đánh giá", icon: <HiOutlineChatAlt2 /> },
+                                { onClick: () => navigate('/login'), label: "Đăng nhập", icon: <HiOutlineLogin /> },
+                            ].map((item, index) => (
+                                <a
+                                    key={index}
+                                    href={item.href}
+                                    onClick={item.onClick || (() => setIsMobileMenuOpen(false))}
+                                    className="flex items-center gap-4 text-2xl font-bold text-gray-800 hover:text-blue-600 transition-colors group"
+                                >
+                                    <span className="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                                        {item.icon}
+                                    </span>
+                                    {item.label}
+                                </a>
+                            ))}
+                        </nav>
+
+                        <div className="mt-8 space-y-4">
+                            <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-[2rem] border border-blue-100/50">
+                                <p className="text-sm text-blue-600 font-bold mb-4 text-center">Sẵn sàng để bắt đầu?</p>
+                                <button
+                                    onClick={() => {
+                                        setIsMobileMenuOpen(false);
+                                        navigate('/login');
+                                    }}
+                                    className="w-full bg-blue-600 text-white py-4 rounded-2xl text-lg font-black shadow-xl shadow-blue-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                >
+                                    Đặt lịch ngay
+                                    <HiOutlineSparkles size={20} />
+                                </button>
+                            </div>
+
+                            <p className="text-center text-gray-400 text-xs">
+                                © 2026 HealthCare App. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </nav>
 
@@ -66,21 +125,24 @@ const LandingPage = () => {
                                 <i className="fa-solid fa-star text-yellow-400 mr-1"></i> Giải pháp Y tế số 1
                             </div>
                             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
-                                Chăm sóc sức khỏe <br className="hidden md:block"/>
+                                Chăm sóc sức khỏe <br className="hidden md:block" />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Trong tầm tay bạn</span>
                             </h1>
                             <p className="text-base md:text-lg text-gray-600 mb-8 leading-relaxed max-w-lg mx-auto lg:mx-0">
                                 Đặt lịch khám với các bác sĩ hàng đầu chỉ trong 30 giây. Không còn chờ đợi mệt mỏi, quản lý hồ sơ sức khỏe trọn đời ngay trên điện thoại.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                                <button className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-500/40 transition transform hover:-translate-y-1 flex items-center justify-center gap-2 w-full sm:w-auto">
+                                <button
+                                    onClick={() => navigate('/login')}
+                                    className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-xl shadow-blue-500/40 transition transform hover:-translate-y-1 flex items-center justify-center gap-2 w-full sm:w-auto"
+                                >
                                     <i className="fa-solid fa-calendar-check"></i> Đặt lịch khám
                                 </button>
                                 <button className="px-8 py-4 bg-white hover:bg-gray-50 text-gray-800 border border-gray-200 rounded-xl font-bold text-lg shadow-sm transition flex items-center justify-center gap-2 w-full sm:w-auto">
                                     <i className="fa-solid fa-play-circle text-blue-600"></i> Xem Demo
                                 </button>
                             </div>
-                            
+
                             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 text-sm text-gray-500">
                                 <div className="flex -space-x-2">
                                     <img className="w-8 h-8 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=1" alt="User" />
@@ -95,7 +157,7 @@ const LandingPage = () => {
                         <div className="w-full lg:w-1/2 relative mt-10 lg:mt-0">
                             <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
                                 <img src="https://images.unsplash.com/photo-1638202993928-7267aad84c31?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Doctor App Dashboard" className="w-full h-auto object-cover" />
-                                
+
                                 <div className="absolute top-6 left-6 md:top-10 md:-left-6 bg-white p-3 md:p-4 rounded-xl shadow-lg animate-bounce hidden sm:block">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
@@ -174,7 +236,7 @@ const LandingPage = () => {
                         <div className="lg:w-1/2 w-full">
                             <span className="text-blue-600 font-bold uppercase tracking-wider text-sm">Quy trình đơn giản</span>
                             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2 mb-8">4 Bước để chăm sóc sức khỏe toàn diện</h2>
-                            
+
                             <div className="space-y-6 md:space-y-8">
                                 {[
                                     { num: 1, title: "Tìm kiếm & Lựa chọn", desc: "Nhập triệu chứng hoặc chuyên khoa, hệ thống sẽ đề xuất các bác sĩ phù hợp nhất." },
@@ -196,7 +258,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-             <section id="app" className="py-16 md:py-24 bg-blue-50">
+            <section id="app" className="py-16 md:py-24 bg-blue-50">
                 <div className="container mx-auto px-4 md:px-6">
                     <div className="bg-blue-600 rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 overflow-hidden relative shadow-2xl">
                         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 md:w-96 md:h-96 rounded-full bg-blue-500 opacity-50 blur-3xl"></div>
@@ -224,7 +286,7 @@ const LandingPage = () => {
                                 </div>
                             </div>
                             <div className="w-full md:w-1/2 flex justify-center md:justify-end relative">
-                                    <img src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" className="w-48 md:w-64 lg:w-80 rounded-[2rem] md:rounded-[3rem] border-[6px] md:border-8 border-gray-900 shadow-2xl transform rotate-0 md:rotate-6 hover:rotate-0 transition duration-500" alt="Mobile App" />
+                                <img src="https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" className="w-48 md:w-64 lg:w-80 rounded-[2rem] md:rounded-[3rem] border-[6px] md:border-8 border-gray-900 shadow-2xl transform rotate-0 md:rotate-6 hover:rotate-0 transition duration-500" alt="Mobile App" />
                             </div>
                         </div>
                     </div>
