@@ -1,20 +1,58 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { AiOutlineUser, AiOutlineLock, AiOutlineEyeInvisible, AiOutlineEye } from 'react-icons/ai';
 import { HiArrowRight, HiOutlineHome } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
-import { loginWithGoogle } from '../../api/authApi';
+import { loginLocal, loginWithGoogle } from '../../api/authApi';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
+import toast from 'react-hot-toast';
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const usernameRef = useRef('');
+    const passwordRef = useRef('');
+    const [isLoadingLogin, setIsLoadingLogin] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+
 
     const handleLoginGoogle = async () => {
-        await loginWithGoogle();
+        try {
+            await loginWithGoogle();
+        } catch (error) {
+            setErrorMessage("Đăng nhập Google thất bại");
+        }
+    };
+
+
+    const handleLoginLocal = async () => {
+        try {
+            setIsLoadingLogin(true);
+            setErrorMessage('');
+            const res = await loginLocal(
+                usernameRef.current.value,
+                passwordRef.current.value
+            )
+            switch (res.data.user.role) {
+                case 'admin': navigate('/dashboard-admin'); break;
+                case 'receptionist': navigate('/dashboard-receptionist'); break;
+                case 'doctor': navigate('/dashboard-doctor'); break;
+                case 'accountant': navigate('/dashboard-accountant'); break;
+                case 'patient': navigate('/dashboard-patient'); break;
+            }
+            toast.success("Đăng nhập thành công!")
+        } catch (err) {
+            setErrorMessage('Tên đăng nhập hoặc mật khẩu không chính xác. Vui lòng thử lại.');
+            toast.error("Đăng nhập không thành công!")
+        } finally {
+            setIsLoadingLogin(false);
+        }
     }
 
     return (
         <div className="mx-auto w-full bg-[#f0f7ff] flex items-center justify-center p-6" style={{ width: '100vw', height: '100vh ' }}>
+            {scrollbarStyles}
             <div className="max-w-5xl w-full bg-white rounded-[3rem] shadow-2xl shadow-blue-100/50 overflow-hidden flex flex-col md:flex-row" style={{ height: '100%' }}>
 
                 {/* CỘT TRÁI: HÌNH ẢNH & THÔNG ĐIỆP (Chỉ hiện trên Desktop) */}
@@ -49,8 +87,8 @@ const LoginPage = () => {
                 </div>
 
                 {/* CỘT PHẢI: FORM ĐĂNG NHẬP */}
-                <div className="w-full md:w-7/12 p-8 lg:p-14 flex flex-col justify-center">
-                    <div className="mb-5">
+                <div className="w-full md:w-7/12 p-8 lg:p-14 flex flex-col justify-center custom-scrollbar overflow-y-auto">
+                    <div className="mb-5 mt-8">
                         <h2 className="text-3xl font-extrabold text-gray-800">Xin chào! 👋</h2>
                         <p className="text-gray-400 mt-2">Vui lòng chọn phương thức đăng nhập phù hợp</p>
                     </div>
@@ -79,16 +117,32 @@ const LoginPage = () => {
                             </div>
                         </div>
 
-                        <form className="space-y-4">
+                        <form className="space-y-4"
+                            onSubmit={async (e) => {
+                                e.preventDefault();
+                                await handleLoginLocal();
+                            }}
+                        >
+                            {errorMessage && (
+                                <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-2xl animate-fade-in">
+                                    <span className="text-lg">⚠️</span>
+                                    <span className="text-xs font-semibold">{errorMessage}</span>
+                                </div>
+                            )}
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-500 text-gray-400">
                                     <AiOutlineUser size={22} />
                                 </div>
                                 <input
+                                    ref={usernameRef}
                                     type="text"
                                     placeholder="Tên đăng nhập của trẻ"
+                                    onChange={(e) => e.target.setCustomValidity("")}
+                                    required
+                                    onInvalid={(e) => e.target.setCustomValidity("Vui lòng nhập tên đăng nhập cho trẻ")}
                                     className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm"
                                 />
+
                             </div>
 
                             <div className="space-y-2">
@@ -98,9 +152,13 @@ const LoginPage = () => {
                                     </div>
 
                                     <input
+                                        ref={passwordRef}
                                         type={showPassword ? "text" : "password"}
                                         placeholder="Mật khẩu hồ sơ"
                                         className="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 outline-none transition-all text-sm"
+                                        onInvalid={(e) => e.target.setCustomValidity("Vui lòng nhập mật khẩu")}
+                                        onChange={(e) => e.target.setCustomValidity("")}
+                                        required
                                     />
 
                                     <button
@@ -122,7 +180,7 @@ const LoginPage = () => {
                                 </div>
                             </div>
                             <button className="w-full bg-gray-800 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-xl active:scale-[0.98] text-sm">
-                                Đăng nhập vào tài khoản trẻ
+                                {isLoadingLogin ? <LoadingSpinner size="18px" /> : <span>Đăng nhập vào tài khoản trẻ</span>}
                             </button>
                         </form>
                     </div>
@@ -151,7 +209,7 @@ const LoginPage = () => {
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 };
 

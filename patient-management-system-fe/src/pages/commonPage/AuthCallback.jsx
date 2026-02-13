@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../supabaseClient.js';
 import axiosClient from '../../api/axiosClient.js';
+import toast from 'react-hot-toast';
 
 export default function AuthCallback() {
     const navigate = useNavigate();
@@ -12,17 +13,14 @@ export default function AuthCallback() {
                 if (event === 'SIGNED_IN' && session) {
                     const res = await axiosClient.post('/auth/sync-user-google');
                     const user = res.data.user;
-                    if (user.role === 'admin') {
-                        navigate('/dashboard-admin');
-                    } else if (user.role === 'patient') {
-                        navigate('/dashboard-patient');
-                    } else if (user.role === 'receptionist') {
-                        navigate('/dashboard-receptionist');
-                    } else if (user.role === 'doctor') {
-                        navigate('/dashboard-doctor');
-                    } else if (user.role === 'accountant') {
-                        navigate('/dashboard-accountant');
+                    switch (user.role) {
+                        case 'admin': navigate('/dashboard-admin'); break;
+                        case 'patient': navigate('/dashboard-patient'); break;
+                        case 'receptionist': navigate('/dashboard-receptionist'); break;
+                        case 'doctor': navigate('/dashboard-doctor'); break;
+                        case 'accountant': navigate('/dashboard-accountant'); break;
                     }
+                    toast.success("Đăng nhập thành công!");
                 }
             }
         );
