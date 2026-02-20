@@ -172,6 +172,7 @@ const LoginPage = () => {
 
                                 <div className="flex justify-end px-1">
                                     <button
+                                        onClick={() => navigate('/forget-password')}
                                         type="button"
                                         className="text-[11px] font-bold text-gray-400 hover:text-blue-500 transition-colors uppercase tracking-tighter"
                                     >
@@ -179,8 +180,18 @@ const LoginPage = () => {
                                     </button>
                                 </div>
                             </div>
-                            <button className="w-full bg-gray-800 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-xl active:scale-[0.98] text-sm">
-                                {isLoadingLogin ? <LoadingSpinner size="18px" /> : <span>Đăng nhập vào tài khoản trẻ</span>}
+                            <button
+                                disabled={isLoadingLogin}
+                                className={`w-full font-bold py-4 rounded-2xl transition-all shadow-xl active:scale-[0.98] text-sm
+                                ${isLoadingLogin
+                                        ? "bg-gray-500 cursor-not-allowed text-white"
+                                        : "bg-gray-800 hover:bg-black text-white"}
+    `}
+                            >
+                                {isLoadingLogin
+                                    ? <LoadingSpinner size="18px" />
+                                    : <span>Đăng nhập vào tài khoản trẻ</span>
+                                }
                             </button>
                         </form>
                     </div>

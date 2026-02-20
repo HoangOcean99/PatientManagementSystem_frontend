@@ -34,3 +34,25 @@ export const verifyAndCreate = async (username, password, emailParent, relations
     });
     return res;
 }
+
+
+export const requestForgetPassword = async (username) => {
+    const res = await axiosClient.post('/auth/request-forget-password', {
+        username
+    });
+    return res;
+}
+
+export const verityResetOtp = async (username, emailParent, otp) => {
+    const res = await axiosClient.post('/auth/verify-reset-otp', {
+        username, emailParent, otp
+    });
+    return res;
+}
+
+export const resetPassword = async (token, newPassword) => {
+    const res = await axiosClient.post('/auth/reset-password', {
+        token, newPassword
+    });
+    return res;
+}
