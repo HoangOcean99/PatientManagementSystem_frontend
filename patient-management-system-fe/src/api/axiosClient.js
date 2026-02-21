@@ -2,7 +2,7 @@ import axios from 'axios';
 import { supabase } from '../../supabaseClient';
 
 const axiosClient = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: '', // Để request tự động điền path
   headers: {
     'Content-Type': 'application/json'
   }
