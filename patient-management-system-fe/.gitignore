@@ -26,3 +26,8 @@ Thumbs.db
 
 # cache
 .eslintcache
+
+# dataBase
+dataBase.txt
+doc_design.txt
+design-system/
