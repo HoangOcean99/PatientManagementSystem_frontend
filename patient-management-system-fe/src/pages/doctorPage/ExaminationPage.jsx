@@ -141,7 +141,7 @@ function MiniCalendar({ selectedDate, onSelect }) {
   const handleDayClick = (day) => {
     if (!day || isPast(day)) return;
     const dateStr = `${viewDate.year}-${String(viewDate.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    onSelect(dateStr);
+    onSelect(dateStr === selectedDate ? '' : dateStr);
   };
 
   return (
