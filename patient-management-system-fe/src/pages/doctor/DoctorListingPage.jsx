@@ -73,7 +73,7 @@ const DoctorListingPage = () => {
     const specialties = [...new Set(doctors.map(d => d.specialization).filter(Boolean))];
 
     return (
-        <div className={`min-h-screen ${isAdminView ? 'bg-gray-50/50' : 'bg-blue-50/30'} font-sans text-gray-700`}>
+        <div className={`${isAdminView ? 'bg-gray-50/50' : 'bg-blue-50/30'} font-sans text-gray-700`} style={{width: '100vw'}}>
             {scrollbarStyles}
             
             {/* Header Section */}

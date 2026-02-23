@@ -7,7 +7,7 @@ const LandingPage = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="font-sans text-gray-700 antialiased overflow-x-hidden bg-white">
+        <div className="font-sans text-gray-700 antialiased overflow-x-hidden bg-white" style={{width: '100vw'}}>
             <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
                 <div className="container mx-auto px-6 py-4">
                     <div className="flex justify-between items-center">

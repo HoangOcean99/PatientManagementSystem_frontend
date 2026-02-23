@@ -368,7 +368,7 @@ const PatientDetailPage = () => {
   };
 
   return (
-    <div className="pd-layout">
+    <div className="pd-layout" style={{}}>
       {/* ===== SIDEBAR ===== */}
       <aside className="pd-sidebar">
         <div className="pd-sidebar__brand">
