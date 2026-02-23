@@ -81,7 +81,7 @@ const DoctorDetailsAdminPage = () => {
     const doctorAvatar = doctor.Users?.avatar_url || 'https://i.pravatar.cc/150?img=11';
 
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-12">
+        <div className="min-h-screen bg-gray-50/50 pb-12" style={{width: '100vw'}}>
             {scrollbarStyles}
             
             {/* Header Thống kê/Breadcrumb */}
