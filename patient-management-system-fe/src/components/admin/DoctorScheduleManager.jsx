@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { getDoctorSchedule, addScheduleSlot, deleteScheduleSlot } from '../../api/scheduleApi';
-import LoadingSpinner from '../LoadingSpinner';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const DoctorScheduleManager = ({ doctorId }) => {
     // Generate next 7 days mock for UI
@@ -19,7 +19,7 @@ const DoctorScheduleManager = ({ doctorId }) => {
     const [selectedDate, setSelectedDate] = useState(dates[0]);
     const [slots, setSlots] = useState([]);
     const [loading, setLoading] = useState(false);
-    
+
     // Add slot state
     const [isAdding, setIsAdding] = useState(false);
     const [newStartTime, setNewStartTime] = useState('08:00');
@@ -67,7 +67,7 @@ const DoctorScheduleManager = ({ doctorId }) => {
             setIsAdding(false);
             // Real API:
             // await addScheduleSlot(doctorId, formatDateForAPI(selectedDate), newStartTime, newEndTime);
-            
+
             // Mock add:
             const tempId = Math.random().toString(36).substr(2, 9);
             const newSlot = {
@@ -76,8 +76,8 @@ const DoctorScheduleManager = ({ doctorId }) => {
                 end_time: newEndTime,
                 status: 'available'
             };
-            setSlots([...slots, newSlot].sort((a,b) => a.start_time.localeCompare(b.start_time)));
-            
+            setSlots([...slots, newSlot].sort((a, b) => a.start_time.localeCompare(b.start_time)));
+
             toast.success("Thêm Slot thành công!");
             setNewStartTime('08:00');
             setNewEndTime('09:00');
@@ -92,7 +92,7 @@ const DoctorScheduleManager = ({ doctorId }) => {
         try {
             // Real API:
             // await deleteScheduleSlot(doctorId, slotId);
-            
+
             // Mock delete:
             setSlots(slots.filter(s => s.id !== slotId));
             toast.success("Xoá slot thành công!");
@@ -124,11 +124,10 @@ const DoctorScheduleManager = ({ doctorId }) => {
                         <button
                             key={idx}
                             onClick={() => setSelectedDate(d)}
-                            className={`flex-shrink-0 px-4 py-3 rounded-xl border transition-all text-center min-w-[90px] ${
-                                isSelected
-                                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200'
-                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                            }`}
+                            className={`flex-shrink-0 px-4 py-3 rounded-xl border transition-all text-center min-w-[90px] ${isSelected
+                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                }`}
                         >
                             <div className="text-xs opacity-90 mb-1">{idx === 0 ? 'Hôm nay' : dayName}</div>
                             <div className="font-bold text-lg whitespace-nowrap">{dateNum}/{monthNum}</div>
@@ -144,7 +143,7 @@ const DoctorScheduleManager = ({ doctorId }) => {
                         <i className="fa-regular fa-clock text-blue-500"></i>
                         Các ca làm việc ngày {selectedDate.toLocaleDateString('vi-VN')}
                     </h4>
-                    <button 
+                    <button
                         onClick={() => setIsAdding(!isAdding)}
                         className="bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2"
                     >
@@ -157,7 +156,7 @@ const DoctorScheduleManager = ({ doctorId }) => {
                     <div className="bg-white p-4 rounded-xl border border-blue-100 mb-6 shadow-sm flex items-end gap-4 animate-fade-in">
                         <div className="flex-1">
                             <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Từ giờ</label>
-                            <input 
+                            <input
                                 type="time"
                                 value={newStartTime}
                                 onChange={(e) => setNewStartTime(e.target.value)}
@@ -166,14 +165,14 @@ const DoctorScheduleManager = ({ doctorId }) => {
                         </div>
                         <div className="flex-1">
                             <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">Đến giờ</label>
-                            <input 
+                            <input
                                 type="time"
                                 value={newEndTime}
                                 onChange={(e) => setNewEndTime(e.target.value)}
                                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                             />
                         </div>
-                        <button 
+                        <button
                             onClick={handleAddSlot}
                             className="bg-blue-600 text-white px-6 py-2 h-[42px] rounded-lg font-bold hover:bg-blue-700 transition"
                         >
@@ -194,8 +193,8 @@ const DoctorScheduleManager = ({ doctorId }) => {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {slots.map((slot) => (
-                            <div 
-                                key={slot.id} 
+                            <div
+                                key={slot.id}
                                 className="group bg-white border border-gray-200 hover:border-blue-400 rounded-xl p-4 flex justify-between items-center transition-all hover:shadow-md"
                             >
                                 <div className="flex flex-col">
@@ -207,7 +206,7 @@ const DoctorScheduleManager = ({ doctorId }) => {
                                     </span>
                                 </div>
                                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button 
+                                    <button
                                         className="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition"
                                         onClick={() => handleDeleteSlot(slot.id)}
                                         title="Xoá slot"

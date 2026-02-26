@@ -1,3 +1,4 @@
+import { Activity } from 'lucide-react';
 import React, { useState } from 'react';
 import { HiOutlineChatAlt2, HiOutlineCursorClick, HiOutlineLogin, HiOutlineSparkles, HiX } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
@@ -7,15 +8,13 @@ const LandingPage = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="font-sans text-gray-700 antialiased overflow-x-hidden bg-white" style={{width: '100vw'}}>
+        <div className="font-sans text-gray-700 antialiased overflow-x-hidden bg-white" style={{ width: '100vw' }}>
             <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
                 <div className="container mx-auto px-6 py-4">
                     <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2 cursor-pointer z-50">
-                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl shadow-lg shadow-blue-500/30">
-                                <i className="fa-solid fa-heart-pulse"></i>
-                            </div>
-                            <span className="text-2xl font-bold text-gray-900 tracking-tight">MedCare<span className="text-blue-600">.</span></span>
+                        <div className="flex items-center gap-2 text-blue-600 font-bold text-lg">
+                            <div className="bg-blue-600 p-1 rounded text-white"><Activity size={20} /></div>
+                            MedSchedule
                         </div>
 
                         <div className="hidden md:flex space-x-8 text-sm font-medium text-gray-600 items-center">

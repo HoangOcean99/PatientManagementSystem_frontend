@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import LoadingSpinner from "./LoadingSpinner";
 import { AiOutlineClose, AiOutlineMail } from "react-icons/ai";
-import { maskEmail } from "../helpers/authUtils";
+import { maskEmail } from "../../helpers/authUtils.js";
 
 const OtpPopUp = ({
     emailParentRef,
