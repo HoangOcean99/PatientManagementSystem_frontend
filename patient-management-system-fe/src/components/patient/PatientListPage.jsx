@@ -1,24 +1,112 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllPatients } from '../../api/patientApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import toast from 'react-hot-toast';
 
-/* ─── Color palette: Fruit Aegeo ─── */
+/* ─── Gender Filter Options ─── */
+const FILTER_OPTIONS = [
+    { value: '', label: 'Tất cả giới tính', icon: 'fa-sliders', color: '#2563eb', bg: 'bg-blue-50', text: 'text-blue-600' },
+    { value: 'male', label: 'Nam', icon: 'fa-mars', color: '#2563eb', bg: 'bg-blue-50', text: 'text-blue-600' },
+    { value: 'female', label: 'Nữ', icon: 'fa-venus', color: '#e11d48', bg: 'bg-rose-50', text: 'text-rose-600' },
+    { value: 'other', label: 'Khác', icon: 'fa-genderless', color: '#6366f1', bg: 'bg-indigo-50', text: 'text-indigo-600' },
+];
+
+const GenderFilterDropdown = ({ value, onChange }) => {
+    const [open, setOpen] = useState(false);
+    const ref = useRef(null);
+    const selected = FILTER_OPTIONS.find(o => o.value === value) || FILTER_OPTIONS[0];
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div ref={ref} className="w-full md:w-52 relative">
+            {/* Trigger */}
+            <button
+                type="button"
+                onClick={() => setOpen(prev => !prev)}
+                className={`w-full px-3 py-3 rounded-xl flex items-center gap-2.5 transition-all duration-300 cursor-pointer ${open ? 'bg-white ring-2 ring-blue-200 shadow-sm' : 'bg-transparent hover:bg-white/80'}`}
+            >
+                <div className={`w-7 h-7 rounded-lg ${selected.bg} flex items-center justify-center flex-shrink-0 transition-transform duration-300`}>
+                    <i className={`fa-solid ${selected.icon} text-xs ${selected.text}`}></i>
+                </div>
+                <span className="flex-1 text-left font-semibold text-gray-800 text-sm truncate">
+                    {selected.label}
+                </span>
+                <motion.i
+                    animate={{ rotate: open ? 180 : 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="fa-solid fa-chevron-down text-[10px] text-gray-400"
+                ></motion.i>
+            </button>
+
+            {/* Panel */}
+            <AnimatePresence>
+                {open && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -6, scaleY: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scaleY: 1 }}
+                        exit={{ opacity: 0, y: -6, scaleY: 0.96 }}
+                        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-gray-200 shadow-[0_12px_40px_rgba(37,99,235,0.12)] overflow-hidden origin-top"
+                    >
+                        {FILTER_OPTIONS.map((opt, i) => {
+                            const isActive = value === opt.value;
+                            return (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => { onChange(opt.value); setOpen(false); }}
+                                    className={`w-full px-3.5 py-2.5 flex items-center gap-2.5 transition-all duration-200 cursor-pointer ${isActive ? opt.bg : 'hover:bg-gray-50'} ${i < FILTER_OPTIONS.length - 1 ? 'border-b border-gray-100' : ''}`}
+                                >
+                                    <div className={`w-7 h-7 rounded-lg ${opt.bg} flex items-center justify-center ${isActive ? 'scale-110' : ''} transition-transform duration-200`}>
+                                        <i className={`fa-solid ${opt.icon} text-xs ${opt.text}`}></i>
+                                    </div>
+                                    <span className={`flex-1 text-left text-sm font-semibold ${isActive ? 'text-gray-900' : 'text-gray-600'}`}>
+                                        {opt.label}
+                                    </span>
+                                    {isActive && (
+                                        <motion.div
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                                            style={{ backgroundColor: opt.color }}
+                                        >
+                                            <i className="fa-solid fa-check text-white text-[8px]"></i>
+                                        </motion.div>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+/* ─── Color palette ─── */
 const GENDER_MAP = {
-    male: { label: 'Nam', icon: 'fa-mars', accent: '#0ea5e9', bg: 'bg-sky-50', text: 'text-sky-600', dot: 'bg-sky-400' },
-    female: { label: 'Nữ', icon: 'fa-venus', accent: '#f472b6', bg: 'bg-pink-50', text: 'text-pink-500', dot: 'bg-pink-400' },
-    other: { label: 'Khác', icon: 'fa-genderless', accent: '#fbbf24', bg: 'bg-amber-50', text: 'text-amber-500', dot: 'bg-amber-400' },
+    male: { label: 'Nam', icon: 'fa-mars', accent: '#2563eb', bg: 'bg-blue-50', text: 'text-blue-600', dot: 'bg-blue-500' },
+    female: { label: 'Nữ', icon: 'fa-venus', accent: '#e11d48', bg: 'bg-rose-50', text: 'text-rose-600', dot: 'bg-rose-500' },
+    other: { label: 'Khác', icon: 'fa-genderless', accent: '#6366f1', bg: 'bg-indigo-50', text: 'text-indigo-600', dot: 'bg-indigo-500' },
 };
 
 const AVATAR_GRADIENTS = [
-    'from-teal-400 to-cyan-500',
-    'from-sky-400 to-blue-500',
-    'from-emerald-400 to-teal-500',
-    'from-cyan-400 to-sky-500',
-    'from-blue-400 to-indigo-500',
-    'from-teal-300 to-emerald-500',
+    'from-blue-500 to-indigo-600',
+    'from-indigo-500 to-purple-600',
+    'from-blue-400 to-blue-600',
+    'from-sky-500 to-blue-600',
+    'from-indigo-400 to-blue-600',
+    'from-blue-500 to-purple-500',
 ];
 
 const formatDate = (dateStr) => {
@@ -35,7 +123,7 @@ const calcAge = (dateStr) => {
 };
 
 /* ─── Patient Row Card ─── */
-const PatientRow = ({ patient, index, order }) => {
+const PatientRow = ({ patient, index, order, onEdit }) => {
     const g = GENDER_MAP[patient.gender] || GENDER_MAP.other;
     const age = calcAge(patient.dob);
     const name = patient.Users?.full_name || 'Chưa cập nhật';
@@ -50,16 +138,17 @@ const PatientRow = ({ patient, index, order }) => {
             exit={{ opacity: 0, scale: 0.97 }}
             transition={{ delay: index * 0.04, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="group relative"
+            onClick={() => onEdit(patient)}
         >
             {/* Card */}
-            <div className="relative bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:border-teal-200/60 transition-all duration-500 cursor-pointer overflow-hidden">
+            <div className="relative bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] hover:border-blue-200/60 transition-all duration-500 cursor-pointer overflow-hidden">
                 {/* Left accent bar */}
                 <div className="absolute left-0 top-4 bottom-4 w-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300" style={{ backgroundColor: g.accent }}></div>
 
                 <div className="p-5 pl-6 flex items-center gap-5">
                     {/* Order number */}
                     <div className="hidden sm:flex flex-shrink-0 w-8 text-right">
-                        <span className="text-[13px] font-bold text-gray-300 group-hover:text-teal-400 transition-colors tabular-nums">
+                        <span className="text-[13px] font-bold text-gray-300 group-hover:text-blue-500 transition-colors tabular-nums">
                             {String(order).padStart(2, '0')}
                         </span>
                     </div>
@@ -69,7 +158,7 @@ const PatientRow = ({ patient, index, order }) => {
                         {avatar ? (
                             <img src={avatar} alt={name} className="w-12 h-12 rounded-xl object-cover ring-2 ring-white shadow-sm" />
                         ) : (
-                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-teal-500/15 group-hover:shadow-teal-500/30 group-hover:scale-105 transition-all duration-300`}>
+                            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/15 group-hover:shadow-blue-500/30 group-hover:scale-105 transition-all duration-300`}>
                                 {initials}
                             </div>
                         )}
@@ -81,7 +170,7 @@ const PatientRow = ({ patient, index, order }) => {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2.5 mb-1.5">
-                            <h3 className="text-[15px] font-bold text-gray-800 truncate group-hover:text-teal-700 transition-colors duration-300">
+                            <h3 className="text-[15px] font-bold text-gray-800 truncate group-hover:text-blue-700 transition-colors duration-300">
                                 {name}
                             </h3>
                             <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md ${g.bg} ${g.text}`}>
@@ -95,7 +184,7 @@ const PatientRow = ({ patient, index, order }) => {
                             </span>
                             <span className="w-px h-3 bg-gray-200"></span>
                             <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                                <i className="fa-regular fa-calendar text-[10px] text-teal-400"></i>
+                                <i className="fa-regular fa-calendar text-[10px] text-blue-400"></i>
                                 {formatDate(patient.dob)}
                             </span>
                             {age !== null && (
@@ -119,7 +208,7 @@ const PatientRow = ({ patient, index, order }) => {
                         </div>
                     </div>
 
-                    {/* Status + Arrow */}
+                    {/* Status + Edit */}
                     <div className="flex items-center gap-3 flex-shrink-0">
                         {patient.Users?.status === 'active' && (
                             <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
@@ -127,8 +216,11 @@ const PatientRow = ({ patient, index, order }) => {
                                 Hoạt động
                             </span>
                         )}
-                        <div className="w-9 h-9 rounded-xl bg-gray-50/80 group-hover:bg-teal-50 flex items-center justify-center transition-all duration-300 group-hover:translate-x-0.5">
-                            <i className="fa-solid fa-arrow-right text-xs text-gray-300 group-hover:text-teal-500 transition-colors"></i>
+                        <div
+                            className="w-9 h-9 rounded-xl bg-gray-50/80 group-hover:bg-blue-50 flex items-center justify-center transition-all duration-300 group-hover:translate-x-0.5 cursor-pointer"
+                            title="Chỉnh sửa"
+                        >
+                            <i className="fa-solid fa-pen-to-square text-xs text-gray-300 group-hover:text-blue-600 transition-colors"></i>
                         </div>
                     </div>
                 </div>
@@ -139,6 +231,7 @@ const PatientRow = ({ patient, index, order }) => {
 
 /* ─── Main Page ─── */
 const PatientListPage = () => {
+    const navigate = useNavigate();
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -200,74 +293,61 @@ const PatientListPage = () => {
     }), [patients]);
 
     return (
-        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #f0fdfa 0%, #f8fafc 30%, #fdf4ff 60%, #ecfdf5 100%)' }}>
+        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
             {scrollbarStyles}
 
-            {/* ─── Decorative Elements ─── */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-                {/* Soft organic blobs */}
-                <div className="absolute -top-24 right-0 w-[600px] h-[600px] rounded-full opacity-30" style={{ background: 'radial-gradient(circle, #99f6e4 0%, transparent 70%)' }}></div>
-                <div className="absolute top-1/2 -left-40 w-[500px] h-[500px] rounded-full opacity-20" style={{ background: 'radial-gradient(circle, #a5f3fc 0%, transparent 70%)' }}></div>
-                <div className="absolute bottom-0 right-1/3 w-[400px] h-[400px] rounded-full opacity-15" style={{ background: 'radial-gradient(circle, #fbcfe8 0%, transparent 70%)' }}></div>
-                {/* Subtle grid */}
-                <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'radial-gradient(circle, #0d9488 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
-            </div>
-
             {/* ─── Header ─── */}
-            <div className="sticky top-0 z-30 border-b border-teal-100/40" style={{ background: 'linear-gradient(180deg, rgba(240,253,250,0.95) 0%, rgba(255,255,255,0.85) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
+            <div className="sticky top-0 z-30 border-b border-blue-100/40" style={{ background: 'linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.9) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-6">
                     {/* Title area */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-100 mb-4">
-                            <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></div>
-                            <span className="text-xs font-bold text-teal-700 uppercase tracking-wider">Hệ thống Y tế</span>
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 mb-4">
+                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                            <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">Hệ thống Y tế</span>
                         </div>
-                        <h1 className="text-3xl md:text-4xl font-extrabold mb-2" style={{ color: '#134e4a' }}>
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
                             Quản lý Hồ sơ Bệnh nhân
                         </h1>
-                        <p className="text-sm md:text-base text-teal-600/60 max-w-lg mx-auto">
+                        <p className="text-sm md:text-base text-gray-500 max-w-lg mx-auto">
                             Tra cứu, theo dõi và quản lý thông tin sức khoẻ toàn diện
                         </p>
                     </div>
 
                     {/* Search */}
-                    <div className="relative p-1.5 rounded-2xl bg-white/60 border border-teal-100/50 shadow-lg shadow-teal-500/[0.03] flex flex-col md:flex-row gap-2">
+                    <div className="relative p-1.5 rounded-2xl bg-white/60 border border-gray-200/60 shadow-lg shadow-blue-500/[0.04] flex flex-col md:flex-row gap-2">
                         <div className="flex-1 relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <i className="fa-solid fa-magnifying-glass text-teal-300 group-focus-within:text-teal-500 transition-colors"></i>
+                                <i className="fa-solid fa-magnifying-glass text-gray-400 group-focus-within:text-blue-500 transition-colors"></i>
                             </div>
                             <input
                                 type="text"
-                                className="block w-full pl-11 pr-4 py-3 border-0 rounded-xl bg-transparent focus:bg-white focus:ring-2 focus:ring-teal-200 focus:outline-none transition-all placeholder-gray-400 font-medium text-gray-700"
+                                className="block w-full pl-11 pr-4 py-3 border-0 rounded-xl bg-transparent focus:bg-white focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all placeholder-gray-400 font-medium text-gray-700"
                                 placeholder="Tìm theo tên, mã bệnh nhân hoặc SĐT..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
 
-                        <div className="w-full md:w-52 relative group">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i className="fa-solid fa-sliders text-teal-300 group-focus-within:text-teal-500 transition-colors"></i>
-                            </div>
-                            <select
-                                className="block w-full pl-10 pr-8 py-3 border-0 rounded-xl bg-transparent focus:bg-white focus:ring-2 focus:ring-teal-200 focus:outline-none transition-all font-medium appearance-none cursor-pointer text-gray-700 hover:bg-white/80"
-                                value={genderFilter}
-                                onChange={(e) => setGenderFilter(e.target.value)}
-                            >
-                                <option value="">Tất cả giới tính</option>
-                                <option value="male">Nam</option>
-                                <option value="female">Nữ</option>
-                                <option value="other">Khác</option>
-                            </select>
-                        </div>
+                        <GenderFilterDropdown
+                            value={genderFilter}
+                            onChange={(val) => setGenderFilter(val)}
+                        />
 
                         <button
                             onClick={() => setCurrentPage(1)}
-                            className="px-7 py-3 rounded-xl font-bold transition-all active:scale-95 whitespace-nowrap cursor-pointer text-white shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30"
-                            style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' }}
+                            className="px-7 py-3 rounded-xl font-bold transition-all active:scale-95 whitespace-nowrap cursor-pointer text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40"
+                            style={{ background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' }}
                         >
-                            <i className="fa-solid fa-magnifying-glass mr-2 text-teal-200"></i>
+                            <i className="fa-solid fa-magnifying-glass mr-2 text-blue-200"></i>
                             Tìm kiếm
+                        </button>
+                        <button
+                            onClick={() => navigate('/admin/patients/create')}
+                            className="px-7 py-3 rounded-xl font-bold transition-all active:scale-95 whitespace-nowrap cursor-pointer text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 hover:-translate-y-0.5"
+                            style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)' }}
+                        >
+                            <i className="fa-solid fa-user-plus mr-2"></i>
+                            Thêm bệnh nhân
                         </button>
                     </div>
                 </div>
@@ -288,9 +368,9 @@ const PatientListPage = () => {
                     {!loading && patients.length > 0 && (
                         <div className="flex items-center gap-2">
                             {[
-                                { label: 'Tổng', value: stats.total, color: 'bg-teal-400' },
-                                { label: 'Nam', value: stats.male, color: 'bg-sky-400' },
-                                { label: 'Nữ', value: stats.female, color: 'bg-pink-400' },
+                                { label: 'Tổng', value: stats.total, color: 'bg-blue-500' },
+                                { label: 'Nam', value: stats.male, color: 'bg-blue-400' },
+                                { label: 'Nữ', value: stats.female, color: 'bg-rose-500' },
                             ].map(s => (
                                 <div key={s.label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/70 border border-gray-100/80 shadow-sm">
                                     <div className={`w-2 h-2 rounded-full ${s.color}`}></div>
@@ -306,22 +386,22 @@ const PatientListPage = () => {
                 {loading ? (
                     <div className="flex flex-col justify-center items-center h-48 gap-3">
                         <LoadingSpinner />
-                        <span className="text-sm text-teal-500/60 font-medium">Đang tải dữ liệu...</span>
+                        <span className="text-sm text-blue-500/60 font-medium">Đang tải dữ liệu...</span>
                     </div>
                 ) : filtered.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="text-center py-20 bg-white/60 backdrop-blur-sm rounded-3xl border border-teal-100/30 shadow-sm"
+                        className="text-center py-20 bg-white/60 backdrop-blur-sm rounded-3xl border border-blue-100/30 shadow-sm"
                     >
-                        <div className="w-20 h-20 rounded-2xl bg-teal-50 flex items-center justify-center mx-auto mb-5">
-                            <i className="fa-solid fa-hospital-user text-3xl text-teal-300"></i>
+                        <div className="w-20 h-20 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-5">
+                            <i className="fa-solid fa-hospital-user text-3xl text-blue-300"></i>
                         </div>
                         <h3 className="text-xl font-bold text-gray-800">Không tìm thấy bệnh nhân nào</h3>
                         <p className="text-gray-400 mt-2 text-sm">Vui lòng thử lại với từ khóa hoặc bộ lọc khác</p>
                         <button
                             onClick={() => { setSearchTerm(''); setGenderFilter(''); refetch(); }}
-                            className="mt-6 font-bold text-teal-600 hover:text-teal-700 px-5 py-2 bg-teal-50 hover:bg-teal-100 rounded-xl cursor-pointer transition-colors"
+                            className="mt-6 font-bold text-blue-600 hover:text-blue-700 px-5 py-2 bg-blue-50 hover:bg-blue-100 rounded-xl cursor-pointer transition-colors"
                         >
                             <i className="fa-solid fa-rotate-left mr-2 text-sm"></i>
                             Xóa bộ lọc
@@ -337,6 +417,7 @@ const PatientListPage = () => {
                                         patient={patient}
                                         index={idx}
                                         order={(currentPage - 1) * pageSize + idx + 1}
+                                        onEdit={(p) => navigate(`/admin/patients/${p.patient_id}/edit`, { state: { patient: p } })}
                                     />
                                 ))}
                             </AnimatePresence>
@@ -372,10 +453,10 @@ const PatientListPage = () => {
                                                 key={item}
                                                 onClick={() => setCurrentPage(item)}
                                                 className={`w-10 h-10 rounded-xl text-sm font-bold transition-all cursor-pointer ${currentPage === item
-                                                        ? 'text-white shadow-lg shadow-teal-500/25'
-                                                        : 'text-gray-500 hover:bg-white/80'
+                                                    ? 'text-white shadow-lg shadow-blue-500/25'
+                                                    : 'text-gray-500 hover:bg-white/80'
                                                     }`}
-                                                style={currentPage === item ? { background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' } : {}}
+                                                style={currentPage === item ? { background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' } : {}}
                                             >
                                                 {item}
                                             </button>
