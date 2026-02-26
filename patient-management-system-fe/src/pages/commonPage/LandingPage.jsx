@@ -7,7 +7,7 @@ const LandingPage = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="font-sans text-gray-700 antialiased overflow-x-hidden bg-white" style={{width: '100vw'}}>
+        <div className="font-sans text-gray-700 antialiased overflow-x-hidden bg-white" style={{ width: '100vw' }}>
             <nav className="fixed w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
                 <div className="container mx-auto px-6 py-4">
                     <div className="flex justify-between items-center">
@@ -23,6 +23,7 @@ const LandingPage = () => {
                             <a href="#how-it-works" className="hover:text-blue-600 transition">Quy trình</a>
                             <a href="#testimonials" className="hover:text-blue-600 transition">Đánh giá</a>
                             <a href="#app" className="hover:text-blue-600 transition">Ứng dụng</a>
+                            <a onClick={() => navigate('/admin/patients')} className="hover:text-blue-600 transition cursor-pointer">Quản trị</a>
 
                             <div className="flex items-center gap-4 pl-4 border-l border-gray-200">
                                 <a onClick={() => navigate('/login')} className="text-sm font-semibold text-gray-600 hover:text-blue-600 cursor-pointer">Đăng nhập</a>
@@ -75,6 +76,7 @@ const LandingPage = () => {
                                 { href: "#features", label: "Tính năng", icon: <HiOutlineSparkles /> },
                                 { href: "#how-it-works", label: "Quy trình", icon: <HiOutlineCursorClick /> },
                                 { href: "#testimonials", label: "Đánh giá", icon: <HiOutlineChatAlt2 /> },
+                                { onClick: () => navigate('/admin/patients'), label: "Quản trị", icon: <HiOutlineSparkles /> },
                                 { onClick: () => navigate('/login'), label: "Đăng nhập", icon: <HiOutlineLogin /> },
                             ].map((item, index) => (
                                 <a
