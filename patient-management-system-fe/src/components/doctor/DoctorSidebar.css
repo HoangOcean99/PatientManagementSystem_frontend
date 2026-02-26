@@ -1,0 +1,131 @@
+/* ============================
+   DoctorSidebar — Shared Navigation
+   Reuses token system from ExaminationPage
+   ============================ */
+
+/* ===== SIDEBAR ===== */
+.doc-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--ex-sidebar-width, 260px);
+  background: var(--ex-surface, #fff);
+  border-right: 1px solid var(--ex-border, #E2E8F0);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+}
+
+.doc-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--ex-border-light, #F1F5F9);
+}
+
+.doc-sidebar__logo {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, var(--ex-primary, #2563EB), var(--ex-primary-dark, #1D4ED8));
+  border-radius: var(--ex-radius-md, 10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.doc-sidebar__brand-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ex-text-primary, #0F172A);
+}
+
+.doc-sidebar__nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.doc-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--ex-radius-md, 10px);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ex-text-secondary, #475569);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+}
+
+.doc-sidebar__link:hover {
+  background: var(--ex-surface-hover, #F1F5F9);
+  color: var(--ex-text-primary, #0F172A);
+}
+
+.doc-sidebar__link--active {
+  background: var(--ex-primary-subtle, #EFF6FF);
+  color: var(--ex-primary, #2563EB);
+  font-weight: 600;
+}
+
+.doc-sidebar__link--active:hover {
+  background: var(--ex-primary-light, #DBEAFE);
+}
+
+/* Divider between nav groups */
+.doc-sidebar__divider {
+  height: 1px;
+  background: var(--ex-border-light, #F1F5F9);
+  margin: 8px 16px;
+}
+
+/* ===== FOOTER ===== */
+.doc-sidebar__footer {
+  padding: 16px 12px;
+  border-top: 1px solid var(--ex-border-light, #F1F5F9);
+}
+
+.doc-sidebar__logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  width: 100%;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ex-text-muted, #94A3B8);
+  cursor: pointer;
+  border-radius: var(--ex-radius-md, 10px);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.doc-sidebar__logout:hover {
+  background: var(--ex-danger-light, #FEF2F2);
+  color: var(--ex-danger, #EF4444);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .doc-sidebar {
+    display: none;
+  }
+}

@@ -20,6 +20,7 @@ import {
   FiBookOpen,
   FiPlay,
 } from 'react-icons/fi';
+import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import './PatientDetailPage.css';
 
 // ===== MOCK DATA (replace with API calls) =====
@@ -370,32 +371,7 @@ const PatientDetailPage = () => {
   return (
     <div className="pd-layout" style={{}}>
       {/* ===== SIDEBAR ===== */}
-      <aside className="pd-sidebar">
-        <div className="pd-sidebar__brand">
-          <div className="pd-sidebar__logo">
-            <i className="fa-solid fa-heart-pulse"></i>
-          </div>
-          <span className="pd-sidebar__brand-text">MedSchedule</span>
-        </div>
-
-        <nav className="pd-sidebar__nav">
-          <a href="#" className="pd-sidebar__link">
-            <FiCalendar size={20} />
-            <span>Lịch làm việc</span>
-          </a>
-          <a href="#" className="pd-sidebar__link pd-sidebar__link--active">
-            <FiClipboard size={20} />
-            <span>Quy trình khám bệnh</span>
-          </a>
-        </nav>
-
-        <div className="pd-sidebar__footer">
-          <button className="pd-sidebar__logout" onClick={() => navigate('/')}>
-            <FiArrowLeft size={18} />
-            <span>Đăng xuất</span>
-          </button>
-        </div>
-      </aside>
+      <DoctorSidebar activePage="schedule" />
 
       {/* ===== MAIN CONTENT ===== */}
       <main className="pd-main">
