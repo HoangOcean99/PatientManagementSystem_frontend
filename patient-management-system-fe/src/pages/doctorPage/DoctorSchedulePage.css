@@ -1,0 +1,434 @@
+/* ============================
+   DoctorSchedulePage
+   Theme: White / Blue (Clinical Trust)
+   ============================ */
+
+/* ===== LAYOUT ===== */
+.sched-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--ex-bg, #F8FAFC);
+  font-family: var(--ex-font, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  color: var(--ex-text-primary, #0F172A);
+}
+
+.sched-main {
+  flex: 1;
+  margin-left: var(--ex-sidebar-width, 260px);
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.sched-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 36px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ===== PAGE HEADER ===== */
+.sched-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.sched-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sched-header__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ex-text-primary, #0F172A);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sched-header__title svg {
+  color: var(--ex-primary, #2563EB);
+}
+
+.sched-header__date {
+  font-size: 14px;
+  color: var(--ex-text-secondary, #475569);
+  font-weight: 500;
+}
+
+/* ===== FILTER BAR ===== */
+.sched-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sched-search {
+  flex: 1;
+  min-width: 220px;
+  position: relative;
+}
+
+.sched-search__icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ex-text-muted, #94A3B8);
+  pointer-events: none;
+}
+
+.sched-search__input {
+  width: 100%;
+  padding: 10px 14px 10px 40px;
+  border: 1.5px solid var(--ex-border, #E2E8F0);
+  border-radius: var(--ex-radius-md, 10px);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ex-text-primary, #0F172A);
+  background: var(--ex-surface, #fff);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.sched-search__input:focus {
+  border-color: var(--ex-primary, #2563EB);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.sched-search__input::placeholder {
+  color: var(--ex-text-muted, #94A3B8);
+}
+
+.sched-filter-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--ex-surface, #fff);
+  border: 1.5px solid var(--ex-border, #E2E8F0);
+  border-radius: var(--ex-radius-md, 10px);
+  padding: 4px;
+}
+
+.sched-filter-tab {
+  padding: 8px 16px;
+  border-radius: var(--ex-radius-sm, 6px);
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-text-secondary, #475569);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.sched-filter-tab:hover {
+  background: var(--ex-surface-hover, #F1F5F9);
+}
+
+.sched-filter-tab--active {
+  background: var(--ex-primary, #2563EB);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+.sched-filter-tab--active:hover {
+  background: var(--ex-primary-dark, #1D4ED8);
+}
+
+/* ===== PATIENT TABLE ===== */
+.sched-table-wrap {
+  background: var(--ex-surface, #fff);
+  border: 1px solid var(--ex-border, #E2E8F0);
+  border-radius: var(--ex-radius-lg, 14px);
+  box-shadow: var(--ex-shadow-sm);
+  overflow: hidden;
+}
+
+.sched-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sched-table th {
+  text-align: left;
+  padding: 14px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ex-text-muted, #94A3B8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--ex-primary-50, #F0F7FF);
+  border-bottom: 1px solid var(--ex-border, #E2E8F0);
+}
+
+.sched-table td {
+  padding: 14px 20px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--ex-border-light, #F1F5F9);
+  vertical-align: middle;
+}
+
+.sched-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sched-table tr:hover td {
+  background: var(--ex-surface-hover, #F1F5F9);
+}
+
+.sched-patient-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sched-patient-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ex-primary, #2563EB), var(--ex-primary-dark, #1D4ED8));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sched-patient-name {
+  font-weight: 600;
+  color: var(--ex-text-primary, #0F172A);
+}
+
+.sched-patient-meta {
+  font-size: 12px;
+  color: var(--ex-text-muted, #94A3B8);
+  margin-top: 1px;
+}
+
+.sched-time {
+  font-weight: 600;
+  color: var(--ex-text-secondary, #475569);
+}
+
+.sched-queue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--ex-primary-light, #DBEAFE);
+  color: var(--ex-primary, #2563EB);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Status */
+.sched-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sched-status--waiting {
+  background: var(--ex-warning-light, #FFFBEB);
+  color: var(--ex-warning, #F59E0B);
+}
+
+.sched-status--in_progress {
+  background: var(--ex-primary-light, #DBEAFE);
+  color: var(--ex-primary, #2563EB);
+}
+
+.sched-status--completed {
+  background: var(--ex-success-light, #ECFDF5);
+  color: var(--ex-success, #10B981);
+}
+
+/* Actions */
+.sched-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sched-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: var(--ex-radius-sm, 6px);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  border: none;
+  white-space: nowrap;
+}
+
+.sched-action-btn--start {
+  background: var(--ex-primary, #2563EB);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+.sched-action-btn--start:hover {
+  background: var(--ex-primary-dark, #1D4ED8);
+  transform: translateY(-1px);
+}
+
+.sched-action-btn--view {
+  background: transparent;
+  color: var(--ex-primary, #2563EB);
+  border: 1.5px solid var(--ex-border, #E2E8F0);
+}
+
+.sched-action-btn--view:hover {
+  border-color: var(--ex-primary, #2563EB);
+  background: var(--ex-primary-subtle, #EFF6FF);
+}
+
+/* ===== EMPTY STATE ===== */
+.sched-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 12px;
+}
+
+.sched-empty__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--ex-primary-light, #DBEAFE);
+  color: var(--ex-primary, #2563EB);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sched-empty__text {
+  font-size: 14px;
+  color: var(--ex-text-muted, #94A3B8);
+  margin: 0;
+}
+
+/* ===== RESULT COUNT ===== */
+.sched-result-count {
+  font-size: 13px;
+  color: var(--ex-text-muted, #94A3B8);
+  padding: 12px 20px;
+  border-top: 1px solid var(--ex-border-light, #F1F5F9);
+}
+
+/* ===== FOOTER ===== */
+.sched-footer {
+  text-align: center;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--ex-border-light, #F1F5F9);
+}
+
+.sched-footer p {
+  font-size: 13px;
+  color: var(--ex-text-muted, #94A3B8);
+  margin: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .sched-content {
+    padding: 20px 20px 40px;
+  }
+
+  .sched-table th:nth-child(4),
+  .sched-table td:nth-child(4) {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .sched-main {
+    margin-left: 0;
+  }
+
+  .sched-content {
+    padding: 16px 16px 32px;
+  }
+
+  .sched-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sched-search {
+    min-width: unset;
+  }
+
+  .sched-filter-tabs {
+    overflow-x: auto;
+  }
+
+  /* Card layout on mobile */
+  .sched-table,
+  .sched-table thead,
+  .sched-table tbody,
+  .sched-table th,
+  .sched-table td,
+  .sched-table tr {
+    display: block;
+  }
+
+  .sched-table thead {
+    display: none;
+  }
+
+  .sched-table tr {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--ex-border-light, #F1F5F9);
+  }
+
+  .sched-table td {
+    padding: 4px 0;
+    border: none;
+    text-align: left;
+  }
+
+  .sched-table td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ex-text-muted, #94A3B8);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .sched-actions {
+    margin-top: 10px;
+  }
+
+  .sched-action-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

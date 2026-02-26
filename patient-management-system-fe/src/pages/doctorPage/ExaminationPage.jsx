@@ -20,7 +20,10 @@ import {
   FiLoader,
   FiAlertCircle,
   FiHeart,
+  FiSend,
+  FiDownload,
 } from 'react-icons/fi';
+import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import './ExaminationPage.css';
 
 // ===== MOCK DATA (replace with API) =====
@@ -67,6 +70,13 @@ const STATUS_MAP = {
   ready: { label: 'Sẵn sàng', color: 'status--ready', icon: FiLoader },
   in_progress: { label: 'Đang khám', color: 'status--active', icon: FiPlay },
   completed: { label: 'Hoàn tất', color: 'status--done', icon: FiCheckCircle },
+};
+
+const LAB_STATUS_MAP = {
+  draft: { label: 'Chưa gửi', color: 'lab-status--draft', icon: FiFileText },
+  sent: { label: 'Đã gửi', color: 'lab-status--sent', icon: FiSend },
+  processing: { label: 'Đang xử lý', color: 'lab-status--processing', icon: FiLoader },
+  completed: { label: 'Có kết quả', color: 'lab-status--completed', icon: FiCheckCircle },
 };
 
 // ===== ANIMATION VARIANTS =====
@@ -198,7 +208,15 @@ const ExaminationPage = () => {
   ]);
 
   // LabOrders (dynamic list)
-  const [labOrders, setLabOrders] = useState([]);
+  const [labOrders, setLabOrders] = useState([
+    {
+      id: 1,
+      test_name: 'Xét nghiệm máu tổng quát',
+      status: 'completed',
+      result_summary: 'WBC: 7.5 x10⁹/L (bình thường). RBC: 3.2 x10¹²/L (thấp nhẹ). HGB: 110 g/L (dưới ngưỡng). Đề nghị theo dõi thêm.',
+      result_file_url: 'https://example.com/lab-results/blood-test-001.pdf',
+    },
+  ]);
 
   // Follow-up date (UI only)
   const [followUpDate, setFollowUpDate] = useState('');
@@ -231,7 +249,10 @@ const ExaminationPage = () => {
 
   // -- Lab Orders --
   const addLabOrder = () => {
-    setLabOrders((prev) => [...prev, { id: Date.now(), test_name: '' }]);
+    setLabOrders((prev) => [
+      ...prev,
+      { id: Date.now(), test_name: '', status: 'draft' },
+    ]);
   };
 
   const removeLabOrder = (id) => {
@@ -243,6 +264,49 @@ const ExaminationPage = () => {
       prev.map((l) => (l.id === id ? { ...l, test_name: value } : l))
     );
   };
+
+  const [labSending, setLabSending] = useState(false);
+
+  const handleSendLabOrders = async () => {
+    const validOrders = labOrders.filter(
+      (l) => l.test_name.trim() && l.status === 'draft'
+    );
+    if (validOrders.length === 0) {
+      alert('Không có xét nghiệm mới nào để gửi.');
+      return;
+    }
+
+    setLabSending(true);
+    const payload = {
+      appointment_id: appointment.appointment_id,
+      doctor_id: appointment.doctor_id,
+      patient_id: appointment.patient_id,
+      lab_orders: validOrders.map((l) => ({
+        test_name: l.test_name.trim(),
+        status: 'ordered',
+      })),
+    };
+
+    console.log('Send Lab Orders:', payload);
+    // TODO: API call — POST /api/lab-orders
+
+    // Simulate success → update status to 'sent'
+    setTimeout(() => {
+      setLabOrders((prev) =>
+        prev.map((l) =>
+          l.status === 'draft' && l.test_name.trim()
+            ? { ...l, status: 'sent' }
+            : l
+        )
+      );
+      setLabSending(false);
+      alert('Đã gửi yêu cầu xét nghiệm thành công!');
+    }, 800);
+  };
+
+  const hasDraftLabs = labOrders.some(
+    (l) => l.status === 'draft' && l.test_name.trim()
+  );
 
   // -- Save / Complete --
   const handleSaveDraft = () => {
@@ -284,13 +348,7 @@ const ExaminationPage = () => {
         instructions: p.instructions.trim(),
         reminder_schedule: p.reminder_schedule,
       })),
-    // LabOrders
-    lab_orders: labOrders
-      .filter((l) => l.test_name.trim())
-      .map((l) => ({
-        test_name: l.test_name.trim(),
-        status: 'ordered',
-      })),
+    // LabOrders — handled separately via handleSendLabOrders
     // Follow-up (UI only — future use)
     follow_up_date: followUpDate || null,
   });
@@ -313,32 +371,7 @@ const ExaminationPage = () => {
   return (
     <div className="ex-layout">
       {/* ===== SIDEBAR ===== */}
-      <aside className="ex-sidebar">
-        <div className="ex-sidebar__brand">
-          <div className="ex-sidebar__logo">
-            <i className="fa-solid fa-heart-pulse"></i>
-          </div>
-          <span className="ex-sidebar__brand-text">MedSchedule</span>
-        </div>
-
-        <nav className="ex-sidebar__nav">
-          <a href="#" className="ex-sidebar__link">
-            <FiCalendar size={20} />
-            <span>Lịch làm việc & Hồ sơ</span>
-          </a>
-          <a href="#" className="ex-sidebar__link ex-sidebar__link--active">
-            <FiClipboard size={20} />
-            <span>Quy trình khám bệnh</span>
-          </a>
-        </nav>
-
-        <div className="ex-sidebar__footer">
-          <button className="ex-sidebar__logout" onClick={() => navigate('/')}>
-            <FiArrowLeft size={18} />
-            <span>Đăng xuất</span>
-          </button>
-        </div>
-      </aside>
+      <DoctorSidebar activePage="examination" />
 
       {/* ===== MAIN ===== */}
       <main className="ex-main">
@@ -568,8 +601,8 @@ const ExaminationPage = () => {
             {/* RIGHT COLUMN */}
             <div className="ex-form-col ex-form-col--right">
               {/* Chỉ định xét nghiệm */}
-              <motion.div className="ex-form-card" variants={itemVariants}>
-                <div className="ex-form-card__header">
+              <motion.div className="ex-form-card ex-form-card--lab" variants={itemVariants}>
+                <div className="ex-form-card__header ex-form-card__header--lab">
                   <FiActivity size={18} className="ex-form-card__icon" />
                   <h3 className="ex-form-card__title">Chỉ định xét nghiệm</h3>
                   {!isCompleted && (
@@ -585,40 +618,123 @@ const ExaminationPage = () => {
                 </div>
                 <div className="ex-form-card__body">
                   <AnimatePresence>
-                    {labOrders.map((l) => (
-                      <motion.div
-                        key={l.id}
-                        className="ex-lab-item"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <input
-                          type="text"
-                          className="ex-input"
-                          placeholder="Tên xét nghiệm..."
-                          value={l.test_name}
-                          onChange={(e) => updateLabOrder(l.id, e.target.value)}
-                          disabled={isCompleted}
-                        />
-                        {!isCompleted && (
-                          <button
-                            className="ex-btn-delete"
-                            onClick={() => removeLabOrder(l.id)}
-                            type="button"
-                            aria-label="Xóa xét nghiệm"
-                          >
-                            <FiTrash2 size={16} color="#fff" />
-                          </button>
-                        )}
-                      </motion.div>
-                    ))}
+                    {labOrders.map((l, idx) => {
+                      const labStatus = LAB_STATUS_MAP[l.status] || LAB_STATUS_MAP.draft;
+                      const LabIcon = labStatus.icon;
+                      const isSent = l.status !== 'draft';
+
+                      return (
+                        <motion.div
+                          key={l.id}
+                          className={`ex-lab-card ${isSent ? 'ex-lab-card--sent' : ''}`}
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25 }}
+                        >
+                          <div className="ex-lab-card__header">
+                            <span className="ex-lab-card__num">#{idx + 1}</span>
+                            <div className={`ex-lab-status-badge ${labStatus.color}`}>
+                              <LabIcon size={12} />
+                              <span>{labStatus.label}</span>
+                            </div>
+                            {!isCompleted && !isSent && (
+                              <button
+                                className="ex-btn-delete"
+                                onClick={() => removeLabOrder(l.id)}
+                                type="button"
+                                aria-label="Xóa xét nghiệm"
+                              >
+                                <FiTrash2 size={16} color="#fff" />
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="ex-lab-card__fields">
+                            <input
+                              type="text"
+                              className="ex-input"
+                              placeholder="Tên xét nghiệm..."
+                              value={l.test_name}
+                              onChange={(e) => updateLabOrder(l.id, e.target.value)}
+                              disabled={isCompleted || isSent}
+                            />
+                          </div>
+
+                          {/* Kết quả xét nghiệm - hiển khi completed */}
+                          {l.status === 'completed' && l.result_summary && (
+                            <div className="ex-lab-result">
+                              <div className="ex-lab-result__header">
+                                <FiClipboard size={14} />
+                                <span>Kết quả xét nghiệm</span>
+                              </div>
+                              <p className="ex-lab-result__summary">{l.result_summary}</p>
+                              {l.result_file_url && (
+                                <a
+                                  href={l.result_file_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="ex-lab-result__file"
+                                >
+                                  <FiDownload size={14} />
+                                  Tải file kết quả
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })}
                   </AnimatePresence>
                   {labOrders.length === 0 && (
-                    <p className="ex-empty-text">Chưa có chỉ định xét nghiệm nào.</p>
+                    <div className="ex-lab-empty">
+                      <FiActivity size={32} className="ex-lab-empty__icon" />
+                      <p className="ex-lab-empty__text">Chưa có chỉ định xét nghiệm nào.</p>
+                      {!isCompleted && (
+                        <button
+                          className="ex-btn ex-btn--outline ex-btn--sm"
+                          onClick={addLabOrder}
+                          type="button"
+                        >
+                          <FiPlus size={14} />
+                          Thêm xét nghiệm đầu tiên
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
+
+                {/* Dedicated Send Button */}
+                {labOrders.length > 0 && !isCompleted && (
+                  <div className="ex-lab-action-bar">
+                    <div className="ex-lab-action-bar__info">
+                      <FiActivity size={14} />
+                      <span>
+                        {labOrders.filter((l) => l.status === 'draft').length} chưa gửi
+                        {labOrders.filter((l) => l.status === 'sent').length > 0 &&
+                          ` · ${labOrders.filter((l) => l.status === 'sent').length} đã gửi`}
+                      </span>
+                    </div>
+                    <button
+                      className={`ex-btn ex-btn--send ${!hasDraftLabs ? 'ex-btn--disabled' : ''}`}
+                      onClick={handleSendLabOrders}
+                      type="button"
+                      disabled={!hasDraftLabs || labSending}
+                    >
+                      {labSending ? (
+                        <>
+                          <FiLoader size={16} className="ex-spin" />
+                          Đang gửi...
+                        </>
+                      ) : (
+                        <>
+                          <FiSend size={16} />
+                          Gửi yêu cầu xét nghiệm
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </motion.div>
 
               {/* Lịch tái khám */}
