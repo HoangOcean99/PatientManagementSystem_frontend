@@ -2,15 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import { getDoctorById } from '../../api/doctorApi';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
+import Sidebar from '../../components/common/Sidebar';
+import Header from '../../components/common/Header';
+import { ItemsAdminSideBar } from '../../components/sidebar/ItemsAdminSideBar';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
-const DoctorProfilePage = () => {
-    const { id } = useParams();
+const UserProfileManagement = () => {
+    return (
+        <div className="flex flex-col h-screen bg-white" style={{ width: '100vw' }}>
+            <Header />
+
+            <div className="flex flex-1 overflow-hidden">
+                <Sidebar items={ItemsAdminSideBar} />
+
+                <MainUserProfileManagement />
+            </div>
+        </div>
+    )
+};
+
+const MainUserProfileManagement = () => {
+    const { id, role } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Nếu chúng ta đến từ route của Admin thì đây là flag nhận diện nhanh
     const isAdminView = location.pathname.includes('/admin/');
 
     const [selectedDateIndex, setSelectedDateIndex] = useState(0);
@@ -37,7 +53,7 @@ const DoctorProfilePage = () => {
         }
     }, [id]);
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
+    if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50" style={{ width: '100vw' }} > <LoadingSpinner /></div >
 
     if (!doctor) return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center" style={{ width: '100vw' }}>
@@ -71,14 +87,15 @@ const DoctorProfilePage = () => {
     const isActive = displayDoctor.status === 'active';
 
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-12 font-sans" style={{width: '100vw'}}>
+
+        <main className="flex-1 overflow-y-auto bg-gray-50/30">
             {scrollbarStyles}
 
             {/* Top Navigation */}
             <div className={`sticky top-0 z-40 backdrop-blur-md border-b border-gray-100 ${isAdminView ? 'bg-white/90' : 'bg-white/80'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
                     <button
-                        onClick={() => navigate(-1)}
+                        onClick={() => navigate(`/admin/user-management/${role}`)}
                         className="flex items-center gap-2 text-gray-500 hover:text-blue-600 font-bold transition-colors hover:bg-gray-100 px-3 py-1.5 rounded-xl"
                     >
                         <i className="fa-solid fa-arrow-left"></i>
@@ -87,7 +104,7 @@ const DoctorProfilePage = () => {
 
                     {isAdminView ? (
                         <button
-                            onClick={() => navigate(`/admin/doctors/${id}/edit`)}
+                            onClick={() => navigate(`/admin/user-profile-edit/${role}/${id}`)}
                             className="bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border border-indigo-200 hover:border-indigo-600 flex items-center gap-2"
                         >
                             <i className="fa-solid fa-pen-to-square"></i>
@@ -216,8 +233,8 @@ const DoctorProfilePage = () => {
                                                 setSelectedSlot(null);
                                             }}
                                             className={`flex-shrink-0 px-4 py-3 rounded-xl border transition-all text-center min-w-[100px] ${selectedDateIndex === idx
-                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200/50'
-                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200/50'
+                                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                                                 }`}
                                         >
                                             <div className="text-xs opacity-80 mb-1">{day.date.split(',')[0]}</div>
@@ -238,8 +255,8 @@ const DoctorProfilePage = () => {
                                             key={idx}
                                             onClick={() => setSelectedSlot(slot)}
                                             className={`py-2 px-1 rounded-lg text-sm font-bold border transition-all truncate ${selectedSlot === slot
-                                                    ? 'bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-500 ring-offset-1'
-                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50'
+                                                ? 'bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-500 ring-offset-1'
+                                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50'
                                                 }`}
                                         >
                                             {slot}
@@ -250,7 +267,7 @@ const DoctorProfilePage = () => {
                                 {/* Main Button Action */}
                                 {isAdminView ? (
                                     <button
-                                        onClick={() => navigate(`/admin/doctors/${id}`)}
+                                        onClick={() => navigate(`/admin/user-profile-edit/${id}`)}
                                         className="w-full py-3.5 rounded-xl font-bold text-[15px] transition-all bg-gray-900 text-white hover:bg-black shadow-lg shadow-gray-200 border border-transparent active:scale-[0.98] flex items-center justify-center gap-2"
                                     >
                                         <i className="fa-solid fa-calendar-plus"></i>
@@ -280,8 +297,8 @@ const DoctorProfilePage = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     );
-};
+}
 
-export default DoctorProfilePage;
+export default UserProfileManagement;

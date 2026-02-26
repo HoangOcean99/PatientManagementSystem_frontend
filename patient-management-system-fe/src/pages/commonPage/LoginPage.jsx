@@ -4,7 +4,7 @@ import { AiOutlineUser, AiOutlineLock, AiOutlineEyeInvisible, AiOutlineEye } fro
 import { HiArrowRight, HiOutlineHome } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
 import { loginLocal, loginWithGoogle } from '../../api/authApi';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import toast from 'react-hot-toast';
 

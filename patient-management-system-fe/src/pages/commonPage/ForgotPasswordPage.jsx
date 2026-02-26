@@ -2,10 +2,10 @@ import React, { useRef, useState } from 'react';
 import { AiOutlineMail, AiOutlineArrowLeft, AiOutlineUser, AiOutlineCheckCircle, AiOutlineLock } from 'react-icons/ai';
 import { HiOutlineHome, HiOutlineCheckCircle } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import toast from 'react-hot-toast';
-import OtpPopUp from '../../components/OtpPopUp';
+import OtpPopUp from '../../components/common/OtpPopUp';
 import { requestForgetPassword, resetPassword, verityResetOtp } from '../../api/authApi';
 import { validatePassword } from '../../helpers/validationUtils';
 

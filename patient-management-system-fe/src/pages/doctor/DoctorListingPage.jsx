@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import DoctorCard from '../../components/doctor/DoctorCard';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import { getAllDoctors, searchDoctors } from '../../api/doctorApi';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 const DoctorListingPage = () => {

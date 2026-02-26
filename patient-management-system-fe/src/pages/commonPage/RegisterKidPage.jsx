@@ -7,8 +7,8 @@ import { requestRegister, verifyAndCreate } from '../../api/authApi';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import { validatePassword, validateUsername } from '../../helpers/validationUtils';
 import toast from 'react-hot-toast';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import OtpPopUp from '../../components/OtpPopUp';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import OtpPopUp from '../../components/common/OtpPopUp';
 
 const RegisterKidPage = () => {
     const navigate = useNavigate();
