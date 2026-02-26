@@ -3,26 +3,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import { getDoctorById } from '../../api/doctorApi';
 import toast from 'react-hot-toast';
-import Sidebar from '../../components/common/Sidebar';
-import Header from '../../components/common/Header';
-import { ItemsAdminSideBar } from '../../components/sidebar/ItemsAdminSideBar';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const UserProfileManagement = () => {
-    return (
-        <div className="flex flex-col h-screen bg-white" style={{ width: '100vw' }}>
-            <Header />
-
-            <div className="flex flex-1 overflow-hidden">
-                <Sidebar items={ItemsAdminSideBar} />
-
-                <MainUserProfileManagement />
-            </div>
-        </div>
-    )
-};
-
-const MainUserProfileManagement = () => {
     const { id, role } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
@@ -299,6 +282,6 @@ const MainUserProfileManagement = () => {
             </div>
         </main>
     );
-}
+};
 
 export default UserProfileManagement;

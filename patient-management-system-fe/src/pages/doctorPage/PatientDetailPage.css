@@ -1,56 +1,10 @@
-/* ============================
-   PatientDetailPage — Medical Dashboard
-   Theme: White / Blue (Clinical Trust)
-   ============================ */
-
-/* ===== TOKENS ===== */
-:root {
-  --pd-primary: #2563EB;
-  --pd-primary-dark: #1D4ED8;
-  --pd-primary-light: #DBEAFE;
-  --pd-primary-subtle: #EFF6FF;
-  --pd-primary-50: #F0F7FF;
-
-  --pd-bg: #F8FAFC;
-  --pd-surface: #FFFFFF;
-  --pd-surface-hover: #F1F5F9;
-
-  --pd-text-primary: #0F172A;
-  --pd-text-secondary: #475569;
-  --pd-text-muted: #94A3B8;
-
-  --pd-border: #E2E8F0;
-  --pd-border-light: #F1F5F9;
-
-  --pd-danger: #EF4444;
-  --pd-danger-light: #FEF2F2;
-  --pd-warning: #F59E0B;
-  --pd-warning-light: #FFFBEB;
-  --pd-success: #10B981;
-  --pd-success-light: #ECFDF5;
-
-  --pd-sidebar-width: 260px;
-  --pd-sidebar-bg: #FFFFFF;
-
-  --pd-radius-sm: 6px;
-  --pd-radius-md: 10px;
-  --pd-radius-lg: 14px;
-  --pd-radius-xl: 18px;
-
-  --pd-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
-  --pd-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.03);
-  --pd-shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.08), 0 4px 8px rgba(15, 23, 42, 0.04);
-
-  --pd-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* ===== LAYOUT ===== */
 .pd-layout {
   display: flex;
   min-height: 100vh;
   background: var(--pd-bg);
   font-family: var(--pd-font);
   color: var(--pd-text-primary);
+  width: 100vw;
 }
 
 /* ===== SIDEBAR ===== */
@@ -65,14 +19,12 @@
   display: flex;
   flex-direction: column;
   z-index: 40;
-  padding: 0;
 }
 
 .pd-sidebar__brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 24px;
   border-bottom: 1px solid var(--pd-border-light);
 }
 
@@ -165,13 +117,11 @@
 /* ===== MAIN ===== */
 .pd-main {
   flex: 1;
-  margin-left: var(--pd-sidebar-width);
   min-height: 100vh;
   overflow-y: auto;
 }
 
 .pd-content {
-  max-width: 960px;
   margin: 0 auto;
   padding: 32px 40px 48px;
   display: flex;

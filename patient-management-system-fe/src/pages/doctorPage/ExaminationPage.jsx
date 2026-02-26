@@ -23,7 +23,6 @@ import {
   FiSend,
   FiDownload,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import './ExaminationPage.css';
 
 // ===== MOCK DATA (replace with API) =====
@@ -100,8 +99,8 @@ function MiniCalendar({ selectedDate, onSelect }) {
   const daysInMonth = new Date(viewDate.year, viewDate.month + 1, 0).getDate();
   const firstDay = new Date(viewDate.year, viewDate.month, 1).getDay();
   const monthNames = [
-    'Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
-    'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12',
+    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
   ];
 
   const prevMonth = () => {
@@ -370,11 +369,7 @@ const ExaminationPage = () => {
 
   return (
     <div className="ex-layout">
-      {/* ===== SIDEBAR ===== */}
-      <DoctorSidebar activePage="examination" />
-
-      {/* ===== MAIN ===== */}
-      <main className="ex-main">
+      <main className="ex-main p-8">
         <motion.div
           className="ex-content"
           variants={containerVariants}

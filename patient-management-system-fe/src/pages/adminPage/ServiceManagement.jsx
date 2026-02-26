@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
 import * as Icons from "lucide-react";
-import Header from '../../components/common/Header';
-import Sidebar from '../../components/common/Sidebar';
-import { ItemsAdminSideBar } from '../../components/sidebar/ItemsAdminSideBar';
 import { useNavigate } from 'react-router-dom';
 import DynamicModal from '../../components/common/DynamicModal';
 
@@ -142,78 +139,72 @@ const ServiceManagement = () => {
     const [isShowServiceCreatePopUp, setIsShowServiceCreatePopUp] = useState(false);
 
     return (
-        <div className="flex flex-col h-screen bg-white" style={{ width: '100vw' }}>
-            <Header />
-
-            <div className="flex flex-1 overflow-hidden">
-                <Sidebar items={ItemsAdminSideBar} />
-
-                <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8">            {/* Header Section */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-800">Danh mục Dịch vụ</h1>
-                            <p className="text-gray-500 mt-1 font-medium">Quản lý và tùy chỉnh các gói dịch vụ y tế của phòng khám.</p>
-                        </div>
-                        <button
-                            onClick={() => setIsShowServiceCreatePopUp(true)}
-                            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:scale-95"
-                        >
-                            <Icons.Plus size={20} />
-                            Thêm dịch vụ mới
-                        </button>
+        <>
+            <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-800">Danh mục Dịch vụ</h1>
+                        <p className="text-gray-500 mt-1 font-medium">Quản lý và tùy chỉnh các gói dịch vụ y tế của phòng khám.</p>
                     </div>
+                    <button
+                        onClick={() => setIsShowServiceCreatePopUp(true)}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:scale-95"
+                    >
+                        <Icons.Plus size={20} />
+                        Thêm dịch vụ mới
+                    </button>
+                </div>
 
-                    {/* Filter & Search Bar */}
-                    <div className="flex flex-col lg:flex-row gap-4 mb-8">
-                        <div className="relative flex-1 group">
-                            <Icons.Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
-                            <input
-                                type="text"
-                                placeholder="Tìm kiếm tên dịch vụ hoặc mô tả..."
-                                className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all shadow-sm"
-                            />
-                        </div>
-                        <div className="flex p-1 bg-gray-100 rounded-2xl w-fit">
-                            {['Tất cả', 'Hoạt động', 'Bảo trì'].map((item) => (
-                                <button
-                                    key={item}
-                                    onClick={() => setFilter(item)}
-                                    className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${filter === item ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                                        }`}
-                                >
-                                    {item}
-                                </button>
-                            ))}
-                        </div>
+                {/* Filter & Search Bar */}
+                <div className="flex flex-col lg:flex-row gap-4 mb-8">
+                    <div className="relative flex-1 group">
+                        <Icons.Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm tên dịch vụ hoặc mô tả..."
+                            className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all shadow-sm"
+                        />
                     </div>
-
-                    {/* Services Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {servicesData.map(service => (
-                            <ServiceCard key={service.id} service={service} />
+                    <div className="flex p-1 bg-gray-100 rounded-2xl w-fit">
+                        {['Tất cả', 'Hoạt động', 'Bảo trì'].map((item) => (
+                            <button
+                                key={item}
+                                onClick={() => setFilter(item)}
+                                className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${filter === item ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                                    }`}
+                            >
+                                {item}
+                            </button>
                         ))}
-
-                        {/* Empty State / Add Placeholder */}
-                        <div className="border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center p-8 text-gray-400 hover:border-blue-300 hover:bg-blue-50/30 transition-all cursor-pointer group">
-                            <div className="p-4 bg-gray-50 rounded-full group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
-                                <Icons.Plus size={32} />
-                            </div>
-                            <p className="mt-4 font-bold text-sm">Tạo thêm dịch vụ chuyên khoa</p>
-                        </div>
                     </div>
+                </div>
 
-                    {/* Pagination Footer */}
-                    <div className="mt-12 flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                        <span className="text-sm text-gray-400">Hiển thị 6 trên 12 dịch vụ</span>
-                        <div className="flex gap-2">
-                            <button className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50"><Icons.ChevronLeft size={18} /></button>
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-md shadow-blue-100">1</button>
-                            <button className="px-4 py-2 hover:bg-gray-50 rounded-lg text-sm font-bold">2</button>
-                            <button className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50"><Icons.ChevronRight size={18} /></button>
+                {/* Services Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {servicesData.map(service => (
+                        <ServiceCard key={service.id} service={service} />
+                    ))}
+
+                    {/* Empty State / Add Placeholder */}
+                    <div className="border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center p-8 text-gray-400 hover:border-blue-300 hover:bg-blue-50/30 transition-all cursor-pointer group">
+                        <div className="p-4 bg-gray-50 rounded-full group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
+                            <Icons.Plus size={32} />
                         </div>
+                        <p className="mt-4 font-bold text-sm">Tạo thêm dịch vụ chuyên khoa</p>
                     </div>
-                </main>
-            </div>
+                </div>
+
+                {/* Pagination Footer */}
+                <div className="mt-12 flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                    <span className="text-sm text-gray-400">Hiển thị 6 trên 12 dịch vụ</span>
+                    <div className="flex gap-2">
+                        <button className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50"><Icons.ChevronLeft size={18} /></button>
+                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-md shadow-blue-100">1</button>
+                        <button className="px-4 py-2 hover:bg-gray-50 rounded-lg text-sm font-bold">2</button>
+                        <button className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50"><Icons.ChevronRight size={18} /></button>
+                    </div>
+                </div>
+            </main>
 
             {isShowServiceCreatePopUp && <DynamicModal
                 title="Thêm người dùng"
@@ -221,7 +212,7 @@ const ServiceManagement = () => {
                 onSubmit={(data) => console.log(data)}
                 onClose={() => setIsShowServiceCreatePopUp(false)}
             />}
-        </div>
+        </>
     );
 };
 

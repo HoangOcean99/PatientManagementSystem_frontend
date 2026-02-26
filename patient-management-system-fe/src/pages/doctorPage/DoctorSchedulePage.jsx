@@ -8,7 +8,6 @@ import {
   FiEye,
   FiInbox,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import './DoctorSchedulePage.css';
 
 // ===== MOCK DATA =====
@@ -158,10 +157,9 @@ const DoctorSchedulePage = () => {
   }, [appointments, searchTerm, statusFilter]);
 
   return (
-    <div className="sched-layout" style={{ width: '100vw' }} >
-      <DoctorSidebar activePage="schedule" />
+    <div className="sched-layout">
 
-      <main className="sched-main">
+      <main className="sched-main p-8">
         <motion.div
           className="sched-content"
           variants={containerVariants}

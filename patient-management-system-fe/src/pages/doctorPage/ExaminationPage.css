@@ -1,46 +1,5 @@
-/* ============================
-   ExaminationPage — Medical Form
-   Theme: White / Blue (Clinical Trust)
-   Reuses variable tokens from PatientDetailPage
-   ============================ */
 
-/* ===== TOKENS ===== */
-:root {
-  --ex-primary: #2563EB;
-  --ex-primary-dark: #1D4ED8;
-  --ex-primary-light: #DBEAFE;
-  --ex-primary-subtle: #EFF6FF;
-  --ex-primary-50: #F0F7FF;
 
-  --ex-bg: #F8FAFC;
-  --ex-surface: #FFFFFF;
-  --ex-surface-hover: #F1F5F9;
-
-  --ex-text-primary: #0F172A;
-  --ex-text-secondary: #475569;
-  --ex-text-muted: #94A3B8;
-
-  --ex-border: #E2E8F0;
-  --ex-border-light: #F1F5F9;
-
-  --ex-danger: #EF4444;
-  --ex-danger-light: #FEF2F2;
-  --ex-success: #10B981;
-  --ex-success-light: #ECFDF5;
-  --ex-warning: #F59E0B;
-  --ex-warning-light: #FFFBEB;
-
-  --ex-sidebar-width: 260px;
-  --ex-radius-sm: 6px;
-  --ex-radius-md: 10px;
-  --ex-radius-lg: 14px;
-  --ex-radius-xl: 18px;
-
-  --ex-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
-  --ex-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.03);
-
-  --ex-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
 
 /* ===== LAYOUT ===== */
 .ex-layout {
@@ -156,15 +115,12 @@
 /* ===== MAIN ===== */
 .ex-main {
   flex: 1;
-  margin-left: var(--ex-sidebar-width);
   min-height: 100vh;
   overflow-y: auto;
 }
 
 .ex-content {
-  max-width: 1040px;
-  margin: 0 auto;
-  padding: 28px 36px 48px;
+  margin: auto auto;
   display: flex;
   flex-direction: column;
   gap: 20px;

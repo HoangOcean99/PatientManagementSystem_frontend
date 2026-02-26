@@ -9,7 +9,6 @@ const mainRoutes = [
     ...patientRoutes,
     ...accountantRoutes,
     ...adminRoutes,
-    ...commonRoutes
 ];
 
 export default mainRoutes;

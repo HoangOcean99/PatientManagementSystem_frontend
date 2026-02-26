@@ -10,8 +10,7 @@ import {
   FiAlertCircle,
   FiCamera,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
-import './DoctorProfileSettingsPage.css';
+ import './DoctorProfileSettingsPage.css';
 
 // ===== MOCK DATA =====
 const MOCK_DOCTOR = {
@@ -73,10 +72,9 @@ const DoctorProfileSettingsPage = () => {
   };
 
   return (
-    <div className="prof-layout" style={{ width: '100vw' }}>
-      <DoctorSidebar activePage="profile" />
+    <div className="prof-layout">
 
-      <main className="prof-main">
+      <main className="prof-main p-8">
         <motion.div
           className="prof-content"
           variants={containerVariants}

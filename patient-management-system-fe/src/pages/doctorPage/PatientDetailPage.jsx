@@ -20,7 +20,6 @@ import {
   FiBookOpen,
   FiPlay,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import './PatientDetailPage.css';
 
 // ===== MOCK DATA (replace with API calls) =====
@@ -369,12 +368,8 @@ const PatientDetailPage = () => {
   };
 
   return (
-    <div className="pd-layout" style={{}}>
-      {/* ===== SIDEBAR ===== */}
-      <DoctorSidebar activePage="schedule" />
-
-      {/* ===== MAIN CONTENT ===== */}
-      <main className="pd-main">
+    <div className="pd-layout">
+      <main className="pd-main p-8">
         <motion.div
           className="pd-content"
           variants={containerVariants}
