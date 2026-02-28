@@ -22,3 +22,25 @@ export const validatePassword = (password) => {
     }
     return null;
 };
+
+export const validateFullName = (fullName) => {
+    if (!fullName || !fullName.trim()) return "Họ tên không được để trống";
+    if (fullName.trim().length < 6) return "Họ tên phải có ít nhất 6 ký tự";
+    
+    const regex = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄễỆệỈỉỊịỌọỎỏỐốỒồỔổỖỗỘộỚớỜờỞởỠỡỢợỤụỦủỨứỪừỬửỮữỰựỲỳỴỵỶỷỸỹ ]+$/;
+    if (!regex.test(fullName)) return "Họ tên không được chứa số hoặc ký tự đặc biệt";
+    
+    return null;
+};
+
+export const validatePhoneNumber = (phoneNumber, isRequired = false) => {
+    if (!phoneNumber) {
+        return isRequired ? "Vui lòng nhập số điện thoại" : null;
+    }
+    
+    // Phone must match VN operators rules
+    const regex = /^(03|05|07|08|09|01[2|6|8|9])[0-9]{8}$/;
+    if (!regex.test(phoneNumber)) return "Số điện thoại không đúng định dạng Việt Nam";
+    
+    return null;
+};

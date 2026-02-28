@@ -19,6 +19,7 @@ import {
   FiThermometer,
   FiBookOpen,
   FiPlay,
+  FiExternalLink,
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import './PatientDetailPage.css';
@@ -78,16 +79,18 @@ const MOCK_RECORDS = [
       {
         lab_order_id: 'l-001',
         test_name: 'CRP',
-        result_summary: '7.9',
+        result_summary: 'Kết quả CRP: 7.9 mg/L — Cao hơn bình thường, có dấu hiệu viêm.',
+        result_file_url: 'https://example.com/results/crp-001.pdf',
         status: 'completed',
-        unit: 'mg/L',
+        created_at: '2026-01-25T10:30:00',
       },
       {
         lab_order_id: 'l-002',
         test_name: 'WBC',
-        result_summary: '12.5',
+        result_summary: 'Bạch cầu: 12.5 K/uL — Tăng nhẹ, phù hợp với tình trạng viêm nhiễm.',
+        result_file_url: null,
         status: 'completed',
-        unit: 'K/uL',
+        created_at: '2026-01-25T10:45:00',
       },
     ],
   },
@@ -117,10 +120,11 @@ const MOCK_RECORDS = [
     lab_orders: [
       {
         lab_order_id: 'l-003',
-        test_name: 'Huyết áp',
-        result_summary: '130/85',
+        test_name: 'Công thức máu',
+        result_summary: 'Hồng cầu, bạch cầu, tiểu cầu trong giới hạn bình thường.',
+        result_file_url: 'https://example.com/results/cbc-003.pdf',
         status: 'completed',
-        unit: 'mmHg',
+        created_at: '2026-01-24T09:15:00',
       },
     ],
   },
@@ -168,16 +172,18 @@ const MOCK_RECORDS = [
       {
         lab_order_id: 'l-004',
         test_name: 'HbA1c',
-        result_summary: '6.8',
+        result_summary: 'HbA1c: 6.8% — Tiền tiểu đường, cần theo dõi chế độ ăn.',
+        result_file_url: 'https://example.com/results/hba1c-004.pdf',
         status: 'completed',
-        unit: '%',
+        created_at: '2025-03-10T11:00:00',
       },
       {
         lab_order_id: 'l-005',
         test_name: 'Glucose (đói)',
-        result_summary: '126',
+        result_summary: 'Glucose lúc đói: 126 mg/dL — Trên ngưỡng bình thường.',
+        result_file_url: null,
         status: 'completed',
-        unit: 'mg/dL',
+        created_at: '2025-03-10T11:20:00',
       },
     ],
   },
@@ -327,27 +333,34 @@ function LabTable({ labOrders }) {
     return <p className="pd-empty-text">Không có kết quả xét nghiệm.</p>;
   }
   return (
-    <div className="pd-table-wrapper">
-      <table className="pd-table">
-        <thead>
-          <tr>
-            <th>STT</th>
-            <th>Tên xét nghiệm</th>
-            <th>Kết quả</th>
-            <th>Đơn vị</th>
-          </tr>
-        </thead>
-        <tbody>
-          {labOrders.map((l, i) => (
-            <tr key={l.lab_order_id || i}>
-              <td>{i + 1}</td>
-              <td>{l.test_name}</td>
-              <td className="pd-table__result">{l.result_summary || '—'}</td>
-              <td>{l.unit || '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="pd-lab-list">
+      {labOrders.map((l, i) => (
+        <div key={l.lab_order_id || i} className="pd-lab-item">
+          <div className="pd-lab-item__header">
+            <span className="pd-lab-item__name">{l.test_name}</span>
+          </div>
+
+          {l.result_summary && (
+            <div className="pd-lab-item__summary">
+              <p className="pd-lab-item__summary-text">{l.result_summary}</p>
+            </div>
+          )}
+
+          {l.result_file_url && (
+            <div className="pd-lab-item__footer">
+              <a
+                href={l.result_file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pd-lab-item__file-link"
+              >
+                <FiExternalLink size={12} />
+                Xem file kết quả
+              </a>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

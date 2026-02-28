@@ -6,18 +6,26 @@ import {
   FiClipboard,
   FiUser,
   FiLogOut,
+  FiActivity,
 } from 'react-icons/fi';
 import './DoctorSidebar.css';
 
-const NAV_ITEMS = [
+const DOCTOR_NAV = [
   { key: 'dashboard', label: 'Dashboard', icon: FiGrid, path: '/doctor/dashboard' },
   { key: 'schedule', label: 'Lịch khám hôm nay', icon: FiCalendar, path: '/doctor/schedule' },
   { key: 'profile', label: 'Hồ sơ cá nhân', icon: FiUser, path: '/doctor/profile' },
 ];
 
-const DoctorSidebar = ({ activePage }) => {
+const LAB_NAV = [
+  { key: 'lab-queue', label: 'Danh sách chờ XN', icon: FiActivity, path: '/lab/queue' },
+  { key: 'lab-profile', label: 'Hồ sơ cá nhân', icon: FiUser, path: '/lab/profile' },
+];
+
+const DoctorSidebar = ({ activePage, role = 'doctor' }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const navItems = role === 'lab' ? LAB_NAV : DOCTOR_NAV;
 
   const isActive = (item) => {
     if (activePage) return activePage === item.key;
@@ -43,7 +51,7 @@ const DoctorSidebar = ({ activePage }) => {
       </div>
 
       <nav className="doc-sidebar__nav">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item);
           return (

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -7,110 +7,24 @@ import {
   FiPlay,
   FiEye,
   FiInbox,
+  FiLoader,
+  FiAlertCircle,
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
+import { getAppointmentsByDoctorId } from '../../api/doctorApi';
 import './DoctorSchedulePage.css';
-
-// ===== MOCK DATA =====
-const MOCK_APPOINTMENTS = [
-  {
-    appointment_id: 'a-001',
-    queue_number: 1,
-    patient_name: 'Nguyễn Văn A',
-    patient_id: 'p-001',
-    gender: 'male',
-    age: 35,
-    phone: '0901234001',
-    start_time: '08:00',
-    end_time: '08:30',
-    status: 'completed',
-    service: 'Khám tổng quát',
-  },
-  {
-    appointment_id: 'a-002',
-    queue_number: 2,
-    patient_name: 'Trần Thị B',
-    patient_id: 'p-002',
-    gender: 'female',
-    age: 28,
-    phone: '0901234002',
-    start_time: '08:30',
-    end_time: '09:00',
-    status: 'completed',
-    service: 'Nội khoa',
-  },
-  {
-    appointment_id: 'a-003',
-    queue_number: 3,
-    patient_name: 'Lê Minh C',
-    patient_id: 'p-003',
-    gender: 'male',
-    age: 45,
-    phone: '0901234003',
-    start_time: '09:00',
-    end_time: '09:30',
-    status: 'in_progress',
-    service: 'Nội khoa',
-  },
-  {
-    appointment_id: 'a-004',
-    queue_number: 4,
-    patient_name: 'Phạm Thị D',
-    patient_id: 'p-004',
-    gender: 'female',
-    age: 52,
-    phone: '0901234004',
-    start_time: '09:30',
-    end_time: '10:00',
-    status: 'waiting',
-    service: 'Tim mạch',
-  },
-  {
-    appointment_id: 'a-005',
-    queue_number: 5,
-    patient_name: 'Hoàng Văn E',
-    patient_id: 'p-005',
-    gender: 'male',
-    age: 30,
-    phone: '0901234005',
-    start_time: '10:00',
-    end_time: '10:30',
-    status: 'waiting',
-    service: 'Khám tổng quát',
-  },
-  {
-    appointment_id: 'a-006',
-    queue_number: 6,
-    patient_name: 'Ngô Thị F',
-    patient_id: 'p-006',
-    gender: 'female',
-    age: 40,
-    phone: '0901234006',
-    start_time: '10:30',
-    end_time: '11:00',
-    status: 'waiting',
-    service: 'Nội khoa',
-  },
-  {
-    appointment_id: 'a-007',
-    queue_number: 7,
-    patient_name: 'Vũ Đức G',
-    patient_id: 'p-007',
-    gender: 'male',
-    age: 60,
-    phone: '0901234007',
-    start_time: '11:00',
-    end_time: '11:30',
-    status: 'waiting',
-    service: 'Tim mạch',
-  },
-];
 
 // ===== HELPERS =====
 const STATUS_LABELS = {
+  pending: 'Chờ xác nhận',
+  confirmed: 'Đã xác nhận',
+  checked_in: 'Đã check-in',
+  ready: 'Sẵn sàng',
   waiting: 'Chờ khám',
   in_progress: 'Đang khám',
   completed: 'Hoàn tất',
+  cancelled: 'Đã hủy',
+  missed: 'Vắng mặt',
 };
 
 const getGenderLabel = (g) => (g === 'male' ? 'Nam' : g === 'female' ? 'Nữ' : 'Khác');
@@ -123,9 +37,25 @@ const getTodayFormatted = () => {
   return d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
 };
 
+const calculateAge = (dob) => {
+  if (!dob) return '';
+  const today = new Date();
+  const b = new Date(dob);
+  let age = today.getFullYear() - b.getFullYear();
+  const m = today.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < b.getDate())) age--;
+  return age;
+};
+
+const formatTime = (t) => {
+  if (!t) return '';
+  return t.length > 5 ? t.slice(0, 5) : t;
+};
+
 const FILTER_OPTIONS = [
   { key: 'all', label: 'Tất cả' },
   { key: 'waiting', label: 'Chờ khám' },
+  { key: 'ready', label: 'Sẵn sàng' },
   { key: 'in_progress', label: 'Đang khám' },
   { key: 'completed', label: 'Hoàn tất' },
 ];
@@ -146,8 +76,45 @@ const DoctorSchedulePage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // TODO: Replace with API call
-  const appointments = MOCK_APPOINTMENTS;
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        // TODO: Lấy doctor_id từ auth context thay vì hardcode
+        const doctorId = localStorage.getItem('doctor_id') || '85be2ff0-0b7d-489f-a63a-9a0538338773';
+        const response = await getAppointmentsByDoctorId(doctorId);
+        const data = response.data?.data || response.data || [];
+
+        const mapped = (Array.isArray(data) ? data : []).map((appt) => ({
+          appointment_id: appt.appointment_id,
+          queue_number: appt.queue_number,
+          patient_name: appt.Patients?.Users?.full_name || 'N/A',
+          patient_id: appt.Patients?.patient_id || appt.patient_id,
+          gender: appt.Patients?.gender || '',
+          age: calculateAge(appt.Patients?.dob),
+          phone: appt.Patients?.Users?.phone_number || '',
+          start_time: formatTime(appt.start_time),
+          end_time: formatTime(appt.end_time),
+          status: appt.status,
+          service: appt.ClinicServices?.name || '',
+        }));
+
+        setAppointments(mapped);
+      } catch (err) {
+        console.error('Failed to fetch appointments:', err);
+        setError('Không thể tải danh sách lịch khám. Vui lòng thử lại.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppointments();
+  }, []);
 
   const filtered = useMemo(() => {
     return appointments.filter((appt) => {
@@ -206,7 +173,21 @@ const DoctorSchedulePage = () => {
 
           {/* Patient Table */}
           <motion.div className="sched-table-wrap" variants={itemVariants}>
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="sched-empty">
+                <div className="sched-empty__icon">
+                  <FiLoader size={24} className="sched-spin" />
+                </div>
+                <p className="sched-empty__text">Đang tải danh sách lịch khám...</p>
+              </div>
+            ) : error ? (
+              <div className="sched-empty">
+                <div className="sched-empty__icon" style={{ background: '#FEF2F2', color: '#EF4444' }}>
+                  <FiAlertCircle size={24} />
+                </div>
+                <p className="sched-empty__text" style={{ color: '#EF4444' }}>{error}</p>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="sched-empty">
                 <div className="sched-empty__icon">
                   <FiInbox size={24} />

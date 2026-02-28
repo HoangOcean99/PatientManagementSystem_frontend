@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   FiUser,
@@ -9,21 +9,12 @@ import {
   FiCheckCircle,
   FiAlertCircle,
   FiCamera,
+  FiLoader,
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
+import { getDoctorById, updateDoctor } from '../../api/doctorApi';
+import { validateFullName, validatePhoneNumber } from '../../helpers/validationUtils';
 import './DoctorProfileSettingsPage.css';
-
-// ===== MOCK DATA =====
-const MOCK_DOCTOR = {
-  user_id: 'u-d001',
-  doctor_id: 'd-001',
-  full_name: 'Nguyễn Văn Bác Sĩ',
-  email: 'doctor.nguyen@medschedule.vn',
-  phone_number: '0909123456',
-  specialization: 'Nội khoa',
-  description: 'Bác sĩ chuyên khoa nội, 10 năm kinh nghiệm tại bệnh viện Chợ Rẫy.',
-  avatar_url: null,
-};
 
 // ===== HELPERS =====
 const getInitials = (name) =>
@@ -47,29 +38,97 @@ const fadeVariants = {
 };
 
 const DoctorProfileSettingsPage = () => {
+  const doctorId = localStorage.getItem('doctor_id') || '85be2ff0-0b7d-489f-a63a-9a0538338773';
+
   // Profile form state
   const [profile, setProfile] = useState({
-    full_name: MOCK_DOCTOR.full_name,
-    email: MOCK_DOCTOR.email,
-    phone_number: MOCK_DOCTOR.phone_number,
-    specialization: MOCK_DOCTOR.specialization,
-    description: MOCK_DOCTOR.description,
-    avatar_url: MOCK_DOCTOR.avatar_url || '',
+    full_name: '',
+    email: '',
+    phone_number: '',
+    specialization: '',
+    description: '',
+    avatar_url: '',
   });
 
-  // Messages
+  // UI States
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState(null);
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const res = await getDoctorById(doctorId);
+        const d = res.data?.data || res.data;
+        if (d) {
+          setProfile({
+            full_name: d.Users?.full_name || '',
+            email: d.Users?.email || '',
+            phone_number: d.Users?.phone_number || '',
+            specialization: d.specialization || '',
+            description: d.bio || d.description || '',
+            avatar_url: d.Users?.avatar_url || '',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch doctor profile:', error);
+        setProfileMessage({ type: 'error', text: 'Không thể tải thông tin hồ sơ.' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [doctorId]);
 
   // ===== HANDLERS =====
   const handleProfileChange = (field, value) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
+    // Clear specific error on change
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
+    }
   };
 
-  const handleProfileSave = () => {
-    // TODO: API call with updateDoctor
-    console.log('Save profile:', profile);
-    setProfileMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
-    setTimeout(() => setProfileMessage(null), 3000);
+  const validateForm = () => {
+    const newErrors = {};
+    
+    const nameError = validateFullName(profile.full_name);
+    if (nameError) newErrors.full_name = nameError;
+
+    const phoneError = validatePhoneNumber(profile.phone_number);
+    if (phoneError) newErrors.phone_number = phoneError;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleProfileSave = async () => {
+    if (!validateForm()) return;
+
+    try {
+      setSaving(true);
+      setProfileMessage(null);
+      
+      const payload = {
+        full_name: profile.full_name,
+        phone_number: profile.phone_number,
+        specialization: profile.specialization,
+        bio: profile.description,
+        avatar_url: profile.avatar_url,
+      };
+
+      await updateDoctor(doctorId, payload);
+      
+      setProfileMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
+      setTimeout(() => setProfileMessage(null), 3000);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      setProfileMessage({ type: 'error', text: 'Cập nhật thất bại. Vui lòng thử lại.' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -92,20 +151,26 @@ const DoctorProfileSettingsPage = () => {
           </motion.div>
 
           {/* Profile Card */}
-          <motion.div className="prof-card" variants={itemVariants}>
+          {loading ? (
+             <div className="prof-card" style={{ justifyContent: 'center', opacity: 0.6 }}>
+                 <FiLoader size={24} className="lr-spin" /> {/* reusing spin from previous css, or just standard spin */}
+             </div>
+          ) : (
+          <motion.div className="prof-card" variants={itemVariants} initial="hidden" animate="visible">
             <div className="prof-card__avatar">
-              {MOCK_DOCTOR.avatar_url ? (
-                <img src={MOCK_DOCTOR.avatar_url} alt={MOCK_DOCTOR.full_name} />
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.full_name} />
               ) : (
-                getInitials(MOCK_DOCTOR.full_name)
+                getInitials(profile.full_name)
               )}
             </div>
             <div className="prof-card__info">
-              <h2 className="prof-card__name">{MOCK_DOCTOR.full_name}</h2>
-              <p className="prof-card__specialty">{MOCK_DOCTOR.specialization}</p>
-              <p className="prof-card__email">{MOCK_DOCTOR.email}</p>
+              <h2 className="prof-card__name">{profile.full_name || 'Bác sĩ'}</h2>
+              <p className="prof-card__specialty">{profile.specialization}</p>
+              <p className="prof-card__email">{profile.email}</p>
             </div>
           </motion.div>
+          )}
 
           {/* Profile Content */}
               <motion.div
@@ -168,11 +233,12 @@ const DoctorProfileSettingsPage = () => {
                     </label>
                     <input
                       type="text"
-                      className="prof-input"
+                      className={`prof-input ${errors.full_name ? 'prof-input--error' : ''}`}
                       value={profile.full_name}
                       onChange={(e) => handleProfileChange('full_name', e.target.value)}
                       placeholder="Nhập họ và tên"
                     />
+                    {errors.full_name && <span className="prof-field__error">{errors.full_name}</span>}
                   </div>
 
                   <div className="prof-field-row">
@@ -196,11 +262,12 @@ const DoctorProfileSettingsPage = () => {
                       </label>
                       <input
                         type="text"
-                        className="prof-input"
+                        className={`prof-input ${errors.phone_number ? 'prof-input--error' : ''}`}
                         value={profile.phone_number}
                         onChange={(e) => handleProfileChange('phone_number', e.target.value)}
                         placeholder="Số điện thoại"
                       />
+                      {errors.phone_number && <span className="prof-field__error">{errors.phone_number}</span>}
                     </div>
                   </div>
 
@@ -227,9 +294,9 @@ const DoctorProfileSettingsPage = () => {
                   </div>
 
                   <div className="prof-form-actions">
-                    <button className="prof-btn prof-btn--primary" onClick={handleProfileSave}>
-                      <FiSave size={16} />
-                      Lưu thay đổi
+                    <button className="prof-btn prof-btn--primary" onClick={handleProfileSave} disabled={saving}>
+                      {saving ? <FiLoader size={16} className="lr-spin" /> : <FiSave size={16} />}
+                      {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
                     </button>
                   </div>
                 </div>
