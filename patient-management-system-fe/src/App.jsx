@@ -2,22 +2,25 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import mainRoutes from "./routes/appRoutes";
 import MainPage from "./pages/commonPage/MainPage";
 import commonRoutes from "./routes/commonRoutes";
+import { AuthProvider } from "./components/security/AuthContext";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {commonRoutes.map((r, index) => (
-          <Route key={index} path={r.path} element={r.element} />
-        ))}
-        <Route element={<MainPage />}>
-          {mainRoutes.map((r, index) => (
+    <AuthProvider>
+
+      <BrowserRouter>
+        <Routes>
+          {commonRoutes.map((r, index) => (
             <Route key={index} path={r.path} element={r.element} />
           ))}
-        </Route>
-      </Routes>
-    </BrowserRouter>
-
+          <Route element={<MainPage />}>
+            {mainRoutes.map((r, index) => (
+              <Route key={index} path={r.path} element={r.element} />
+            ))}
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
 

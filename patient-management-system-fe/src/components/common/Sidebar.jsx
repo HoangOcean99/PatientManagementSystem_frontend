@@ -1,9 +1,12 @@
 import * as Icons from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { signOut } from "../../api/authApi";
+import { supabase } from "../../../supabaseClient";
 
 const SidebarItem = ({ icon, label, active = false, linkPage }) => {
     const IconComponent = Icons[icon];
     const navigate = useNavigate();
+
 
     return (
         <div
@@ -30,7 +33,14 @@ const SidebarItem = ({ icon, label, active = false, linkPage }) => {
 const Sidebar = ({ items }) => {
     const location = useLocation();
     const navigate = useNavigate();
-
+    const handleSignOut = async () => {
+        try {
+            await supabase.auth.signOut();
+            navigate('/login')
+        } catch (error) {
+            setErrorMessage("Đăng nhập Google thất bại");
+        }
+    }
     return (
         <aside className="w-64 border-r border-gray-100 flex flex-col p-4 bg-white">
             <nav className="flex-1 space-y-1">
@@ -51,7 +61,7 @@ const Sidebar = ({ items }) => {
                 })}
             </nav>
 
-            <div className="pt-4 border-t border-gray-50" onClick={() => navigate('/login')}>
+            <div className="pt-4 border-t border-gray-50" onClick={handleSignOut}>
                 <SidebarItem icon={"LogOut"} label="Đăng xuất" />
             </div>
         </aside>

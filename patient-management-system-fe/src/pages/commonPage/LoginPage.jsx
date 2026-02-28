@@ -7,6 +7,8 @@ import { loginLocal, loginWithGoogle } from '../../api/authApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import toast from 'react-hot-toast';
+import { supabase } from '../../../supabaseClient';
+import { fakeEmail } from '../../helpers/authUtils';
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -25,22 +27,15 @@ const LoginPage = () => {
         }
     };
 
-
     const handleLoginLocal = async () => {
         try {
             setIsLoadingLogin(true);
             setErrorMessage('');
-            const res = await loginLocal(
-                usernameRef.current.value,
+            const mainUsername = fakeEmail(usernameRef.current.value);
+            await loginLocal(
+                mainUsername,
                 passwordRef.current.value
             )
-            switch (res.data.user.role) {
-                case 'admin': navigate('/dashboard-admin'); break;
-                case 'receptionist': navigate('/dashboard-receptionist'); break;
-                case 'doctor': navigate('/dashboard-doctor'); break;
-                case 'accountant': navigate('/dashboard-accountant'); break;
-                case 'patient': navigate('/dashboard-patient'); break;
-            }
             toast.success("Đăng nhập thành công!")
         } catch (err) {
             setErrorMessage('Tên đăng nhập hoặc mật khẩu không chính xác. Vui lòng thử lại.');

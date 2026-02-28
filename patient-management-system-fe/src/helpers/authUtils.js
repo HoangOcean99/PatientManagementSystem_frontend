@@ -12,3 +12,7 @@ export const maskEmail = (email) => {
 
     return visiblePart + maskedPart + "@" + domain;
 };
+
+export const fakeEmail = (username) => {
+    return `${username}@app.com`;
+}

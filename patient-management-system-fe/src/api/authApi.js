@@ -14,11 +14,14 @@ export const loginWithGoogle = async () => {
     }
     return data;
 };
-export const loginLocal = async (username, password) => {
-    const res = await axiosClient.post('/auth/login-local', {
-        username, password
+export const loginLocal = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email, password
     });
-    return res;
+    if (error) {
+        throw error;
+    }
+    return data;
 }
 
 export const requestRegister = async (username, emailParent) => {
@@ -54,5 +57,9 @@ export const resetPassword = async (token, newPassword) => {
     const res = await axiosClient.post('/auth/reset-password', {
         token, newPassword
     });
+    return res;
+}
+export const signOut = async () => {
+    const res = await axiosClient.post('/auth/sign-out');
     return res;
 }
