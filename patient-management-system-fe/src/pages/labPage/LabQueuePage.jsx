@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -9,88 +9,12 @@ import {
   FiInbox,
   FiCheckCircle,
   FiClock,
+  FiLoader,
+  FiAlertCircle,
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
+import labOrderApi from '../../api/labOrderApi';
 import './LabQueuePage.css';
-
-// ===== MOCK DATA =====
-// In production: GET /api/lab-orders?status=ordered,processing
-// Joins: LabOrders → MedicalRecords → Patients (+ Users)
-const MOCK_LAB_ORDERS = [
-  {
-    lab_order_id: 'lo-001',
-    record_id: 'r-001',
-    test_name: 'Xét nghiệm máu tổng quát',
-    status: 'ordered',       // lab_status enum
-    created_at: '2026-02-28T08:15:00',
-    // Joined from MedicalRecords → Patients → Users
-    patient_name: 'Nguyễn Thị An',
-    patient_id: 'p-001',
-    gender: 'female',
-    age: 34,
-    doctor_name: 'BS. Nguyễn Văn Bác Sĩ',
-  },
-  {
-    lab_order_id: 'lo-002',
-    record_id: 'r-001',
-    test_name: 'Xét nghiệm nước tiểu',
-    status: 'ordered',
-    created_at: '2026-02-28T08:15:00',
-    patient_name: 'Nguyễn Thị An',
-    patient_id: 'p-001',
-    gender: 'female',
-    age: 34,
-    doctor_name: 'BS. Nguyễn Văn Bác Sĩ',
-  },
-  {
-    lab_order_id: 'lo-003',
-    record_id: 'r-002',
-    test_name: 'Xét nghiệm đường huyết',
-    status: 'processing',
-    created_at: '2026-02-28T08:30:00',
-    patient_name: 'Trần Văn Bình',
-    patient_id: 'p-002',
-    gender: 'male',
-    age: 52,
-    doctor_name: 'BS. Lê Minh Hoàng',
-  },
-  {
-    lab_order_id: 'lo-004',
-    record_id: 'r-003',
-    test_name: 'Xét nghiệm chức năng gan',
-    status: 'ordered',
-    created_at: '2026-02-28T09:00:00',
-    patient_name: 'Phạm Thị Dung',
-    patient_id: 'p-003',
-    gender: 'female',
-    age: 45,
-    doctor_name: 'BS. Nguyễn Văn Bác Sĩ',
-  },
-  {
-    lab_order_id: 'lo-005',
-    record_id: 'r-004',
-    test_name: 'Xét nghiệm mỡ máu',
-    status: 'ordered',
-    created_at: '2026-02-28T09:15:00',
-    patient_name: 'Hoàng Văn Phú',
-    patient_id: 'p-004',
-    gender: 'male',
-    age: 60,
-    doctor_name: 'BS. Lê Minh Hoàng',
-  },
-  {
-    lab_order_id: 'lo-006',
-    record_id: 'r-005',
-    test_name: 'Xét nghiệm công thức máu',
-    status: 'completed',
-    created_at: '2026-02-28T07:45:00',
-    patient_name: 'Vũ Thị Mai',
-    patient_id: 'p-005',
-    gender: 'female',
-    age: 28,
-    doctor_name: 'BS. Nguyễn Văn Bác Sĩ',
-  },
-];
 
 // ===== HELPERS =====
 const STATUS_CONFIG = {
@@ -122,6 +46,16 @@ const getTodayFormatted = () => {
   return d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
 };
 
+const calculateAge = (dob) => {
+  if (!dob) return '';
+  const today = new Date();
+  const b = new Date(dob);
+  let age = today.getFullYear() - b.getFullYear();
+  const m = today.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < b.getDate())) age--;
+  return age;
+};
+
 // ===== ANIMATION =====
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -138,8 +72,66 @@ const LabQueuePage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // TODO: Replace with API call
-  const labOrders = MOCK_LAB_ORDERS;
+  // API states
+  const [labOrders, setLabOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch lab orders on mount
+  useEffect(() => {
+    const fetchLabOrders = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await labOrderApi.getAllLabOrders();
+        const data = response.data?.data || response.data || [];
+
+        // Map data từ API — backend join MedicalRecords → Patients → Users
+        const mapped = (Array.isArray(data) ? data : []).map((lo) => ({
+          lab_order_id: lo.lab_order_id,
+          record_id: lo.record_id,
+          test_name: lo.test_name,
+          status: lo.status,
+          result_summary: lo.result_summary || '',
+          result_file_url: lo.result_file_url || '',
+          created_at: lo.created_at,
+          // Joined patient info (nested from backend)
+          patient_name: lo.MedicalRecord?.Patient?.User?.full_name
+            || lo.MedicalRecords?.Patients?.Users?.full_name
+            || lo.patient_name
+            || 'N/A',
+          patient_id: lo.MedicalRecord?.Patient?.patient_id
+            || lo.MedicalRecords?.Patients?.patient_id
+            || lo.patient_id
+            || '',
+          gender: lo.MedicalRecord?.Patient?.gender
+            || lo.MedicalRecords?.Patients?.gender
+            || lo.gender
+            || '',
+          age: calculateAge(
+            lo.MedicalRecord?.Patient?.dob
+            || lo.MedicalRecords?.Patients?.dob
+            || lo.dob
+          ),
+          // Joined doctor info
+          doctor_name: lo.MedicalRecord?.Doctor?.User?.full_name
+            || lo.MedicalRecords?.Doctors?.Users?.full_name
+            || lo.doctor_name
+            || '',
+        }));
+
+        setLabOrders(mapped);
+      } catch (err) {
+        console.error('Failed to fetch lab orders:', err);
+        setError('Không thể tải danh sách xét nghiệm. Vui lòng thử lại.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLabOrders();
+  }, []);
 
   const filtered = useMemo(() => {
     return labOrders.filter((lo) => {
@@ -236,7 +228,21 @@ const LabQueuePage = () => {
 
           {/* Table */}
           <motion.div className="lq-table-wrap" variants={itemVariants}>
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="lq-empty">
+                <div className="lq-empty__icon">
+                  <FiLoader size={24} className="lq-spin" />
+                </div>
+                <p className="lq-empty__text">Đang tải danh sách xét nghiệm...</p>
+              </div>
+            ) : error ? (
+              <div className="lq-empty">
+                <div className="lq-empty__icon" style={{ background: '#FEF2F2', color: '#EF4444' }}>
+                  <FiAlertCircle size={24} />
+                </div>
+                <p className="lq-empty__text" style={{ color: '#EF4444' }}>{error}</p>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="lq-empty">
                 <div className="lq-empty__icon">
                   <FiInbox size={24} />
@@ -274,7 +280,7 @@ const LabQueuePage = () => {
                               <div>
                                 <div className="lq-patient-name">{lo.patient_name}</div>
                                 <div className="lq-patient-meta">
-                                  {getGenderLabel(lo.gender)} • {lo.age} tuổi
+                                  {getGenderLabel(lo.gender)} {lo.age ? `• ${lo.age} tuổi` : ''}
                                 </div>
                               </div>
                             </div>
@@ -283,7 +289,7 @@ const LabQueuePage = () => {
                             <span className="lq-test-name">{lo.test_name}</span>
                           </td>
                           <td data-label="BS chỉ định">
-                            <span className="lq-doctor-name">{lo.doctor_name}</span>
+                            <span className="lq-doctor-name">{lo.doctor_name || '—'}</span>
                           </td>
                           <td data-label="Thời gian">
                             <span className="lq-time">{formatTime(lo.created_at)}</span>

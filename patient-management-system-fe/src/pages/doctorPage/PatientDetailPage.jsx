@@ -27,13 +27,13 @@ import './PatientDetailPage.css';
 // ===== MOCK DATA (replace with API calls) =====
 const MOCK_PATIENT = {
   // From Users table
-  user_id: 'u-001',
+  user_id: 'dcd6557e-e9e2-412a-9dad-2a9a1ada2e94',
   full_name: 'Nguyễn Văn A',
   email: 'nguyenvana@example.com',
   phone_number: '0901234567',
   avatar_url: null,
   // From Patients table
-  patient_id: 'p-001',
+  patient_id: 'dcd6557e-e9e2-412a-9dad-2a9a1ada2e94',
   dob: '1990-01-01',
   gender: 'male',
   address: '123 Đường ABC, Quận 1, TP.HCM',

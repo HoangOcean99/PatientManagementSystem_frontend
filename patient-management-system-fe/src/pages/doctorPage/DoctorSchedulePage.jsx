@@ -237,7 +237,7 @@ const DoctorSchedulePage = () => {
                         </td>
                         <td data-label="Hành động">
                           <div className="sched-actions">
-                            {appt.status === 'waiting' && (
+                            {(appt.status === 'waiting' || appt.status === 'ready') && (
                               <button
                                 className="sched-action-btn sched-action-btn--start"
                                 onClick={() => navigate(`/doctor/examine/${appt.appointment_id}`)}

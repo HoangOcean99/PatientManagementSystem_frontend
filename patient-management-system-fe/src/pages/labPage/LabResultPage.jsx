@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -15,49 +15,24 @@ import {
   FiX,
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
+import labOrderApi from '../../api/labOrderApi';
 import './LabResultPage.css';
-
-// ===== MOCK DATA =====
-// In production: GET /api/lab-orders/:labOrderId  (joins patient info)
-const MOCK_LAB_ORDERS = {
-  'lo-001': {
-    lab_order_id: 'lo-001',
-    record_id: 'r-001',
-    test_name: 'Xét nghiệm máu tổng quát',
-    result_summary: '',
-    result_file_url: '',
-    status: 'ordered',
-    created_at: '2026-02-28T08:15:00',
-    // Joined patient info
-    patient_name: 'Nguyễn Thị An',
-    patient_id: 'p-001',
-    gender: 'female',
-    age: 34,
-    allergies: 'Phấn hoa, Penicillin',
-    doctor_name: 'BS. Nguyễn Văn Bác Sĩ',
-  },
-  'lo-003': {
-    lab_order_id: 'lo-003',
-    record_id: 'r-002',
-    test_name: 'Xét nghiệm đường huyết',
-    result_summary: 'Chỉ số đường huyết: 5.2 mmol/L — Bình thường.',
-    result_file_url: '',
-    status: 'processing',
-    created_at: '2026-02-28T08:30:00',
-    patient_name: 'Trần Văn Bình',
-    patient_id: 'p-002',
-    gender: 'male',
-    age: 52,
-    allergies: '',
-    doctor_name: 'BS. Lê Minh Hoàng',
-  },
-};
 
 // ===== HELPERS =====
 const getInitials = (name) =>
   name ? name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(-2) : '?';
 
 const getGenderLabel = (g) => ({ male: 'Nam', female: 'Nữ', other: 'Khác' }[g] || g);
+
+const calculateAge = (dob) => {
+  if (!dob) return '';
+  const today = new Date();
+  const b = new Date(dob);
+  let age = today.getFullYear() - b.getFullYear();
+  const m = today.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < b.getDate())) age--;
+  return age;
+};
 
 const STATUS_MAP = {
   ordered:    { label: 'Chờ xét nghiệm', color: 'lr-status--ordered',    icon: FiClock },
@@ -80,72 +55,214 @@ const LabResultPage = () => {
   const navigate = useNavigate();
   const { labOrderId } = useParams();
 
-  // TODO: Replace with API call using labOrderId
-  const labOrderData = MOCK_LAB_ORDERS[labOrderId] || MOCK_LAB_ORDERS['lo-001'];
+  // Page-level states
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState(null);
 
-  const [labOrder, setLabOrder] = useState(labOrderData);
+  // Lab order data
+  const [labOrder, setLabOrder] = useState(null);
 
-  // Form state — fields from LabOrders table
-  const [resultSummary, setResultSummary] = useState(labOrder.result_summary || '');
-  const [resultFileUrl, setResultFileUrl] = useState(labOrder.result_file_url || '');
+  // Form state
+  const [resultSummary, setResultSummary] = useState('');
+  const [resultFileUrl, setResultFileUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
 
-  const isCompleted = labOrder.status === 'completed';
-  const statusInfo = STATUS_MAP[labOrder.status] || STATUS_MAP.ordered;
-  const StatusIcon = statusInfo.icon;
+  // Fetch lab order detail on mount
+  useEffect(() => {
+    const fetchLabOrder = async () => {
+      try {
+        setPageLoading(true);
+        setPageError(null);
+
+        const response = await labOrderApi.getLabOrderById(labOrderId);
+        const data = response.data?.data || response.data;
+
+        if (!data) {
+          setPageError('Không tìm thấy xét nghiệm này.');
+          setPageLoading(false);
+          return;
+        }
+
+        // Map data — backend join MedicalRecords → Patients → Users
+        const mapped = {
+          lab_order_id: data.lab_order_id,
+          record_id: data.record_id,
+          test_name: data.test_name,
+          result_summary: data.result_summary || '',
+          result_file_url: data.result_file_url || '',
+          status: data.status,
+          created_at: data.created_at,
+          // Patient info (nested join)
+          patient_name: data.MedicalRecord?.Patient?.User?.full_name
+            || data.MedicalRecords?.Patients?.Users?.full_name
+            || data.patient_name
+            || 'N/A',
+          patient_id: data.MedicalRecord?.Patient?.patient_id
+            || data.MedicalRecords?.Patients?.patient_id
+            || data.patient_id
+            || '',
+          gender: data.MedicalRecord?.Patient?.gender
+            || data.MedicalRecords?.Patients?.gender
+            || data.gender
+            || '',
+          age: calculateAge(
+            data.MedicalRecord?.Patient?.dob
+            || data.MedicalRecords?.Patients?.dob
+            || data.dob
+          ),
+          allergies: data.MedicalRecord?.Patient?.allergies
+            || data.MedicalRecords?.Patients?.allergies
+            || data.allergies
+            || '',
+          // Doctor info
+          doctor_name: data.MedicalRecord?.Doctor?.User?.full_name
+            || data.MedicalRecords?.Doctors?.Users?.full_name
+            || data.doctor_name
+            || '',
+        };
+
+        setLabOrder(mapped);
+        setResultSummary(mapped.result_summary);
+        setResultFileUrl(mapped.result_file_url);
+      } catch (err) {
+        console.error('Failed to fetch lab order:', err);
+        if (err.response?.status === 404) {
+          setPageError('Không tìm thấy xét nghiệm này.');
+        } else {
+          setPageError('Không thể tải dữ liệu xét nghiệm. Vui lòng thử lại.');
+        }
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    if (labOrderId) {
+      fetchLabOrder();
+    }
+  }, [labOrderId]);
 
   // ===== HANDLERS =====
-  const handleStartProcessing = () => {
-    if (labOrder.status === 'ordered') {
+
+  // Bắt đầu xét nghiệm → PATCH /lab-orders/:id { status: 'processing' }
+  const handleStartProcessing = async () => {
+    try {
+      setSaving(true);
+      await labOrderApi.updateLabOrder(labOrderId, { status: 'processing' });
       setLabOrder((prev) => ({ ...prev, status: 'processing' }));
-      // TODO: API call — PATCH /api/lab-orders/:id { status: 'processing' }
+      setMessage({ type: 'success', text: 'Đã tiếp nhận xét nghiệm.' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      console.error('Lỗi khi tiếp nhận xét nghiệm:', err);
+      const msg = err.response?.data?.message || 'Không thể tiếp nhận xét nghiệm.';
+      setMessage({ type: 'error', text: msg });
+      setTimeout(() => setMessage(null), 3000);
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleSaveDraft = () => {
-    setSaving(true);
-    const payload = {
-      lab_order_id: labOrder.lab_order_id,
-      result_summary: resultSummary.trim(),
-      result_file_url: resultFileUrl.trim(),
-      status: 'processing',
-    };
-    console.log('Save Draft Lab Result:', payload);
-    // TODO: API call — PATCH /api/lab-orders/:id
+  // Lưu nháp → PATCH /lab-orders/:id { result_summary, result_file_url, status: 'processing' }
+  const handleSaveDraft = async () => {
+    try {
+      setSaving(true);
+      const payload = {
+        result_summary: resultSummary.trim(),
+        result_file_url: resultFileUrl.trim(),
+        status: 'processing',
+      };
 
-    setTimeout(() => {
-      setSaving(false);
-      setLabOrder((prev) => ({ ...prev, status: 'processing' }));
+      await labOrderApi.updateLabOrder(labOrderId, payload);
+      setLabOrder((prev) => ({ ...prev, status: 'processing', ...payload }));
       setMessage({ type: 'success', text: 'Đã lưu nháp kết quả xét nghiệm.' });
       setTimeout(() => setMessage(null), 3000);
-    }, 600);
+    } catch (err) {
+      console.error('Lỗi khi lưu nháp:', err);
+      const msg = err.response?.data?.message || 'Không thể lưu nháp.';
+      setMessage({ type: 'error', text: msg });
+      setTimeout(() => setMessage(null), 3000);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleComplete = () => {
+  // Hoàn tất → PATCH /lab-orders/:id { result_summary, result_file_url, status: 'completed' }
+  const handleComplete = async () => {
     if (!resultSummary.trim()) {
       setMessage({ type: 'error', text: 'Vui lòng nhập kết quả xét nghiệm trước khi hoàn tất.' });
       setTimeout(() => setMessage(null), 3000);
       return;
     }
 
-    setSaving(true);
-    const payload = {
-      lab_order_id: labOrder.lab_order_id,
-      result_summary: resultSummary.trim(),
-      result_file_url: resultFileUrl.trim(),
-      status: 'completed',
-    };
-    console.log('Complete Lab Order:', payload);
-    // TODO: API call — PATCH /api/lab-orders/:id
+    try {
+      setSaving(true);
+      const payload = {
+        result_summary: resultSummary.trim(),
+        result_file_url: resultFileUrl.trim(),
+        status: 'completed',
+      };
 
-    setTimeout(() => {
-      setSaving(false);
-      setLabOrder((prev) => ({ ...prev, status: 'completed' }));
+      await labOrderApi.updateLabOrder(labOrderId, payload);
+      setLabOrder((prev) => ({ ...prev, status: 'completed', ...payload }));
       setMessage({ type: 'success', text: 'Hoàn tất xét nghiệm! Kết quả đã được gửi cho bác sĩ chỉ định.' });
       setTimeout(() => setMessage(null), 4000);
-    }, 600);
+    } catch (err) {
+      console.error('Lỗi khi hoàn tất:', err);
+      const msg = err.response?.data?.message || 'Không thể hoàn tất xét nghiệm.';
+      setMessage({ type: 'error', text: msg });
+      setTimeout(() => setMessage(null), 3000);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  // ===== LOADING STATE =====
+  if (pageLoading) {
+    return (
+      <div className="lr-layout">
+        <DoctorSidebar activePage="lab-queue" role="lab" />
+        <main className="lr-main">
+          <div className="lr-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ textAlign: 'center' }}>
+              <FiLoader size={32} className="lr-spin" style={{ color: '#3b82f6', marginBottom: 16 }} />
+              <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Đang tải dữ liệu xét nghiệm...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ===== ERROR STATE =====
+  if (pageError || !labOrder) {
+    return (
+      <div className="lr-layout">
+        <DoctorSidebar activePage="lab-queue" role="lab" />
+        <main className="lr-main">
+          <div className="lr-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ textAlign: 'center' }}>
+              <FiAlertCircle size={32} style={{ color: '#ef4444', marginBottom: 16 }} />
+              <p style={{ color: '#ef4444', fontSize: '0.95rem', marginBottom: 16 }}>
+                {pageError || 'Không tìm thấy dữ liệu.'}
+              </p>
+              <button
+                className="lr-btn lr-btn--outline"
+                onClick={() => navigate('/lab/queue')}
+                type="button"
+              >
+                <FiArrowLeft size={16} />
+                Quay lại danh sách
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const isCompleted = labOrder.status === 'completed';
+  const statusInfo = STATUS_MAP[labOrder.status] || STATUS_MAP.ordered;
+  const StatusIcon = statusInfo.icon;
 
   return (
     <div className="lr-layout">
@@ -197,9 +314,11 @@ const LabResultPage = () => {
               <div className="lr-patient-banner__info">
                 <h1 className="lr-patient-banner__name">{labOrder.patient_name}</h1>
                 <div className="lr-patient-banner__meta">
-                  <span className="lr-badge">ID: {labOrder.patient_id}</span>
+                  <span className="lr-badge">
+                    ID: {labOrder.patient_id ? `${labOrder.patient_id.slice(0, 8)}...` : '—'}
+                  </span>
                   <span className="lr-meta-sep">•</span>
-                  <span>{labOrder.age} tuổi</span>
+                  <span>{labOrder.age ? `${labOrder.age} tuổi` : '—'}</span>
                   <span className="lr-meta-sep">•</span>
                   <span>{getGenderLabel(labOrder.gender)}</span>
                 </div>
@@ -223,8 +342,13 @@ const LabResultPage = () => {
                   className="lr-btn lr-btn--primary"
                   onClick={handleStartProcessing}
                   type="button"
+                  disabled={saving}
                 >
-                  <FiActivity size={16} />
+                  {saving ? (
+                    <FiLoader size={16} className="lr-spin" />
+                  ) : (
+                    <FiActivity size={16} />
+                  )}
                   Bắt đầu xét nghiệm
                 </button>
               )}
@@ -249,16 +373,20 @@ const LabResultPage = () => {
                   </div>
                   <div className="lr-info-row">
                     <span className="lr-info-label">Bác sĩ chỉ định</span>
-                    <span className="lr-info-value">{labOrder.doctor_name}</span>
+                    <span className="lr-info-value">{labOrder.doctor_name || '—'}</span>
                   </div>
                   <div className="lr-info-row">
                     <span className="lr-info-label">Mã phiếu</span>
-                    <span className="lr-info-value">{labOrder.lab_order_id}</span>
+                    <span className="lr-info-value">
+                      {labOrder.lab_order_id ? `${labOrder.lab_order_id.slice(0, 8)}...` : '—'}
+                    </span>
                   </div>
                   <div className="lr-info-row">
                     <span className="lr-info-label">Thời gian chỉ định</span>
                     <span className="lr-info-value">
-                      {new Date(labOrder.created_at).toLocaleString('vi-VN')}
+                      {labOrder.created_at
+                        ? new Date(labOrder.created_at).toLocaleString('vi-VN')
+                        : '—'}
                     </span>
                   </div>
                 </div>
