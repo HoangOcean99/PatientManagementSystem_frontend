@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 const DoctorListingPage = () => {
     const location = useLocation();
     const isAdminView = location.pathname.includes('/admin/');
-    
+
     const [searchTerm, setSearchTerm] = useState('');
     const [specialtyFilter, setSpecialtyFilter] = useState('');
     const [doctors, setDoctors] = useState([]);
@@ -24,12 +24,12 @@ const DoctorListingPage = () => {
             setLoading(true);
             const res = await getAllDoctors();
             const fetchedData = res.data?.data || [];
-            
+
             // Nếu là admin, hiển thị tất cả, còn user thì chỉ list doctor active
-            const displayData = isAdminView 
-                ? fetchedData 
+            const displayData = isAdminView
+                ? fetchedData
                 : fetchedData.filter(d => d.Users?.status === 'active');
-                
+
             setDoctors(displayData);
         } catch (error) {
             console.error("Failed to fetch doctors:", error);
@@ -59,23 +59,23 @@ const DoctorListingPage = () => {
     const filteredDoctors = doctors.filter(doctor => {
         const docName = doctor.Users?.full_name || '';
         const docSpec = doctor.specialization || '';
-        
+
         const matchesName = docName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesSpecialty = specialtyFilter 
-            ? docSpec === specialtyFilter 
+        const matchesSpecialty = specialtyFilter
+            ? docSpec === specialtyFilter
             : true;
-        
+
         const matchesSpecialtyText = docSpec.toLowerCase().includes(searchTerm.toLowerCase());
-        
+
         return (matchesName || matchesSpecialtyText) && matchesSpecialty;
     });
 
     const specialties = [...new Set(doctors.map(d => d.specialization).filter(Boolean))];
 
     return (
-        <div className={`${isAdminView ? 'bg-gray-50/50' : 'bg-blue-50/30'} font-sans text-gray-700`} style={{width: '100vw'}}>
+        <div className={`${isAdminView ? 'bg-gray-50/50' : 'bg-blue-50/30'} font-sans text-gray-700`} style={{ width: '100vw' }}>
             {scrollbarStyles}
-            
+
             {/* Header Section */}
             <div className={`border-b border-gray-100 sticky top-0 z-30 shadow-sm relative ${isAdminView ? 'bg-white' : 'bg-white'}`}>
                 <div className="container mx-auto px-4 py-8">
@@ -108,12 +108,12 @@ const DoctorListingPage = () => {
                                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                                 />
                             </div>
-                            
+
                             <div className="w-full md:w-56 relative group">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <i className="fa-solid fa-filter text-gray-400 group-focus-within:text-blue-500"></i>
                                 </div>
-                                <select 
+                                <select
                                     className="block w-full pl-10 pr-8 py-3 border border-transparent rounded-xl focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:outline-none transition-all font-medium appearance-none cursor-pointer text-gray-700 hover:bg-white bg-transparent"
                                     value={specialtyFilter}
                                     onChange={(e) => setSpecialtyFilter(e.target.value)}
@@ -124,14 +124,13 @@ const DoctorListingPage = () => {
                                     ))}
                                 </select>
                             </div>
-                            
-                            <button 
+
+                            <button
                                 onClick={handleSearch}
-                                className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap ${
-                                    isAdminView 
-                                    ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-gray-300' 
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
-                                }`}
+                                className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap ${isAdminView
+                                        ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-gray-300'
+                                        : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
+                                    }`}
                             >
                                 Tìm kiếm
                             </button>
@@ -149,7 +148,7 @@ const DoctorListingPage = () => {
                 </div>
 
                 {loading ? (
-                    <div className="flex justify-center items-center h-48 opacity-50">
+                    <div className="relative flex-1">
                         <LoadingSpinner />
                     </div>
                 ) : filteredDoctors.length > 0 ? (
@@ -165,9 +164,9 @@ const DoctorListingPage = () => {
                         </div>
                         <h3 className="text-xl font-bold text-gray-900">Không tìm thấy bác sĩ nào</h3>
                         <p className="text-gray-500 mt-2 text-sm">Vui lòng thử lại với từ khóa hoặc chuyên khoa khác</p>
-                        <button 
+                        <button
                             onClick={() => {
-                                setSearchTerm(''); 
+                                setSearchTerm('');
                                 setSpecialtyFilter('');
                                 fetchInitialDoctors();
                             }}

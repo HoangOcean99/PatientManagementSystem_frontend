@@ -56,8 +56,8 @@ const UserProfileEdit = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <LoadingSpinner />
+            <div className="relative flex-1">
+                {loading && <LoadingSpinner />}
             </div>
         );
     }

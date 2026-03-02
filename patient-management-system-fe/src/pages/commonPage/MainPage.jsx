@@ -3,6 +3,8 @@ import Header from "../../components/common/Header";
 import Sidebar from "../../components/common/Sidebar";
 import { ItemsAdminSideBar } from "../../components/sidebar/ItemsAdminSideBar";
 import { ItemsDoctorSideBar } from "../../components/sidebar/ItemsDoctorSideBar";
+import { ItemsPatientSideBar } from "../../components/sidebar/ItemsPatientSideBar";
+import { ItemsLabSideBar } from "../../components/sidebar/ItemsLabSideBar";
 
 
 export default function MainPage() {
@@ -13,6 +15,10 @@ export default function MainPage() {
         items = ItemsAdminSideBar;
     } else if (location.pathname.startsWith("/doctor")) {
         items = ItemsDoctorSideBar;
+    } else if (location.pathname.startsWith("/patient")) {
+        items = ItemsPatientSideBar;
+    } else if (location.pathname.startsWith("/lab")) {
+        items = ItemsLabSideBar;
     }
 
     return (

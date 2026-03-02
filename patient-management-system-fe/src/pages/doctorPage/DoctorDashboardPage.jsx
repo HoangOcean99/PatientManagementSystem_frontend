@@ -12,9 +12,9 @@ import {
   FiLoader,
   FiAlertCircle,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import { getAppointmentsByDoctorId } from '../../api/doctorApi';
 import './DoctorDashboardPage.css';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // ===== HELPERS =====
 const STATUS_LABELS = {
@@ -109,162 +109,28 @@ const DoctorDashboardPage = () => {
   const completedCount = appointments.filter((a) => a.status === 'completed').length;
   const waitingCount = appointments.filter((a) => a.status === 'waiting' || a.status === 'in_progress').length;
 
+  if (loading) {
+    return (
+      <div className="relative flex-1">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
   return (
-    <div className="dash-layout" style={{ width: '100vw' }}>
-      <DoctorSidebar activePage="dashboard" />
-
-      <main className="dash-main">
-        <motion.div
-          className="dash-content"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Welcome Banner */}
-          <motion.div className="dash-welcome" variants={itemVariants}>
-            <h1 className="dash-welcome__greeting">
-              Xin chào, Bác sĩ! 👋
-            </h1>
-            <p className="dash-welcome__date">{getTodayFormatted()}</p>
-          </motion.div>
-
-          {/* Stat Cards */}
-          <motion.div className="dash-stats" variants={itemVariants}>
-            <div className="dash-stat-card">
-              <div className="dash-stat-card__icon dash-stat-card__icon--total">
-                <FiUsers size={22} />
-              </div>
-              <div className="dash-stat-card__info">
-                <p className="dash-stat-card__label">Tổng bệnh nhân hôm nay</p>
-                <p className="dash-stat-card__value">{totalToday}</p>
-              </div>
-            </div>
-
-            <div className="dash-stat-card">
-              <div className="dash-stat-card__icon dash-stat-card__icon--done">
-                <FiCheckCircle size={22} />
-              </div>
-              <div className="dash-stat-card__info">
-                <p className="dash-stat-card__label">Đã khám xong</p>
-                <p className="dash-stat-card__value">{completedCount}</p>
-              </div>
-            </div>
-
-            <div className="dash-stat-card">
-              <div className="dash-stat-card__icon dash-stat-card__icon--waiting">
-                <FiClock size={22} />
-              </div>
-              <div className="dash-stat-card__info">
-                <p className="dash-stat-card__label">Đang chờ khám</p>
-                <p className="dash-stat-card__value">{waitingCount}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Today's Appointments */}
-          <motion.div className="dash-section" variants={itemVariants}>
-            <div className="dash-section__header">
-              <h2 className="dash-section__title">
-                <FiCalendar size={18} />
-                Lịch khám hôm nay
-              </h2>
-              <button
-                className="dash-section__action"
-                onClick={() => navigate('/doctor/schedule')}
-              >
-                Xem tất cả
-                <FiArrowRight size={14} />
-              </button>
-            </div>
-
-            <div className="dash-appointments">
-              {loading ? (
-                <div className="dash-empty" style={{ opacity: 0.6 }}>
-                  <FiLoader size={24} className="lr-spin" />
-                  <p className="dash-empty__text" style={{ marginTop: 12 }}>Đang tải lịch khám...</p>
-                </div>
-              ) : error ? (
-                <div className="dash-empty" style={{ color: '#EF4444' }}>
-                  <FiAlertCircle size={24} />
-                  <p className="dash-empty__text" style={{ marginTop: 12 }}>{error}</p>
-                </div>
-              ) : appointments.length === 0 ? (
-                <div className="dash-empty">
-                  <div className="dash-empty__icon">
-                    <FiInbox size={24} />
-                  </div>
-                  <p className="dash-empty__text">Không có lịch hẹn nào hôm nay.</p>
-                </div>
-              ) : (
-                appointments.slice(0, 5).map((appt) => (
-                  <div key={appt.appointment_id} className="dash-appt-item">
-                    <div className="dash-appt-item__queue">{appt.queue_number}</div>
-                    <div className="dash-appt-item__info">
-                      <p className="dash-appt-item__name">{appt.patient_name}</p>
-                      <span className="dash-appt-item__meta">
-                        {getGenderLabel(appt.gender)} • {appt.age} tuổi
-                      </span>
-                    </div>
-                    <span className="dash-appt-item__time">
-                      {appt.start_time} - {appt.end_time}
-                    </span>
-                    <span className={`dash-appt-item__status dash-appt-item__status--${appt.status}`}>
-                      {STATUS_LABELS[appt.status]}
-                    </span>
-                    {appt.status === 'waiting' && (
-                      <button
-                        className="dash-appt-item__btn dash-appt-item__btn--primary"
-                        onClick={() => navigate(`/doctor/examine/${appt.appointment_id}`)}
-                      >
-                        Bắt đầu khám
-                      </button>
-                    )}
-                    {appt.status === 'completed' && (
-                      <button
-                        className="dash-appt-item__btn dash-appt-item__btn--outline"
-                        onClick={() => navigate(`/doctor/patient/${appt.patient_id}`)}
-                      >
-                        <FiUser size={14} />
-                        Xem hồ sơ
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </motion.div>
-
-          {/* Quick Actions */}
-          <motion.div className="dash-section" variants={itemVariants}>
-            <div className="dash-section__header">
-              <h2 className="dash-section__title">Thao tác nhanh</h2>
-            </div>
-            <div className="dash-quick-actions">
-              <button className="dash-quick-btn" onClick={() => navigate('/doctor/schedule')}>
-                <div className="dash-quick-btn__icon">
-                  <FiCalendar size={20} />
-                </div>
-                <div>
-                  <div className="dash-quick-btn__label">Lịch khám hôm nay</div>
-                  <div className="dash-quick-btn__desc">Xem danh sách bệnh nhân</div>
-                </div>
-              </button>
-              <button className="dash-quick-btn" onClick={() => navigate('/doctor/profile')}>
-                <div className="dash-quick-btn__icon">
-                  <FiUser size={20} />
-                </div>
-                <div>
-                  <div className="dash-quick-btn__label">Hồ sơ cá nhân</div>
-                  <div className="dash-quick-btn__desc">Cập nhật thông tin</div>
-                </div>
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Footer */}
-          <motion.footer className="dash-footer" variants={itemVariants}>
-            <p>&copy; 2026 MedSchedule. All rights reserved.</p>
-          </motion.footer>
+    <main className="dash-main">
+      <motion.div
+        className="dash-content"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Welcome Banner */}
+        <motion.div className="dash-welcome" variants={itemVariants}>
+          <h1 className="dash-welcome__greeting">
+            Xin chào, Bác sĩ! 👋
+          </h1>
+          <p className="dash-welcome__date">{getTodayFormatted()}</p>
         </motion.div>
 
         {/* Stat Cards */}
@@ -317,7 +183,17 @@ const DoctorDashboardPage = () => {
           </div>
 
           <div className="dash-appointments">
-            {appointments.length === 0 ? (
+            {loading ? (
+              <div className="dash-empty" style={{ opacity: 0.6 }}>
+                <FiLoader size={24} className="lr-spin" />
+                <p className="dash-empty__text" style={{ marginTop: 12 }}>Đang tải lịch khám...</p>
+              </div>
+            ) : error ? (
+              <div className="dash-empty" style={{ color: '#EF4444' }}>
+                <FiAlertCircle size={24} />
+                <p className="dash-empty__text" style={{ marginTop: 12 }}>{error}</p>
+              </div>
+            ) : appointments.length === 0 ? (
               <div className="dash-empty">
                 <div className="dash-empty__icon">
                   <FiInbox size={24} />
@@ -394,8 +270,136 @@ const DoctorDashboardPage = () => {
         <motion.footer className="dash-footer" variants={itemVariants}>
           <p>&copy; 2026 MedSchedule. All rights reserved.</p>
         </motion.footer>
-      </main>
-    </div>
+      </motion.div>
+
+      {/* Stat Cards */}
+      <motion.div className="dash-stats" variants={itemVariants}>
+        <div className="dash-stat-card">
+          <div className="dash-stat-card__icon dash-stat-card__icon--total">
+            <FiUsers size={22} />
+          </div>
+          <div className="dash-stat-card__info">
+            <p className="dash-stat-card__label">Tổng bệnh nhân hôm nay</p>
+            <p className="dash-stat-card__value">{totalToday}</p>
+          </div>
+        </div>
+
+        <div className="dash-stat-card">
+          <div className="dash-stat-card__icon dash-stat-card__icon--done">
+            <FiCheckCircle size={22} />
+          </div>
+          <div className="dash-stat-card__info">
+            <p className="dash-stat-card__label">Đã khám xong</p>
+            <p className="dash-stat-card__value">{completedCount}</p>
+          </div>
+        </div>
+
+        <div className="dash-stat-card">
+          <div className="dash-stat-card__icon dash-stat-card__icon--waiting">
+            <FiClock size={22} />
+          </div>
+          <div className="dash-stat-card__info">
+            <p className="dash-stat-card__label">Đang chờ khám</p>
+            <p className="dash-stat-card__value">{waitingCount}</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Today's Appointments */}
+      <motion.div className="dash-section" variants={itemVariants}>
+        <div className="dash-section__header">
+          <h2 className="dash-section__title">
+            <FiCalendar size={18} />
+            Lịch khám hôm nay
+          </h2>
+          <button
+            className="dash-section__action"
+            onClick={() => navigate('/doctor/schedule')}
+          >
+            Xem tất cả
+            <FiArrowRight size={14} />
+          </button>
+        </div>
+
+        <div className="dash-appointments">
+          {appointments.length === 0 ? (
+            <div className="dash-empty">
+              <div className="dash-empty__icon">
+                <FiInbox size={24} />
+              </div>
+              <p className="dash-empty__text">Không có lịch hẹn nào hôm nay.</p>
+            </div>
+          ) : (
+            appointments.slice(0, 5).map((appt) => (
+              <div key={appt.appointment_id} className="dash-appt-item">
+                <div className="dash-appt-item__queue">{appt.queue_number}</div>
+                <div className="dash-appt-item__info">
+                  <p className="dash-appt-item__name">{appt.patient_name}</p>
+                  <span className="dash-appt-item__meta">
+                    {getGenderLabel(appt.gender)} • {appt.age} tuổi
+                  </span>
+                </div>
+                <span className="dash-appt-item__time">
+                  {appt.start_time} - {appt.end_time}
+                </span>
+                <span className={`dash-appt-item__status dash-appt-item__status--${appt.status}`}>
+                  {STATUS_LABELS[appt.status]}
+                </span>
+                {appt.status === 'waiting' && (
+                  <button
+                    className="dash-appt-item__btn dash-appt-item__btn--primary"
+                    onClick={() => navigate(`/doctor/examine/${appt.appointment_id}`)}
+                  >
+                    Bắt đầu khám
+                  </button>
+                )}
+                {appt.status === 'completed' && (
+                  <button
+                    className="dash-appt-item__btn dash-appt-item__btn--outline"
+                    onClick={() => navigate(`/doctor/patient/${appt.patient_id}`)}
+                  >
+                    <FiUser size={14} />
+                    Xem hồ sơ
+                  </button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </motion.div>
+
+      {/* Quick Actions */}
+      <motion.div className="dash-section" variants={itemVariants}>
+        <div className="dash-section__header">
+          <h2 className="dash-section__title">Thao tác nhanh</h2>
+        </div>
+        <div className="dash-quick-actions">
+          <button className="dash-quick-btn" onClick={() => navigate('/doctor/schedule')}>
+            <div className="dash-quick-btn__icon">
+              <FiCalendar size={20} />
+            </div>
+            <div>
+              <div className="dash-quick-btn__label">Lịch khám hôm nay</div>
+              <div className="dash-quick-btn__desc">Xem danh sách bệnh nhân</div>
+            </div>
+          </button>
+          <button className="dash-quick-btn" onClick={() => navigate('/doctor/profile')}>
+            <div className="dash-quick-btn__icon">
+              <FiUser size={20} />
+            </div>
+            <div>
+              <div className="dash-quick-btn__label">Hồ sơ cá nhân</div>
+              <div className="dash-quick-btn__desc">Cập nhật thông tin</div>
+            </div>
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Footer */}
+      <motion.footer className="dash-footer" variants={itemVariants}>
+        <p>&copy; 2026 MedSchedule. All rights reserved.</p>
+      </motion.footer>
+    </main>
   );
 };
 

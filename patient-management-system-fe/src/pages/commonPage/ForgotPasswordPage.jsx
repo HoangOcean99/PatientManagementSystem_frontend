@@ -174,7 +174,9 @@ const ForgotPasswordPage = () => {
                                         ${isLoading ? "bg-blue-300 cursor-not-allowed text-white"
                                             : "bg-blue-600 hover:bg-blue-700 text-white"}`}
                                 >
-                                    {isLoading ? <LoadingSpinner size="18px" /> : "Gửi yêu cầu khôi phục"}
+                                    {isLoading ? <div className="relative flex-1">
+                                        {isLoading && <LoadingSpinner />}
+                                    </div> : "Gửi yêu cầu khôi phục"}
                                 </button>
                             </form>
                         </div>
@@ -227,7 +229,9 @@ const ForgotPasswordPage = () => {
                                     className={`w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-[0.98] text-sm flex items-center justify-center
                                         ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
                                 >
-                                    {isLoading ? <LoadingSpinner size="18px" /> : "Xác nhận đổi mật khẩu"}
+                                    {isLoading ? <div className="relative flex-1">
+                                        {isLoading && <LoadingSpinner />}
+                                    </div> : "Xác nhận đổi mật khẩu"}
                                 </button>
                             </form>
                         </div>

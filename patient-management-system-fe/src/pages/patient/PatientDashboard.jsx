@@ -72,8 +72,8 @@ const PatientDashboard = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
-                <LoadingSpinner />
+            <div className="relative flex-1">
+                {loading && <LoadingSpinner />}
             </div>
         );
     }

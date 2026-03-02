@@ -5,7 +5,11 @@ import { useAuth } from "./AuthContext";
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { userRole, loading } = useAuth();
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="relative flex-1">
+        {loading && <LoadingSpinner />}
+      </div>
+    )
   }
 
   if (!userRole) {

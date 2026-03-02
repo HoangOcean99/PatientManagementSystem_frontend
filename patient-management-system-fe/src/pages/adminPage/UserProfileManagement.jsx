@@ -36,7 +36,9 @@ const UserProfileManagement = () => {
         }
     }, [id]);
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50" style={{ width: '100vw' }} > <LoadingSpinner /></div >
+    if (loading) return <div className="relative flex-1">
+        {loading && <LoadingSpinner />}
+    </div>
 
     if (!doctor) return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center" style={{ width: '100vw' }}>

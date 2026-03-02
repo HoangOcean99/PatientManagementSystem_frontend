@@ -159,8 +159,8 @@ const UserManagement = () => {
                 </div>
 
                 {loading ? (
-                    <div className="flex justify-center items-center h-48 opacity-50">
-                        <LoadingSpinner />
+                    <div className="relative flex-1">
+                        {loading && <LoadingSpinner />}
                     </div>
                 ) : filteredDoctors.length > 0 ? (
                     <div className="flex flex-col gap-4 mx-auto">

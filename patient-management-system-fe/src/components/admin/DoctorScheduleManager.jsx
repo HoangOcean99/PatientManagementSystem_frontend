@@ -125,8 +125,8 @@ const DoctorScheduleManager = ({ doctorId }) => {
                             key={idx}
                             onClick={() => setSelectedDate(d)}
                             className={`flex-shrink-0 px-4 py-3 rounded-xl border transition-all text-center min-w-[90px] ${isSelected
-                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200'
-                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                                 }`}
                         >
                             <div className="text-xs opacity-90 mb-1">{idx === 0 ? 'Hôm nay' : dayName}</div>
@@ -183,7 +183,9 @@ const DoctorScheduleManager = ({ doctorId }) => {
 
                 {loading ? (
                     <div className="flex justify-center py-10 opacity-60">
-                        <LoadingSpinner />
+                        <div className="relative flex-1">
+                            {loading && <LoadingSpinner />}
+                        </div>
                     </div>
                 ) : slots.length === 0 ? (
                     <div className="text-center py-12 text-gray-400">

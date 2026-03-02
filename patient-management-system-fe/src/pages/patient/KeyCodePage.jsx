@@ -18,7 +18,6 @@ const KeyCodePage = () => {
             setLoading(true);
             const { data: authData } = await supabase.auth.getUser();
             const userId = authData?.user?.id;
-            // if (!userId) { navigate('/login'); return; }
             const res = await axiosClient.post('/family-relationships/key-code', { user_id: userId });
             setKeyCode(res.data?.data?.key_code || res.data?.key_code || '');
             toast.success('Đã tạo mã liên kết!');

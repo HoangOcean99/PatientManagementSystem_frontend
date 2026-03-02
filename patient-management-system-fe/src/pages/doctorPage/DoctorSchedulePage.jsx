@@ -10,9 +10,9 @@ import {
   FiLoader,
   FiAlertCircle,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import { getAppointmentsByDoctorId } from '../../api/doctorApi';
 import './DoctorSchedulePage.css';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // ===== HELPERS =====
 const STATUS_LABELS = {
@@ -123,7 +123,13 @@ const DoctorSchedulePage = () => {
       return matchSearch && matchStatus;
     });
   }, [appointments, searchTerm, statusFilter]);
-
+  if (loading) {
+    return (
+      <div className="relative flex-1">
+        <LoadingSpinner />
+      </div>
+    )
+  }
   return (
     <div className="sched-layout">
 

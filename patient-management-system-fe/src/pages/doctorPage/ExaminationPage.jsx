@@ -23,11 +23,11 @@ import {
   FiSend,
   FiDownload,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import { getAppointmentsByDoctorId } from '../../api/doctorApi';
 import medicalRecordApi from '../../api/medicalRecordApi';
 import labOrderApi from '../../api/labOrderApi';
 import './ExaminationPage.css';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // ===== HELPERS =====
 const getGenderLabel = (g) => ({ male: 'Nam', female: 'Nữ', other: 'Khác' }[g] || g);
@@ -586,44 +586,33 @@ const ExaminationPage = () => {
   // ===== LOADING STATE =====
   if (pageLoading) {
     return (
-      <div className="ex-layout">
-        <DoctorSidebar activePage="examination" />
-        <main className="ex-main">
-          <div className="ex-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-            <div style={{ textAlign: 'center' }}>
-              <FiLoader size={32} className="ex-spin" style={{ color: '#3b82f6', marginBottom: 16 }} />
-              <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Đang tải dữ liệu khám bệnh...</p>
-            </div>
-          </div>
-        </main>
+      <div className="relative flex-1">
+        <LoadingSpinner />
       </div>
-    );
+    )
   }
 
   // ===== ERROR STATE =====
   if (pageError || !appointment || !patient) {
     return (
-      <div className="ex-layout">
-        <DoctorSidebar activePage="examination" />
-        <main className="ex-main">
-          <div className="ex-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-            <div style={{ textAlign: 'center' }}>
-              <FiAlertCircle size={32} style={{ color: '#ef4444', marginBottom: 16 }} />
-              <p style={{ color: '#ef4444', fontSize: '0.95rem', marginBottom: 16 }}>
-                {pageError || 'Không tìm thấy dữ liệu.'}
-              </p>
-              <button
-                className="ex-btn ex-btn--outline"
-                onClick={() => navigate('/doctor/schedule')}
-                type="button"
-              >
-                <FiArrowLeft size={16} />
-                Quay lại lịch khám
-              </button>
-            </div>
+      <main className="ex-main">
+        <div className="ex-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <FiAlertCircle size={32} style={{ color: '#ef4444', marginBottom: 16 }} />
+            <p style={{ color: '#ef4444', fontSize: '0.95rem', marginBottom: 16 }}>
+              {pageError || 'Không tìm thấy dữ liệu.'}
+            </p>
+            <button
+              className="ex-btn ex-btn--outline"
+              onClick={() => navigate('/doctor/schedule')}
+              type="button"
+            >
+              <FiArrowLeft size={16} />
+              Quay lại lịch khám
+            </button>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     );
   }
 

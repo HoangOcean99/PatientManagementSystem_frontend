@@ -67,7 +67,6 @@ const BookingAppointmentPage = () => {
       setSubmitting(true);
       const { data: authData } = await supabase.auth.getUser();
       const userId = authData?.user?.id;
-      // if (!userId) { navigate('/login'); return; }
 
       const selectedSvc = services.find(
         (s) => s.service_id === form.service_id,
@@ -132,13 +131,7 @@ const BookingAppointmentPage = () => {
 
   if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{
-          background:
-            "linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)",
-        }}
-      >
+      <div className="relative flex-1">
         <LoadingSpinner />
       </div>
     );

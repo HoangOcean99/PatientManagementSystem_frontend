@@ -18,7 +18,6 @@ const ExamHistoryPage = () => {
             try {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id;
-                // if (!userId) { navigate('/login'); return; }
                 const res = await axiosClient.get('/medical-records', { params: { patient_id: userId } });
                 setRecords(res.data?.data || []);
             } catch (err) {
@@ -40,6 +39,13 @@ const ExamHistoryPage = () => {
         if (!d) return '—';
         return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
+    if (loading) {
+        return (
+            <div className="relative flex-1">
+                <LoadingSpinner />
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
@@ -78,12 +84,7 @@ const ExamHistoryPage = () => {
 
             {/* Content */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
-                {loading ? (
-                    <div className="flex flex-col justify-center items-center h-48 gap-3">
-                        <LoadingSpinner />
-                        <span className="text-sm text-blue-500/60 font-medium">Đang tải dữ liệu...</span>
-                    </div>
-                ) : filtered.length === 0 ? (
+                {filtered.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}

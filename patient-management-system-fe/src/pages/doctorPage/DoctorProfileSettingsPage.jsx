@@ -11,10 +11,10 @@ import {
   FiCamera,
   FiLoader,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import { getDoctorById, updateDoctor } from '../../api/doctorApi';
 import { validateFullName, validatePhoneNumber } from '../../helpers/validationUtils';
 import './DoctorProfileSettingsPage.css';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // ===== HELPERS =====
 const getInitials = (name) =>
@@ -93,7 +93,7 @@ const DoctorProfileSettingsPage = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     const nameError = validateFullName(profile.full_name);
     if (nameError) newErrors.full_name = nameError;
 
@@ -110,7 +110,7 @@ const DoctorProfileSettingsPage = () => {
     try {
       setSaving(true);
       setProfileMessage(null);
-      
+
       const payload = {
         full_name: profile.full_name,
         phone_number: profile.phone_number,
@@ -120,7 +120,7 @@ const DoctorProfileSettingsPage = () => {
       };
 
       await updateDoctor(doctorId, payload);
-      
+
       setProfileMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
       setTimeout(() => setProfileMessage(null), 3000);
     } catch (error) {
@@ -130,7 +130,13 @@ const DoctorProfileSettingsPage = () => {
       setSaving(false);
     }
   };
-
+  if (loading) {
+    return (
+      <div className="relative flex-1">
+        <LoadingSpinner />
+      </div>
+    )
+  }
   return (
     <div className="prof-layout">
 
@@ -151,155 +157,155 @@ const DoctorProfileSettingsPage = () => {
 
           {/* Profile Card */}
           {loading ? (
-             <div className="prof-card" style={{ justifyContent: 'center', opacity: 0.6 }}>
-                 <FiLoader size={24} className="lr-spin" /> {/* reusing spin from previous css, or just standard spin */}
-             </div>
+            <div className="prof-card" style={{ justifyContent: 'center', opacity: 0.6 }}>
+              <FiLoader size={24} className="lr-spin" /> {/* reusing spin from previous css, or just standard spin */}
+            </div>
           ) : (
-          <motion.div className="prof-card" variants={itemVariants} initial="hidden" animate="visible">
-            <div className="prof-card__avatar">
-              {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt={profile.full_name} />
-              ) : (
-                getInitials(profile.full_name)
-              )}
-            </div>
-            <div className="prof-card__info">
-              <h2 className="prof-card__name">{profile.full_name || 'Bác sĩ'}</h2>
-              <p className="prof-card__specialty">{profile.specialization}</p>
-              <p className="prof-card__email">{profile.email}</p>
-            </div>
-          </motion.div>
+            <motion.div className="prof-card" variants={itemVariants} initial="hidden" animate="visible">
+              <div className="prof-card__avatar">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt={profile.full_name} />
+                ) : (
+                  getInitials(profile.full_name)
+                )}
+              </div>
+              <div className="prof-card__info">
+                <h2 className="prof-card__name">{profile.full_name || 'Bác sĩ'}</h2>
+                <p className="prof-card__specialty">{profile.specialization}</p>
+                <p className="prof-card__email">{profile.email}</p>
+              </div>
+            </motion.div>
           )}
 
           {/* Profile Content */}
-              <motion.div
-                key="profile"
-                className="prof-form-section"
-                variants={fadeVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                <div className="prof-form-section__header">
-                  <h3 className="prof-form-section__title">
-                    <FiEdit3 size={16} />
-                    Chỉnh sửa thông tin
-                  </h3>
+          <motion.div
+            key="profile"
+            className="prof-form-section"
+            variants={fadeVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+            <div className="prof-form-section__header">
+              <h3 className="prof-form-section__title">
+                <FiEdit3 size={16} />
+                Chỉnh sửa thông tin
+              </h3>
+            </div>
+            <div className="prof-form-section__body">
+              {profileMessage && (
+                <div className={`prof-message prof-message--${profileMessage.type}`}>
+                  {profileMessage.type === 'success' ? <FiCheckCircle size={16} /> : <FiAlertCircle size={16} />}
+                  {profileMessage.text}
                 </div>
-                <div className="prof-form-section__body">
-                  {profileMessage && (
-                    <div className={`prof-message prof-message--${profileMessage.type}`}>
-                      {profileMessage.type === 'success' ? <FiCheckCircle size={16} /> : <FiAlertCircle size={16} />}
-                      {profileMessage.text}
-                    </div>
-                  )}
+              )}
 
-                  {/* Avatar URL */}
-                  <div className="prof-field">
-                    <label className="prof-field__label">
-                      <FiCamera size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                      Ảnh đại diện (URL)
-                    </label>
-                    <div className="prof-avatar-input">
-                      <div className="prof-avatar-input__preview">
-                        {profile.avatar_url ? (
-                          <img
-                            src={profile.avatar_url}
-                            alt="Avatar preview"
-                            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-                          />
-                        ) : null}
-                        <div
-                          className="prof-avatar-input__placeholder"
-                          style={{ display: profile.avatar_url ? 'none' : 'flex' }}
-                        >
-                          <FiCamera size={20} />
-                        </div>
-                      </div>
-                      <input
-                        type="url"
-                        className="prof-input"
-                        value={profile.avatar_url}
-                        onChange={(e) => handleProfileChange('avatar_url', e.target.value)}
-                        placeholder="https://example.com/avatar.jpg"
+              {/* Avatar URL */}
+              <div className="prof-field">
+                <label className="prof-field__label">
+                  <FiCamera size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                  Ảnh đại diện (URL)
+                </label>
+                <div className="prof-avatar-input">
+                  <div className="prof-avatar-input__preview">
+                    {profile.avatar_url ? (
+                      <img
+                        src={profile.avatar_url}
+                        alt="Avatar preview"
+                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                       />
+                    ) : null}
+                    <div
+                      className="prof-avatar-input__placeholder"
+                      style={{ display: profile.avatar_url ? 'none' : 'flex' }}
+                    >
+                      <FiCamera size={20} />
                     </div>
                   </div>
-
-                  <div className="prof-field">
-                    <label className="prof-field__label">
-                      Họ và tên<span>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      className={`prof-input ${errors.full_name ? 'prof-input--error' : ''}`}
-                      value={profile.full_name}
-                      onChange={(e) => handleProfileChange('full_name', e.target.value)}
-                      placeholder="Nhập họ và tên"
-                    />
-                    {errors.full_name && <span className="prof-field__error">{errors.full_name}</span>}
-                  </div>
-
-                  <div className="prof-field-row">
-                    <div className="prof-field">
-                      <label className="prof-field__label">
-                        <FiMail size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        className="prof-input"
-                        value={profile.email}
-                        disabled
-                        placeholder="Email"
-                      />
-                    </div>
-                    <div className="prof-field">
-                      <label className="prof-field__label">
-                        <FiPhone size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                        Số điện thoại
-                      </label>
-                      <input
-                        type="text"
-                        className={`prof-input ${errors.phone_number ? 'prof-input--error' : ''}`}
-                        value={profile.phone_number}
-                        onChange={(e) => handleProfileChange('phone_number', e.target.value)}
-                        placeholder="Số điện thoại"
-                      />
-                      {errors.phone_number && <span className="prof-field__error">{errors.phone_number}</span>}
-                    </div>
-                  </div>
-
-                  <div className="prof-field">
-                    <label className="prof-field__label">Chuyên khoa</label>
-                    <input
-                      type="text"
-                      className="prof-input"
-                      value={profile.specialization}
-                      onChange={(e) => handleProfileChange('specialization', e.target.value)}
-                      placeholder="Chuyên khoa"
-                    />
-                  </div>
-
-                  <div className="prof-field">
-                    <label className="prof-field__label">Mô tả bản thân</label>
-                    <textarea
-                      className="prof-textarea"
-                      value={profile.description}
-                      onChange={(e) => handleProfileChange('description', e.target.value)}
-                      placeholder="Mô tả kinh nghiệm, chuyên môn..."
-                      rows={4}
-                    />
-                  </div>
-
-                  <div className="prof-form-actions">
-                    <button className="prof-btn prof-btn--primary" onClick={handleProfileSave} disabled={saving}>
-                      {saving ? <FiLoader size={16} className="lr-spin" /> : <FiSave size={16} />}
-                      {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
-                    </button>
-                  </div>
+                  <input
+                    type="url"
+                    className="prof-input"
+                    value={profile.avatar_url}
+                    onChange={(e) => handleProfileChange('avatar_url', e.target.value)}
+                    placeholder="https://example.com/avatar.jpg"
+                  />
                 </div>
-              </motion.div>
+              </div>
+
+              <div className="prof-field">
+                <label className="prof-field__label">
+                  Họ và tên<span>*</span>
+                </label>
+                <input
+                  type="text"
+                  className={`prof-input ${errors.full_name ? 'prof-input--error' : ''}`}
+                  value={profile.full_name}
+                  onChange={(e) => handleProfileChange('full_name', e.target.value)}
+                  placeholder="Nhập họ và tên"
+                />
+                {errors.full_name && <span className="prof-field__error">{errors.full_name}</span>}
+              </div>
+
+              <div className="prof-field-row">
+                <div className="prof-field">
+                  <label className="prof-field__label">
+                    <FiMail size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    className="prof-input"
+                    value={profile.email}
+                    disabled
+                    placeholder="Email"
+                  />
+                </div>
+                <div className="prof-field">
+                  <label className="prof-field__label">
+                    <FiPhone size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                    Số điện thoại
+                  </label>
+                  <input
+                    type="text"
+                    className={`prof-input ${errors.phone_number ? 'prof-input--error' : ''}`}
+                    value={profile.phone_number}
+                    onChange={(e) => handleProfileChange('phone_number', e.target.value)}
+                    placeholder="Số điện thoại"
+                  />
+                  {errors.phone_number && <span className="prof-field__error">{errors.phone_number}</span>}
+                </div>
+              </div>
+
+              <div className="prof-field">
+                <label className="prof-field__label">Chuyên khoa</label>
+                <input
+                  type="text"
+                  className="prof-input"
+                  value={profile.specialization}
+                  onChange={(e) => handleProfileChange('specialization', e.target.value)}
+                  placeholder="Chuyên khoa"
+                />
+              </div>
+
+              <div className="prof-field">
+                <label className="prof-field__label">Mô tả bản thân</label>
+                <textarea
+                  className="prof-textarea"
+                  value={profile.description}
+                  onChange={(e) => handleProfileChange('description', e.target.value)}
+                  placeholder="Mô tả kinh nghiệm, chuyên môn..."
+                  rows={4}
+                />
+              </div>
+
+              <div className="prof-form-actions">
+                <button className="prof-btn prof-btn--primary" onClick={handleProfileSave} disabled={saving}>
+                  {saving ? <FiLoader size={16} className="lr-spin" /> : <FiSave size={16} />}
+                  {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
 
           {/* Footer */}
           <motion.footer className="prof-footer" variants={itemVariants}>

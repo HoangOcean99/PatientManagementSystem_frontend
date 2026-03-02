@@ -184,7 +184,9 @@ const LoginPage = () => {
     `}
                             >
                                 {isLoadingLogin
-                                    ? <LoadingSpinner size="18px" />
+                                    ? <div className="relative flex-1">
+                                        {isLoadingLogin && <LoadingSpinner />}
+                                    </div>
                                     : <span>Đăng nhập vào tài khoản trẻ</span>
                                 }
                             </button>
