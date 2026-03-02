@@ -24,7 +24,7 @@ const UnderMyCarePage = () => {
             try {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id;
-                if (!userId) { navigate('/login'); return; }
+                // if (!userId) { navigate('/login'); return; }
                 const res = await axiosClient.get('/family-relationships', { params: { parent_user_id: userId } });
                 setDependents(res.data?.data || []);
             } catch (err) {
