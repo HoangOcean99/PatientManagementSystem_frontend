@@ -39,7 +39,7 @@ const QueueDashboard = () => {
                 { id: '#C15', name: 'Tạ Minh Khuê', status: 'Chờ' },
             ],
             extraCount: 2,
-            isDragging: true, 
+            isDragging: true,
         },
         {
             id: 'D',
@@ -67,7 +67,7 @@ const QueueDashboard = () => {
         {
             id: 'F',
             name: 'Phòng F - Tai Mũi Họng',
-            nameDoctor: 'Nguyễn Thị Hoa', 
+            nameDoctor: 'Nguyễn Thị Hoa',
             waitingCount: 3,
             currentPatient: { id: '#F08', name: 'Ngô Đình Khoa', status: 'Đang vào', time: '09:30' },
             queue: [
@@ -79,8 +79,8 @@ const QueueDashboard = () => {
     ];
 
     return (
-        <div className="bg-[#f8f9fc] min-h-screen p-4 md:p-8 font-sans text-gray-800">
-            <div className="max-w-[1400px] mx-auto space-y-6">
+        <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8">
+            <div className="mx-auto space-y-6">
 
                 {/* Top Filter Bar */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -185,7 +185,7 @@ const QueueDashboard = () => {
                     ))}
                 </div>
             </div>
-        </div>
+        </main>
     );
 };
 

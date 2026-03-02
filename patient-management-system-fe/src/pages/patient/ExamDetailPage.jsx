@@ -76,7 +76,7 @@ const ExamDetailPage = () => {
     const labOrders = record.LabOrders || [];
 
     return (
-        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+        <main className="flex-1 overflow-y-auto bg-gray-50/30">
             {scrollbarStyles}
 
             {/* Header */}
@@ -180,7 +180,7 @@ const ExamDetailPage = () => {
                     </Section>
                 </motion.div>
             </div>
-        </div>
+        </main>
     );
 };
 

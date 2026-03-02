@@ -86,12 +86,12 @@ const PatientDashboard = () => {
     };
 
     return (
-        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+        <main className="flex-1 overflow-y-auto bg-gray-50/30">
             {scrollbarStyles}
 
             {/* Header */}
             <div className="sticky top-0 z-30 border-b border-blue-100/40" style={{ background: 'linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.9) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex items-center justify-between">
                         <div>
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 mb-2">
@@ -103,23 +103,12 @@ const PatientDashboard = () => {
                             </h1>
                             <p className="text-sm text-gray-500 mt-1">Chào mừng bạn đến hệ thống quản lý sức khoẻ</p>
                         </div>
-                        <button
-                            onClick={async () => {
-                                await supabase.auth.signOut();
-                                navigate('/login');
-                                toast.success('Đã đăng xuất');
-                            }}
-                            className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50 font-semibold text-sm transition-all cursor-pointer shadow-sm"
-                        >
-                            <i className="fa-solid fa-right-from-bracket"></i>
-                            Đăng xuất
-                        </button>
                     </div>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
 
                 {/* Navigation Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -199,7 +188,7 @@ const PatientDashboard = () => {
                     </div>
                 </motion.div>
             </div>
-        </div>
+        </main>
     );
 };
 

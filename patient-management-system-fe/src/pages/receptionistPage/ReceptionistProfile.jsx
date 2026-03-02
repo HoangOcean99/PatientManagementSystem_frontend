@@ -2,7 +2,7 @@ import React from 'react';
 
 const ReceptionistProfile = () => {
     return (
-        <div className="max-w-[1200px] mx-auto space-y-6">
+        <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8">
 
             <div className="relative bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between md:items-center gap-6">
                 <div className="absolute top-4 right-6 bg-gray-100 text-gray-600 text-[11px] font-semibold px-3 py-1.5 rounded-full">
@@ -42,7 +42,7 @@ const ReceptionistProfile = () => {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                         Edit Profile
                     </button>
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 font-medium text-sm shadow-sm shadow-indigo-200 transition-colors">  
+                    <button className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 font-medium text-sm shadow-sm shadow-indigo-200 transition-colors">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         Manage Access
                     </button>
@@ -64,7 +64,7 @@ const ReceptionistProfile = () => {
                     <p className="text-3xl font-bold text-gray-900 mt-1 mb-1">42</p>
                     <p className="text-xs text-gray-400">Target: 50 | 8 remaining</p>
                 </div>
-                
+
                 <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                         <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500">
@@ -112,9 +112,9 @@ const ReceptionistProfile = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
+
                 <div className="lg:col-span-2 space-y-6">
-                    
+
                     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                         <div className="flex justify-between items-start mb-6">
                             <div>
@@ -267,7 +267,7 @@ const ReceptionistProfile = () => {
                 </div>
 
                 <div className="space-y-6">
-                    
+
                     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                         <h2 className="font-bold text-gray-900 text-lg mb-6">Contact Information</h2>
                         <div className="space-y-5">
@@ -304,7 +304,7 @@ const ReceptionistProfile = () => {
 
                     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                         <h2 className="font-bold text-gray-900 text-lg mb-6">Role & Access Control</h2>
-                        
+
                         <div className="bg-[#f8fafc] border border-indigo-100 rounded-xl p-4 mb-6">
                             <div className="flex items-center gap-2 text-indigo-600 mb-1.5">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
@@ -390,7 +390,7 @@ const ReceptionistProfile = () => {
                         <p className="text-sm text-gray-400">Personalize your experience and notification workflows</p>
                     </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                     <div>
                         <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-5">Communication</h3>
@@ -458,8 +458,7 @@ const ReceptionistProfile = () => {
                     </button>
                 </div>
             </div>
-
-        </div>
+        </main>
     );
 };
 

@@ -138,14 +138,8 @@ const BookingAppointmentPage = () => {
   }
 
   return (
-    <div
-      className="min-h-screen font-sans relative"
-      style={{
-        width: "100vw",
-        background:
-          "linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)",
-      }}
-    >
+    <main className="flex-1 overflow-y-auto bg-gray-50/30">
+
       {scrollbarStyles}
 
       {/* Header */}
@@ -157,7 +151,7 @@ const BookingAppointmentPage = () => {
           backdropFilter: "blur(20px) saturate(180%)",
         }}
       >
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate("/patient/dashboard")}
@@ -181,7 +175,7 @@ const BookingAppointmentPage = () => {
       </div>
 
       {/* Form */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         <motion.form
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -307,7 +301,7 @@ const BookingAppointmentPage = () => {
           </div>
         </motion.form>
       </div>
-    </div>
+    </main>
   );
 };
 

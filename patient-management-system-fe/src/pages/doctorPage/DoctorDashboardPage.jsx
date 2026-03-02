@@ -118,7 +118,7 @@ const DoctorDashboardPage = () => {
   }
 
   return (
-    <main className="dash-main">
+    <main className="dash-main p-8">
       <motion.div
         className="dash-content"
         variants={containerVariants}

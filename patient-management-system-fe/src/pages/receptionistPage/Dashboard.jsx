@@ -2,7 +2,7 @@ import React from 'react';
 
 const Dashboard = () => {
     return (
-        <div className="max-w-6xl mx-auto">
+        <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8">
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-2xl font-bold">Tổng quan Hoạt động</h1>
                 <div className="bg-white px-4 py-2 rounded-lg border shadow-sm flex items-center gap-2">
@@ -53,7 +53,7 @@ const Dashboard = () => {
                         </button>
                     </div>
                 </div>
-                
+
                 <table className="w-full text-left">
                     <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
                         <tr>
@@ -72,7 +72,7 @@ const Dashboard = () => {
                             <td className="px-6 py-4 flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-xs">
                                     <i className="fa-solid fa-user"></i>
-                                </div> 
+                                </div>
                                 Nguyễn Đình Tú
                             </td>
                             <td className="px-6 py-4"><span className="bg-gray-100 px-2 py-1 rounded text-xs">Nội tổng quát</span></td>
@@ -92,7 +92,7 @@ const Dashboard = () => {
                     </tbody>
                 </table>
             </div>
-        </div>
+        </main>
     );
 };
 

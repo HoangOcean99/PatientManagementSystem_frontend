@@ -56,12 +56,12 @@ const KeyCodePage = () => {
     };
 
     return (
-        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+        <main className="flex-1 overflow-y-auto bg-gray-50/30">
             {scrollbarStyles}
 
             {/* Header */}
             <div className="sticky top-0 z-30 border-b border-blue-100/40" style={{ background: 'linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.9) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
-                <div className="max-w-xl mx-auto px-4 sm:px-6 py-6">
+                <div className="mx-auto px-4 sm:px-6 py-6">
                     <div className="flex items-center gap-4">
                         <button onClick={() => navigate('/patient/under-my-care')} className="w-10 h-10 rounded-xl bg-white/70 hover:bg-white border border-gray-200/60 flex items-center justify-center text-gray-500 hover:text-blue-600 transition-all shadow-sm cursor-pointer">
                             <i className="fa-solid fa-arrow-left"></i>
@@ -78,7 +78,7 @@ const KeyCodePage = () => {
             </div>
 
             {/* Content */}
-            <div className="max-w-xl mx-auto px-4 sm:px-6 py-8 relative z-10">
+            <div className="mx-auto px-4 sm:px-6 py-8 relative z-10">
                 <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
 
                     {/* Generate key */}
@@ -155,7 +155,7 @@ const KeyCodePage = () => {
                     </div>
                 </motion.div>
             </div>
-        </div>
+        </main>
     );
 };
 

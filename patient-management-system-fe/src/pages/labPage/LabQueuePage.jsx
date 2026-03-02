@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fi';
 import labOrderApi from '../../api/labOrderApi';
 import './LabQueuePage.css';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // ===== HELPERS =====
 const STATUS_CONFIG = {
@@ -146,7 +147,7 @@ const LabQueuePage = () => {
   const orderedCount = labOrders.filter((l) => l.status === 'ordered').length;
   const processingCount = labOrders.filter((l) => l.status === 'processing').length;
   const completedCount = labOrders.filter((l) => l.status === 'completed').length;
-  
+
   if (loading) {
     return (
       <div className="relative flex-1">
