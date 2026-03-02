@@ -6,9 +6,7 @@ export default function PublicRoute({ children }) {
   const { userRole, loading } = useAuth();
   if (loading) {
     return (
-      <div className="relative flex-1">
-        {loading && <LoadingSpinner />}
-      </div>
+      <LoadingSpinner />
     )
   }
 

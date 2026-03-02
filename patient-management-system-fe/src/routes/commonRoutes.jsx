@@ -31,10 +31,7 @@ const commonRoutes = [
     },
     {
         path: '/oauth-callback',
-        element:
-            <PublicRoute>
-                <AuthCallback />
-            </PublicRoute>
+        element: <AuthCallback />
 
     },
     {
