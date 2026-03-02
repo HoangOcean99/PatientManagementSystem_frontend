@@ -11,8 +11,8 @@ const receptionistRoutes = [
         element: (
             <ProtectedRoute allowedRoles={["receptionist"]}>
                 <Dashboard />
-            </ProtectedRoute>
-        )
+            </ProtectedRoute>)
+        
     },
     {
         path: "/receptionist/coordinator",
