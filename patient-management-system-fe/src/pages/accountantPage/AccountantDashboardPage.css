@@ -1,0 +1,395 @@
+/* ============================
+   AccountantDashboardPage
+   Theme: Teal / Emerald (Finance)
+   ============================ */
+
+/* ===== LAYOUT ===== */
+.acc-dash-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #F8FAFC;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0F172A;
+}
+
+.acc-dash-main {
+  flex: 1;
+  margin-left: var(--acc-sidebar-width, 260px);
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.acc-dash-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 36px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ===== WELCOME BANNER ===== */
+.acc-dash-welcome {
+  background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+  border-radius: 18px;
+  padding: 28px 32px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.acc-dash-welcome::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -5%;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+}
+
+.acc-dash-welcome::after {
+  content: '';
+  position: absolute;
+  bottom: -40%;
+  right: 10%;
+  width: 140px;
+  height: 140px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.acc-dash-welcome__greeting {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.acc-dash-welcome__date {
+  font-size: 14px;
+  opacity: 0.85;
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== STAT CARDS ===== */
+.acc-dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.acc-dash-stat-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 22px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.25s ease;
+}
+
+.acc-dash-stat-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.acc-dash-stat-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.acc-dash-stat-card__icon--revenue {
+  background: #F0FDFA;
+  color: #0D9488;
+}
+
+.acc-dash-stat-card__icon--deposit {
+  background: #DBEAFE;
+  color: #2563EB;
+}
+
+.acc-dash-stat-card__icon--unpaid {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.acc-dash-stat-card__icon--pending {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.acc-dash-stat-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.acc-dash-stat-card__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  margin: 0 0 4px 0;
+}
+
+.acc-dash-stat-card__value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1.2;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== SECTION ===== */
+.acc-dash-section {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.acc-dash-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid #F1F5F9;
+  background: #F0FDFA;
+}
+
+.acc-dash-section__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+
+.acc-dash-section__title svg {
+  color: #0D9488;
+}
+
+/* ===== TRANSACTION LIST ===== */
+.acc-dash-transactions {
+  padding: 0;
+}
+
+.acc-dash-txn-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 24px;
+  border-bottom: 1px solid #F1F5F9;
+  transition: background 0.15s ease;
+}
+
+.acc-dash-txn-item:last-child {
+  border-bottom: none;
+}
+
+.acc-dash-txn-item:hover {
+  background: #F8FAFC;
+}
+
+.acc-dash-txn-item__type-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.acc-dash-txn-item__type-icon--deposit {
+  background: #DBEAFE;
+  color: #2563EB;
+}
+
+.acc-dash-txn-item__type-icon--invoice {
+  background: #F0FDFA;
+  color: #0D9488;
+}
+
+.acc-dash-txn-item__type-icon--transfer {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.acc-dash-txn-item__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.acc-dash-txn-item__patient {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0F172A;
+  margin: 0 0 2px 0;
+}
+
+.acc-dash-txn-item__meta {
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+.acc-dash-txn-item__amount {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+}
+
+.acc-dash-txn-item__status {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.acc-dash-txn-item__status--confirmed,
+.acc-dash-txn-item__status--paid {
+  background: #ECFDF5;
+  color: #059669;
+}
+
+.acc-dash-txn-item__status--pending {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.acc-dash-txn-item__status--unpaid {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+/* ===== QUICK ACTIONS ===== */
+.acc-dash-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 20px 24px;
+}
+
+.acc-dash-quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: left;
+}
+
+.acc-dash-quick-btn:hover {
+  border-color: #0D9488;
+  background: #F0FDFA;
+  transform: translateY(-1px);
+}
+
+.acc-dash-quick-btn__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #F0FDFA;
+  color: #0D9488;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.acc-dash-quick-btn__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.acc-dash-quick-btn__desc {
+  font-size: 12px;
+  color: #94A3B8;
+  margin-top: 2px;
+}
+
+/* ===== FOOTER ===== */
+.acc-dash-footer {
+  text-align: center;
+  padding: 16px 0 0;
+  border-top: 1px solid #F1F5F9;
+}
+
+.acc-dash-footer p {
+  font-size: 13px;
+  color: #94A3B8;
+  margin: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .acc-dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .acc-dash-content {
+    padding: 20px 20px 40px;
+  }
+
+  .acc-dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .acc-dash-main {
+    margin-left: 0;
+  }
+
+  .acc-dash-content {
+    padding: 16px 16px 32px;
+  }
+
+  .acc-dash-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .acc-dash-welcome {
+    padding: 20px 24px;
+  }
+
+  .acc-dash-welcome__greeting {
+    font-size: 20px;
+  }
+
+  .acc-dash-quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .acc-dash-txn-item {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
