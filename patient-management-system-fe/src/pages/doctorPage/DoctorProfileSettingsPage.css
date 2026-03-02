@@ -222,6 +222,21 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.prof-input.prof-input--error {
+  border-color: var(--ex-danger, #EF4444);
+}
+
+.prof-input.prof-input--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.prof-field__error {
+  font-size: 12px;
+  color: var(--ex-danger, #EF4444);
+  margin-top: -2px;
+  font-weight: 500;
+}
+
 .prof-input::placeholder {
   color: var(--ex-text-muted, #94A3B8);
 }
@@ -377,4 +392,14 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+/* ===== SPINNER ===== */
+@keyframes lr-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.lr-spin {
+  animation: lr-spin 1s linear infinite;
 }

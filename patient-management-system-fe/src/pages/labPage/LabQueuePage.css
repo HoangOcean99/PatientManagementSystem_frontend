@@ -1,33 +1,36 @@
 /* ============================
-   DoctorSchedulePage
+   LabQueuePage
    Theme: White / Blue (Clinical Trust)
+   Reuses :root tokens from ExaminationPage
    ============================ */
 
 /* ===== LAYOUT ===== */
-.sched-layout {
+.lq-layout {
   display: flex;
   min-height: 100vh;
   background: var(--ex-bg, #F8FAFC);
   font-family: var(--ex-font, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   color: var(--ex-text-primary, #0F172A);
-  width: 100vw;
 }
 
-.sched-main {
+.lq-main {
   flex: 1;
+  margin-left: var(--ex-sidebar-width, 260px);
   min-height: 100vh;
   overflow-y: auto;
 }
 
-.sched-content {
+.lq-content {
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 28px 36px 48px;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
 /* ===== PAGE HEADER ===== */
-.sched-header {
+.lq-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -35,13 +38,13 @@
   gap: 12px;
 }
 
-.sched-header__left {
+.lq-header__left {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.sched-header__title {
+.lq-header__title {
   font-size: 22px;
   font-weight: 700;
   color: var(--ex-text-primary, #0F172A);
@@ -51,31 +54,101 @@
   gap: 10px;
 }
 
-.sched-header__title svg {
+.lq-header__title svg {
   color: var(--ex-primary, #2563EB);
 }
 
-.sched-header__date {
+.lq-header__date {
   font-size: 14px;
+  color: var(--ex-text-secondary, #475569);
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ===== STATS CARDS ===== */
+.lq-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.lq-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--ex-surface, #fff);
+  border: 1px solid var(--ex-border, #E2E8F0);
+  border-radius: var(--ex-radius-lg, 14px);
+  box-shadow: var(--ex-shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: default;
+}
+
+.lq-stat-card:hover {
+  box-shadow: var(--ex-shadow-md);
+  transform: translateY(-1px);
+}
+
+.lq-stat-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--ex-radius-md, 10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lq-stat-card--ordered .lq-stat-card__icon {
+  background: var(--ex-warning-light, #FFFBEB);
+  color: var(--ex-warning, #F59E0B);
+}
+
+.lq-stat-card--processing .lq-stat-card__icon {
+  background: var(--ex-primary-light, #DBEAFE);
+  color: var(--ex-primary, #2563EB);
+}
+
+.lq-stat-card--completed .lq-stat-card__icon {
+  background: var(--ex-success-light, #ECFDF5);
+  color: var(--ex-success, #10B981);
+}
+
+.lq-stat-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lq-stat-card__value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ex-text-primary, #0F172A);
+  line-height: 1;
+}
+
+.lq-stat-card__label {
+  font-size: 13px;
   color: var(--ex-text-secondary, #475569);
   font-weight: 500;
 }
 
 /* ===== FILTER BAR ===== */
-.sched-filters {
+.lq-filters {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.sched-search {
+.lq-search {
   flex: 1;
-  min-width: 220px;
+  min-width: 260px;
   position: relative;
 }
 
-.sched-search__icon {
+.lq-search__icon {
   position: absolute;
   left: 14px;
   top: 50%;
@@ -84,7 +157,7 @@
   pointer-events: none;
 }
 
-.sched-search__input {
+.lq-search__input {
   width: 100%;
   padding: 10px 14px 10px 40px;
   border: 1.5px solid var(--ex-border, #E2E8F0);
@@ -98,16 +171,16 @@
   box-sizing: border-box;
 }
 
-.sched-search__input:focus {
+.lq-search__input:focus {
   border-color: var(--ex-primary, #2563EB);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-.sched-search__input::placeholder {
+.lq-search__input::placeholder {
   color: var(--ex-text-muted, #94A3B8);
 }
 
-.sched-filter-tabs {
+.lq-filter-tabs {
   display: flex;
   gap: 4px;
   background: var(--ex-surface, #fff);
@@ -116,7 +189,7 @@
   padding: 4px;
 }
 
-.sched-filter-tab {
+.lq-filter-tab {
   padding: 8px 16px;
   border-radius: var(--ex-radius-sm, 6px);
   border: none;
@@ -130,22 +203,22 @@
   white-space: nowrap;
 }
 
-.sched-filter-tab:hover {
+.lq-filter-tab:hover {
   background: var(--ex-surface-hover, #F1F5F9);
 }
 
-.sched-filter-tab--active {
+.lq-filter-tab--active {
   background: var(--ex-primary, #2563EB);
   color: #fff;
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
 }
 
-.sched-filter-tab--active:hover {
+.lq-filter-tab--active:hover {
   background: var(--ex-primary-dark, #1D4ED8);
 }
 
-/* ===== PATIENT TABLE ===== */
-.sched-table-wrap {
+/* ===== TABLE ===== */
+.lq-table-wrap {
   background: var(--ex-surface, #fff);
   border: 1px solid var(--ex-border, #E2E8F0);
   border-radius: var(--ex-radius-lg, 14px);
@@ -153,14 +226,14 @@
   overflow: hidden;
 }
 
-.sched-table {
+.lq-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.sched-table th {
+.lq-table th {
   text-align: left;
-  padding: 14px 20px;
+  padding: 14px 18px;
   font-size: 12px;
   font-weight: 700;
   color: var(--ex-text-muted, #94A3B8);
@@ -170,30 +243,31 @@
   border-bottom: 1px solid var(--ex-border, #E2E8F0);
 }
 
-.sched-table td {
-  padding: 14px 20px;
+.lq-table td {
+  padding: 14px 18px;
   font-size: 14px;
   border-bottom: 1px solid var(--ex-border-light, #F1F5F9);
   vertical-align: middle;
 }
 
-.sched-table tr:last-child td {
+.lq-table tr:last-child td {
   border-bottom: none;
 }
 
-.sched-table tr:hover td {
+.lq-table tr:hover td {
   background: var(--ex-surface-hover, #F1F5F9);
 }
 
-.sched-patient-cell {
+/* Patient cell */
+.lq-patient-cell {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.sched-patient-avatar {
-  width: 38px;
-  height: 38px;
+.lq-patient-avatar {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--ex-primary, #2563EB), var(--ex-primary-dark, #1D4ED8));
   display: flex;
@@ -201,32 +275,42 @@
   justify-content: center;
   flex-shrink: 0;
   color: #fff;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
 }
 
-.sched-patient-name {
+.lq-patient-name {
   font-weight: 600;
   color: var(--ex-text-primary, #0F172A);
 }
 
-.sched-patient-meta {
+.lq-patient-meta {
   font-size: 12px;
   color: var(--ex-text-muted, #94A3B8);
   margin-top: 1px;
 }
 
-.sched-time {
+.lq-test-name {
+  font-weight: 600;
+  color: var(--ex-text-primary, #0F172A);
+}
+
+.lq-doctor-name {
+  font-size: 13px;
+  color: var(--ex-text-secondary, #475569);
+}
+
+.lq-time {
   font-weight: 600;
   color: var(--ex-text-secondary, #475569);
 }
 
-.sched-queue {
+.lq-queue {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--ex-primary-light, #DBEAFE);
   color: var(--ex-primary, #2563EB);
@@ -234,8 +318,8 @@
   font-weight: 700;
 }
 
-/* Status */
-.sched-status {
+/* Status badges */
+.lq-status {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -243,49 +327,32 @@
   border-radius: 16px;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.sched-status--pending,
-.sched-status--confirmed,
-.sched-status--checked_in {
-  background: #F0F4FF;
-  color: #6366F1;
-}
-
-.sched-status--ready {
-  background: #FEF3C7;
-  color: #D97706;
-}
-
-.sched-status--waiting {
+.lq-status--ordered {
   background: var(--ex-warning-light, #FFFBEB);
   color: var(--ex-warning, #F59E0B);
 }
 
-.sched-status--in_progress {
+.lq-status--processing {
   background: var(--ex-primary-light, #DBEAFE);
   color: var(--ex-primary, #2563EB);
 }
 
-.sched-status--completed {
+.lq-status--completed {
   background: var(--ex-success-light, #ECFDF5);
   color: var(--ex-success, #10B981);
 }
 
-.sched-status--cancelled,
-.sched-status--missed {
-  background: var(--ex-danger-light, #FEF2F2);
-  color: var(--ex-danger, #EF4444);
-}
-
 /* Actions */
-.sched-actions {
+.lq-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.sched-action-btn {
+.lq-action-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -300,30 +367,30 @@
   white-space: nowrap;
 }
 
-.sched-action-btn--start {
+.lq-action-btn--start {
   background: var(--ex-primary, #2563EB);
   color: #fff;
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
 }
 
-.sched-action-btn--start:hover {
+.lq-action-btn--start:hover {
   background: var(--ex-primary-dark, #1D4ED8);
   transform: translateY(-1px);
 }
 
-.sched-action-btn--view {
+.lq-action-btn--view {
   background: transparent;
   color: var(--ex-primary, #2563EB);
   border: 1.5px solid var(--ex-border, #E2E8F0);
 }
 
-.sched-action-btn--view:hover {
+.lq-action-btn--view:hover {
   border-color: var(--ex-primary, #2563EB);
   background: var(--ex-primary-subtle, #EFF6FF);
 }
 
 /* ===== EMPTY STATE ===== */
-.sched-empty {
+.lq-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -332,7 +399,7 @@
   gap: 12px;
 }
 
-.sched-empty__icon {
+.lq-empty__icon {
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -343,28 +410,28 @@
   justify-content: center;
 }
 
-.sched-empty__text {
+.lq-empty__text {
   font-size: 14px;
   color: var(--ex-text-muted, #94A3B8);
   margin: 0;
 }
 
 /* ===== RESULT COUNT ===== */
-.sched-result-count {
+.lq-result-count {
   font-size: 13px;
   color: var(--ex-text-muted, #94A3B8);
-  padding: 12px 20px;
+  padding: 12px 18px;
   border-top: 1px solid var(--ex-border-light, #F1F5F9);
 }
 
 /* ===== FOOTER ===== */
-.sched-footer {
+.lq-footer {
   text-align: center;
   padding: 16px 0 0;
   border-top: 1px solid var(--ex-border-light, #F1F5F9);
 }
 
-.sched-footer p {
+.lq-footer p {
   font-size: 13px;
   color: var(--ex-text-muted, #94A3B8);
   margin: 0;
@@ -372,64 +439,72 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
-  .sched-content {
+  .lq-content {
     padding: 20px 20px 40px;
   }
 
-  .sched-table th:nth-child(4),
-  .sched-table td:nth-child(4) {
+  .lq-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .lq-table th:nth-child(4),
+  .lq-table td:nth-child(4) {
     display: none;
   }
 }
 
 @media (max-width: 768px) {
-  .sched-main {
+  .lq-main {
     margin-left: 0;
   }
 
-  .sched-content {
+  .lq-content {
     padding: 16px 16px 32px;
   }
 
-  .sched-filters {
+  .lq-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .lq-filters {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .sched-search {
+  .lq-search {
     min-width: unset;
   }
 
-  .sched-filter-tabs {
+  .lq-filter-tabs {
     overflow-x: auto;
   }
 
   /* Card layout on mobile */
-  .sched-table,
-  .sched-table thead,
-  .sched-table tbody,
-  .sched-table th,
-  .sched-table td,
-  .sched-table tr {
+  .lq-table,
+  .lq-table thead,
+  .lq-table tbody,
+  .lq-table th,
+  .lq-table td,
+  .lq-table tr {
     display: block;
   }
 
-  .sched-table thead {
+  .lq-table thead {
     display: none;
   }
 
-  .sched-table tr {
-    padding: 16px 20px;
+  .lq-table tr {
+    padding: 16px 18px;
     border-bottom: 1px solid var(--ex-border-light, #F1F5F9);
   }
 
-  .sched-table td {
+  .lq-table td {
     padding: 4px 0;
     border: none;
     text-align: left;
   }
 
-  .sched-table td::before {
+  .lq-table td::before {
     content: attr(data-label);
     font-size: 11px;
     font-weight: 700;
@@ -439,22 +514,20 @@
     margin-bottom: 2px;
   }
 
-  .sched-actions {
+  .lq-actions {
     margin-top: 10px;
   }
 
-  .sched-action-btn {
+  .lq-action-btn {
     flex: 1;
     justify-content: center;
   }
 }
 
-/* ===== SPINNER ===== */
-@keyframes sched-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.sched-spin {
-  animation: sched-spin 1s linear infinite;
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

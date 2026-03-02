@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -23,38 +23,16 @@ import {
   FiSend,
   FiDownload,
 } from 'react-icons/fi';
+import DoctorSidebar from '../../components/doctor/DoctorSidebar';
+import { getAppointmentsByDoctorId } from '../../api/doctorApi';
+import medicalRecordApi from '../../api/medicalRecordApi';
+import labOrderApi from '../../api/labOrderApi';
 import './ExaminationPage.css';
-
-// ===== MOCK DATA (replace with API) =====
-const MOCK_APPOINTMENT = {
-  appointment_id: 'a-005',
-  patient_id: 'p-001',
-  doctor_id: 'd-001',
-  service_id: 's-001',
-  appointment_date: '2026-02-22',
-  start_time: '09:00',
-  end_time: '09:30',
-  status: 'ready', // ready → in_progress → completed
-  queue_number: 3,
-};
-
-const MOCK_PATIENT = {
-  user_id: 'u-001',
-  full_name: 'Nguyễn Thị An',
-  email: 'nguyenthian@example.com',
-  phone_number: '0901234567',
-  avatar_url: null,
-  patient_id: 'p-001',
-  dob: '1991-05-15',
-  gender: 'female',
-  address: '456 Đường XYZ, Quận 3, TP.HCM',
-  allergies: 'Phấn hoa, Penicillin',
-  medical_history_summary: 'Hen suyễn nhẹ. Đang dùng thuốc kiểm soát.',
-};
 
 // ===== HELPERS =====
 const getGenderLabel = (g) => ({ male: 'Nam', female: 'Nữ', other: 'Khác' }[g] || g);
 const calculateAge = (dob) => {
+  if (!dob) return '';
   const today = new Date();
   const b = new Date(dob);
   let age = today.getFullYear() - b.getFullYear();
@@ -73,7 +51,7 @@ const STATUS_MAP = {
 
 const LAB_STATUS_MAP = {
   draft: { label: 'Chưa gửi', color: 'lab-status--draft', icon: FiFileText },
-  sent: { label: 'Đã gửi', color: 'lab-status--sent', icon: FiSend },
+  ordered: { label: 'Đã gửi', color: 'lab-status--sent', icon: FiSend },
   processing: { label: 'Đang xử lý', color: 'lab-status--processing', icon: FiLoader },
   completed: { label: 'Có kết quả', color: 'lab-status--completed', icon: FiCheckCircle },
 };
@@ -191,40 +169,187 @@ const ExaminationPage = () => {
   const navigate = useNavigate();
   const { appointmentId } = useParams();
 
-  // TODO: fetch from API using appointmentId
-  const [appointment, setAppointment] = useState(MOCK_APPOINTMENT);
-  const patient = MOCK_PATIENT;
+  // ===== PAGE-LEVEL STATES =====
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageError, setPageError] = useState(null);
+
+  // ===== APPOINTMENT & PATIENT DATA (from DoctorSchedulePage navigation) =====
+  const [appointment, setAppointment] = useState(null);
+  const [patient, setPatient] = useState(null);
+
+  // ===== MEDICAL RECORD =====
+  const [recordId, setRecordId] = useState(null);
+  const [recordStatus, setRecordStatus] = useState(null); // null = chưa có record
 
   // ===== FORM STATE =====
-  // MedicalRecords fields
   const [symptoms, setSymptoms] = useState('');
   const [doctorNotes, setDoctorNotes] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
 
-  // Prescriptions (dynamic list)
+  // Prescriptions (dynamic list — local, gửi kèm khi save/complete)
   const [prescriptions, setPrescriptions] = useState([
     { id: Date.now(), medication_name: '', dosage: '', instructions: '', reminder_schedule: '' },
   ]);
 
   // LabOrders (dynamic list)
-  const [labOrders, setLabOrders] = useState([
-    {
-      id: 1,
-      test_name: 'Xét nghiệm máu tổng quát',
-      status: 'completed',
-      result_summary: 'WBC: 7.5 x10⁹/L (bình thường). RBC: 3.2 x10¹²/L (thấp nhẹ). HGB: 110 g/L (dưới ngưỡng). Đề nghị theo dõi thêm.',
-      result_file_url: 'https://example.com/lab-results/blood-test-001.pdf',
-    },
-  ]);
+  const [labOrders, setLabOrders] = useState([]);
 
-  // Follow-up date (UI only)
+  // Follow-up date
   const [followUpDate, setFollowUpDate] = useState('');
 
+  // Action loading states
+  const [starting, setStarting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [labSending, setLabSending] = useState(false);
+
+  // ===== FETCH DATA ON MOUNT =====
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setPageLoading(true);
+        setPageError(null);
+
+        // 1. Lấy thông tin appointment + patient từ danh sách appointments của doctor
+        // TODO: Lấy doctor_id từ auth context thay vì hardcode
+        const doctorId = localStorage.getItem('doctor_id') || '85be2ff0-0b7d-489f-a63a-9a0538338773';
+        const apptRes = await getAppointmentsByDoctorId(doctorId);
+        const allAppointments = apptRes.data?.data || apptRes.data || [];
+
+        const currentAppt = allAppointments.find(
+          (a) => a.appointment_id === appointmentId
+        );
+
+        if (!currentAppt) {
+          setPageError('Không tìm thấy lịch hẹn này.');
+          setPageLoading(false);
+          return;
+        }
+
+        // Map appointment data
+        setAppointment({
+          appointment_id: currentAppt.appointment_id,
+          patient_id: currentAppt.Patients?.patient_id || currentAppt.patient_id,
+          doctor_id: currentAppt.doctor_id || doctorId,
+          service_id: currentAppt.service_id,
+          appointment_date: currentAppt.appointment_date,
+          start_time: currentAppt.start_time,
+          end_time: currentAppt.end_time,
+          status: currentAppt.status,
+          queue_number: currentAppt.queue_number,
+          service_name: currentAppt.ClinicServices?.name || '',
+        });
+
+        // Map patient data
+        setPatient({
+          patient_id: currentAppt.Patients?.patient_id || currentAppt.patient_id,
+          full_name: currentAppt.Patients?.Users?.full_name || 'N/A',
+          email: currentAppt.Patients?.Users?.email || '',
+          phone_number: currentAppt.Patients?.Users?.phone_number || '',
+          avatar_url: currentAppt.Patients?.Users?.avatar_url || null,
+          dob: currentAppt.Patients?.dob || '',
+          gender: currentAppt.Patients?.gender || '',
+          address: currentAppt.Patients?.address || '',
+          allergies: currentAppt.Patients?.allergies || '',
+          medical_history_summary: currentAppt.Patients?.medical_history_summary || '',
+        });
+
+        // 2. Kiểm tra đã có medical record cho appointment này chưa
+        try {
+          const recordRes = await medicalRecordApi.getMedicalRecordByAppointmentId(appointmentId);
+          const record = recordRes.data?.data || recordRes.data;
+
+          if (record && record.record_id) {
+            // Đã có record → load data vào form
+            setRecordId(record.record_id);
+            setRecordStatus(record.status || 'in_progress');
+            setSymptoms(record.symptoms || '');
+            setDoctorNotes(record.doctor_notes || '');
+            setDiagnosis(record.diagnosis || '');
+
+            // Load prescriptions nếu có
+            if (record.Prescriptions && record.Prescriptions.length > 0) {
+              setPrescriptions(
+                record.Prescriptions.map((p) => ({
+                  id: p.prescription_id || Date.now() + Math.random(),
+                  prescription_id: p.prescription_id,
+                  medication_name: p.medication_name || '',
+                  dosage: p.dosage || '',
+                  instructions: p.instructions || '',
+                  reminder_schedule: p.reminder_schedule || '',
+                }))
+              );
+            }
+
+            // Load lab orders nếu có
+            if (record.LabOrders && record.LabOrders.length > 0) {
+              setLabOrders(
+                record.LabOrders.map((l) => ({
+                  id: l.lab_order_id || Date.now() + Math.random(),
+                  lab_order_id: l.lab_order_id,
+                  test_name: l.test_name || '',
+                  status: l.status || 'ordered',
+                  result_summary: l.result_summary || '',
+                  result_file_url: l.result_file_url || '',
+                }))
+              );
+            }
+
+            // Cập nhật status appointment nếu record đang in_progress
+            if (currentAppt.status === 'in_progress' || record.status === 'in_progress') {
+              setAppointment((prev) => ({ ...prev, status: 'in_progress' }));
+            }
+            if (record.status === 'completed' || currentAppt.status === 'completed') {
+              setAppointment((prev) => ({ ...prev, status: 'completed' }));
+              setRecordStatus('completed');
+            }
+          }
+        } catch (recordErr) {
+          // 404 = chưa có record → bình thường, không phải lỗi
+          if (recordErr.response?.status !== 404) {
+            console.warn('Lỗi khi kiểm tra medical record:', recordErr);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load examination data:', err);
+        setPageError('Không thể tải dữ liệu khám bệnh. Vui lòng thử lại.');
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    if (appointmentId) {
+      fetchData();
+    }
+  }, [appointmentId]);
+
   // ===== HANDLERS =====
-  const handleStatusChange = () => {
-    if (appointment.status === 'ready') {
-      setAppointment((a) => ({ ...a, status: 'in_progress' }));
-      // TODO: API call to update appointment status
+
+  // Bắt đầu khám → POST /medical-record/start
+  const handleStartExamination = async () => {
+    if (!appointment) return;
+    try {
+      setStarting(true);
+      const payload = {
+        appointment_id: appointment.appointment_id,
+        doctor_id: appointment.doctor_id,
+        patient_id: appointment.patient_id,
+      };
+
+      const res = await medicalRecordApi.startExamination(payload);
+      const record = res.data?.data || res.data;
+
+      setRecordId(record.record_id);
+      setRecordStatus('in_progress');
+      setAppointment((prev) => ({ ...prev, status: 'in_progress' }));
+
+      alert('Đã bắt đầu ca khám!');
+    } catch (err) {
+      console.error('Lỗi khi bắt đầu khám:', err);
+      const msg = err.response?.data?.message || 'Không thể bắt đầu ca khám.';
+      alert(msg);
+    } finally {
+      setStarting(false);
     }
   };
 
@@ -264,81 +389,135 @@ const ExaminationPage = () => {
     );
   };
 
-  const [labSending, setLabSending] = useState(false);
-
+  // Gửi xét nghiệm → POST /lab-orders
   const handleSendLabOrders = async () => {
-    const validOrders = labOrders.filter(
+    const draftOrders = labOrders.filter(
       (l) => l.test_name.trim() && l.status === 'draft'
     );
-    if (validOrders.length === 0) {
+    if (draftOrders.length === 0) {
       alert('Không có xét nghiệm mới nào để gửi.');
       return;
     }
+    if (!recordId) {
+      alert('Vui lòng bắt đầu khám trước khi gửi xét nghiệm.');
+      return;
+    }
 
-    setLabSending(true);
-    const payload = {
-      appointment_id: appointment.appointment_id,
-      doctor_id: appointment.doctor_id,
-      patient_id: appointment.patient_id,
-      lab_orders: validOrders.map((l) => ({
-        test_name: l.test_name.trim(),
-        status: 'ordered',
-      })),
-    };
+    try {
+      setLabSending(true);
+      const payload = {
+        record_id: recordId,
+        doctor_id: appointment.doctor_id,
+        lab_orders: draftOrders.map((l) => ({
+          test_name: l.test_name.trim(),
+        })),
+      };
 
-    console.log('Send Lab Orders:', payload);
-    // TODO: API call — POST /api/lab-orders
+      const res = await labOrderApi.createLabOrders(payload);
+      const createdOrders = res.data?.data || res.data || [];
 
-    // Simulate success → update status to 'sent'
-    setTimeout(() => {
+      // Cập nhật status từ draft → ordered, gán lab_order_id từ server
       setLabOrders((prev) =>
-        prev.map((l) =>
-          l.status === 'draft' && l.test_name.trim()
-            ? { ...l, status: 'sent' }
-            : l
-        )
+        prev.map((l) => {
+          if (l.status === 'draft' && l.test_name.trim()) {
+            const serverOrder = Array.isArray(createdOrders)
+              ? createdOrders.find((s) => s.test_name === l.test_name.trim())
+              : null;
+            return {
+              ...l,
+              status: 'ordered',
+              lab_order_id: serverOrder?.lab_order_id || l.id,
+            };
+          }
+          return l;
+        })
       );
-      setLabSending(false);
+
       alert('Đã gửi yêu cầu xét nghiệm thành công!');
-    }, 800);
+    } catch (err) {
+      console.error('Lỗi khi gửi xét nghiệm:', err);
+      const msg = err.response?.data?.message || 'Không thể gửi yêu cầu xét nghiệm.';
+      alert(msg);
+    } finally {
+      setLabSending(false);
+    }
   };
 
   const hasDraftLabs = labOrders.some(
     (l) => l.status === 'draft' && l.test_name.trim()
   );
 
-  // -- Save / Complete --
-  const handleSaveDraft = () => {
-    const payload = buildPayload();
-    console.log('Save Draft:', payload);
-    // TODO: API call to save draft
-    alert('Đã lưu nháp thành công!');
+  // Lưu nháp → PATCH /medical-record/update/:recordId
+  const handleSaveDraft = async () => {
+    if (!recordId) {
+      alert('Vui lòng bắt đầu khám trước khi lưu.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const payload = buildPayload();
+      await medicalRecordApi.updateMedicalRecord(recordId, payload);
+      alert('Đã lưu nháp thành công!');
+    } catch (err) {
+      console.error('Lỗi khi lưu nháp:', err);
+      const msg = err.response?.data?.message || 'Không thể lưu nháp.';
+      alert(msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleComplete = () => {
+  // Hoàn tất → POST /medical-record/complete
+  const handleComplete = async () => {
     if (!diagnosis.trim()) {
       alert('Vui lòng nhập chẩn đoán trước khi hoàn tất.');
       return;
     }
-    const payload = buildPayload();
-    payload.appointment_status = 'completed';
-    console.log('Complete Exam:', payload);
-    // TODO: API call to save + update appointment status to completed
-    setAppointment((a) => ({ ...a, status: 'completed' }));
-    alert('Hoàn tất ca khám thành công!');
+    if (!recordId) {
+      alert('Vui lòng bắt đầu khám trước khi hoàn tất.');
+      return;
+    }
+
+    // Kiểm tra có lab draft chưa gửi không
+    if (hasDraftLabs) {
+      const confirmSend = window.confirm(
+        'Còn xét nghiệm chưa gửi. Bạn có muốn bỏ qua và hoàn tất?'
+      );
+      if (!confirmSend) return;
+    }
+
+    try {
+      setCompleting(true);
+
+      // Lưu data trước
+      const updatePayload = buildPayload();
+      await medicalRecordApi.updateMedicalRecord(recordId, updatePayload);
+
+      // Hoàn tất
+      const completePayload = {
+        record_id: recordId,
+        appointment_id: appointment.appointment_id,
+      };
+      await medicalRecordApi.completeExamination(completePayload);
+
+      setRecordStatus('completed');
+      setAppointment((prev) => ({ ...prev, status: 'completed' }));
+      alert('Hoàn tất ca khám thành công!');
+    } catch (err) {
+      console.error('Lỗi khi hoàn tất:', err);
+      const msg = err.response?.data?.message || 'Không thể hoàn tất ca khám.';
+      alert(msg);
+    } finally {
+      setCompleting(false);
+    }
   };
 
   const buildPayload = () => ({
-    // MedicalRecords
-    medical_record: {
-      appointment_id: appointment.appointment_id,
-      doctor_id: appointment.doctor_id,
-      patient_id: appointment.patient_id,
-      symptoms: symptoms.trim(),
-      diagnosis: diagnosis.trim(),
-      doctor_notes: doctorNotes.trim(),
-    },
-    // Prescriptions
+    doctor_id: appointment.doctor_id,
+    symptoms: symptoms.trim(),
+    diagnosis: diagnosis.trim(),
+    doctor_notes: doctorNotes.trim(),
     prescriptions: prescriptions
       .filter((p) => p.medication_name.trim())
       .map((p) => ({
@@ -347,25 +526,106 @@ const ExaminationPage = () => {
         instructions: p.instructions.trim(),
         reminder_schedule: p.reminder_schedule,
       })),
-    // LabOrders — handled separately via handleSendLabOrders
-    // Follow-up (UI only — future use)
-    follow_up_date: followUpDate || null,
   });
 
   const viewPatientProfile = () => {
-    navigate(`/doctor/patient/${patient.patient_id}`);
+    if (patient?.patient_id) {
+      navigate(`/doctor/patient/${patient.patient_id}`);
+    }
   };
 
-  const statusInfo = STATUS_MAP[appointment.status] || STATUS_MAP.ready;
+  // Polling lab orders mỗi 30s để cập nhật trạng thái
+  useEffect(() => {
+    if (!recordId || recordStatus === 'completed') return;
+
+    const hasNonCompletedLabs = labOrders.some(
+      (l) => l.status === 'ordered' || l.status === 'processing'
+    );
+    if (!hasNonCompletedLabs) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await labOrderApi.getLabOrdersByRecordId(recordId);
+        const serverLabs = res.data?.data || res.data || [];
+
+        if (Array.isArray(serverLabs) && serverLabs.length > 0) {
+          setLabOrders((prev) => {
+            const draftLabs = prev.filter((l) => l.status === 'draft');
+            const updatedFromServer = serverLabs.map((sl) => ({
+              id: sl.lab_order_id,
+              lab_order_id: sl.lab_order_id,
+              test_name: sl.test_name,
+              status: sl.status,
+              result_summary: sl.result_summary || '',
+              result_file_url: sl.result_file_url || '',
+            }));
+            return [...updatedFromServer, ...draftLabs];
+          });
+        }
+      } catch (err) {
+        console.warn('Polling lab orders failed:', err);
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [recordId, recordStatus, labOrders]);
+
+  // ===== DERIVED STATE =====
+  const isExamStarted = appointment?.status === 'in_progress';
+  const isCompleted = appointment?.status === 'completed' || recordStatus === 'completed';
+
+  const statusInfo = STATUS_MAP[appointment?.status] || STATUS_MAP.ready;
   const StatusIcon = statusInfo.icon;
-  const isExamStarted = appointment.status === 'in_progress';
-  const isCompleted = appointment.status === 'completed';
 
   const formatFollowUp = (dateStr) => {
     if (!dateStr) return null;
     const d = new Date(dateStr);
     return d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
   };
+
+  // ===== LOADING STATE =====
+  if (pageLoading) {
+    return (
+      <div className="ex-layout">
+        <DoctorSidebar activePage="examination" />
+        <main className="ex-main">
+          <div className="ex-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ textAlign: 'center' }}>
+              <FiLoader size={32} className="ex-spin" style={{ color: '#3b82f6', marginBottom: 16 }} />
+              <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Đang tải dữ liệu khám bệnh...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ===== ERROR STATE =====
+  if (pageError || !appointment || !patient) {
+    return (
+      <div className="ex-layout">
+        <DoctorSidebar activePage="examination" />
+        <main className="ex-main">
+          <div className="ex-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+            <div style={{ textAlign: 'center' }}>
+              <FiAlertCircle size={32} style={{ color: '#ef4444', marginBottom: 16 }} />
+              <p style={{ color: '#ef4444', fontSize: '0.95rem', marginBottom: 16 }}>
+                {pageError || 'Không tìm thấy dữ liệu.'}
+              </p>
+              <button
+                className="ex-btn ex-btn--outline"
+                onClick={() => navigate('/doctor/schedule')}
+                type="button"
+              >
+                <FiArrowLeft size={16} />
+                Quay lại lịch khám
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="ex-layout">
@@ -391,7 +651,7 @@ const ExaminationPage = () => {
               <div className="ex-patient-banner__info">
                 <h1 className="ex-patient-banner__name">{patient.full_name}</h1>
                 <div className="ex-patient-banner__meta">
-                  <span className="ex-badge">ID: {patient.patient_id}</span>
+                  <span className="ex-badge">ID: {patient.patient_id?.slice(0, 8)}...</span>
                   <span className="ex-meta-sep">•</span>
                   <span>Tuổi: {calculateAge(patient.dob)}</span>
                   <span className="ex-meta-sep">•</span>
@@ -421,14 +681,25 @@ const ExaminationPage = () => {
                 <span>{statusInfo.label}</span>
               </div>
 
-              {appointment.status === 'ready' && (
+              {/* Nút bắt đầu khám — chỉ hiện khi chưa có record */}
+              {!recordId && !isCompleted && (
                 <button
                   className="ex-btn ex-btn--primary"
-                  onClick={handleStatusChange}
+                  onClick={handleStartExamination}
                   type="button"
+                  disabled={starting}
                 >
-                  <FiPlay size={16} />
-                  Bắt đầu khám
+                  {starting ? (
+                    <>
+                      <FiLoader size={16} className="ex-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <FiPlay size={16} />
+                      Bắt đầu khám
+                    </>
+                  )}
                 </button>
               )}
             </div>
@@ -456,7 +727,7 @@ const ExaminationPage = () => {
                       rows={3}
                       value={symptoms}
                       onChange={(e) => setSymptoms(e.target.value)}
-                      disabled={isCompleted}
+                      disabled={isCompleted || !recordId}
                     />
                   </div>
                   <div className="ex-field">
@@ -470,7 +741,7 @@ const ExaminationPage = () => {
                       rows={3}
                       value={doctorNotes}
                       onChange={(e) => setDoctorNotes(e.target.value)}
-                      disabled={isCompleted}
+                      disabled={isCompleted || !recordId}
                     />
                   </div>
                 </div>
@@ -489,7 +760,7 @@ const ExaminationPage = () => {
                     placeholder="Nhập chẩn đoán bệnh..."
                     value={diagnosis}
                     onChange={(e) => setDiagnosis(e.target.value)}
-                    disabled={isCompleted}
+                    disabled={isCompleted || !recordId}
                   />
                 </div>
               </motion.div>
@@ -499,7 +770,7 @@ const ExaminationPage = () => {
                 <div className="ex-form-card__header">
                   <FiHeart size={18} className="ex-form-card__icon" />
                   <h3 className="ex-form-card__title">Đơn thuốc</h3>
-                  {!isCompleted && (
+                  {!isCompleted && recordId && (
                     <button
                       className="ex-btn-add"
                       onClick={addPrescription}
@@ -523,7 +794,7 @@ const ExaminationPage = () => {
                       >
                         <div className="ex-prescription-item__header">
                           <span className="ex-prescription-item__num">#{idx + 1}</span>
-                          {!isCompleted && prescriptions.length > 1 && (
+                          {!isCompleted && prescriptions.length > 1 && recordId && (
                             <button
                               className="ex-btn-delete"
                               onClick={() => removePrescription(p.id)}
@@ -543,7 +814,7 @@ const ExaminationPage = () => {
                             onChange={(e) =>
                               updatePrescription(p.id, 'medication_name', e.target.value)
                             }
-                            disabled={isCompleted}
+                            disabled={isCompleted || !recordId}
                           />
                           <div className="ex-prescription-item__row">
                             <input
@@ -554,7 +825,7 @@ const ExaminationPage = () => {
                               onChange={(e) =>
                                 updatePrescription(p.id, 'dosage', e.target.value)
                               }
-                              disabled={isCompleted}
+                              disabled={isCompleted || !recordId}
                             />
                             <input
                               type="text"
@@ -564,7 +835,7 @@ const ExaminationPage = () => {
                               onChange={(e) =>
                                 updatePrescription(p.id, 'instructions', e.target.value)
                               }
-                              disabled={isCompleted}
+                              disabled={isCompleted || !recordId}
                             />
                           </div>
                           <label className="ex-checkbox">
@@ -578,7 +849,7 @@ const ExaminationPage = () => {
                                   e.target.checked ? 'daily' : ''
                                 )
                               }
-                              disabled={isCompleted}
+                              disabled={isCompleted || !recordId}
                             />
                             <span>Nhắc bệnh nhân uống thuốc</span>
                           </label>
@@ -600,7 +871,7 @@ const ExaminationPage = () => {
                 <div className="ex-form-card__header ex-form-card__header--lab">
                   <FiActivity size={18} className="ex-form-card__icon" />
                   <h3 className="ex-form-card__title">Chỉ định xét nghiệm</h3>
-                  {!isCompleted && (
+                  {!isCompleted && recordId && (
                     <button
                       className="ex-btn-add"
                       onClick={addLabOrder}
@@ -616,12 +887,12 @@ const ExaminationPage = () => {
                     {labOrders.map((l, idx) => {
                       const labStatus = LAB_STATUS_MAP[l.status] || LAB_STATUS_MAP.draft;
                       const LabIcon = labStatus.icon;
-                      const isSent = l.status !== 'draft';
+                      const isDraft = l.status === 'draft';
 
                       return (
                         <motion.div
                           key={l.id}
-                          className={`ex-lab-card ${isSent ? 'ex-lab-card--sent' : ''}`}
+                          className={`ex-lab-card ${!isDraft ? 'ex-lab-card--sent' : ''}`}
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
@@ -633,7 +904,7 @@ const ExaminationPage = () => {
                               <LabIcon size={12} />
                               <span>{labStatus.label}</span>
                             </div>
-                            {!isCompleted && !isSent && (
+                            {!isCompleted && isDraft && (
                               <button
                                 className="ex-btn-delete"
                                 onClick={() => removeLabOrder(l.id)}
@@ -652,11 +923,11 @@ const ExaminationPage = () => {
                               placeholder="Tên xét nghiệm..."
                               value={l.test_name}
                               onChange={(e) => updateLabOrder(l.id, e.target.value)}
-                              disabled={isCompleted || isSent}
+                              disabled={isCompleted || !isDraft}
                             />
                           </div>
 
-                          {/* Kết quả xét nghiệm - hiển khi completed */}
+                          {/* Kết quả xét nghiệm — hiển thị khi completed */}
                           {l.status === 'completed' && l.result_summary && (
                             <div className="ex-lab-result">
                               <div className="ex-lab-result__header">
@@ -685,7 +956,7 @@ const ExaminationPage = () => {
                     <div className="ex-lab-empty">
                       <FiActivity size={32} className="ex-lab-empty__icon" />
                       <p className="ex-lab-empty__text">Chưa có chỉ định xét nghiệm nào.</p>
-                      {!isCompleted && (
+                      {!isCompleted && recordId && (
                         <button
                           className="ex-btn ex-btn--outline ex-btn--sm"
                           onClick={addLabOrder}
@@ -700,14 +971,16 @@ const ExaminationPage = () => {
                 </div>
 
                 {/* Dedicated Send Button */}
-                {labOrders.length > 0 && !isCompleted && (
+                {labOrders.length > 0 && !isCompleted && recordId && (
                   <div className="ex-lab-action-bar">
                     <div className="ex-lab-action-bar__info">
                       <FiActivity size={14} />
                       <span>
                         {labOrders.filter((l) => l.status === 'draft').length} chưa gửi
-                        {labOrders.filter((l) => l.status === 'sent').length > 0 &&
-                          ` · ${labOrders.filter((l) => l.status === 'sent').length} đã gửi`}
+                        {labOrders.filter((l) => l.status === 'ordered').length > 0 &&
+                          ` · ${labOrders.filter((l) => l.status === 'ordered').length} đã gửi`}
+                        {labOrders.filter((l) => l.status === 'completed').length > 0 &&
+                          ` · ${labOrders.filter((l) => l.status === 'completed').length} có kết quả`}
                       </span>
                     </div>
                     <button
@@ -757,24 +1030,52 @@ const ExaminationPage = () => {
           </div>
 
           {/* ===== ACTION BAR ===== */}
-          {!isCompleted && (
+          {!isCompleted && recordId && (
             <motion.div className="ex-action-bar" variants={itemVariants}>
               <button
                 className="ex-btn ex-btn--outline"
                 onClick={handleSaveDraft}
                 type="button"
+                disabled={saving}
               >
-                <FiSave size={16} />
-                Lưu nháp
+                {saving ? (
+                  <>
+                    <FiLoader size={16} className="ex-spin" />
+                    Đang lưu...
+                  </>
+                ) : (
+                  <>
+                    <FiSave size={16} />
+                    Lưu nháp
+                  </>
+                )}
               </button>
               <button
                 className="ex-btn ex-btn--primary ex-btn--lg"
                 onClick={handleComplete}
                 type="button"
+                disabled={completing}
               >
-                <FiCheckCircle size={16} />
-                Hoàn tất ca khám
+                {completing ? (
+                  <>
+                    <FiLoader size={16} className="ex-spin" />
+                    Đang hoàn tất...
+                  </>
+                ) : (
+                  <>
+                    <FiCheckCircle size={16} />
+                    Hoàn tất ca khám
+                  </>
+                )}
               </button>
+            </motion.div>
+          )}
+
+          {/* Thông báo chưa bắt đầu khám */}
+          {!recordId && !isCompleted && (
+            <motion.div className="ex-completed-banner" variants={itemVariants} style={{ background: '#FFF7ED', borderColor: '#FDBA74', color: '#C2410C' }}>
+              <FiAlertCircle size={20} />
+              <span>Vui lòng bấm "Bắt đầu khám" để tạo bệnh án và bắt đầu ghi chú.</span>
             </motion.div>
           )}
 

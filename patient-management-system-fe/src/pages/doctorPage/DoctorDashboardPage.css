@@ -454,3 +454,13 @@
     justify-content: center;
   }
 }
+
+/* ===== SPINNER ===== */
+@keyframes lr-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.lr-spin {
+  animation: lr-spin 1s linear infinite;
+}

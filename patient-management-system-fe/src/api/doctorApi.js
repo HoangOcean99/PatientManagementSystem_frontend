@@ -23,3 +23,8 @@ export const updateDoctor = async (id, data) => {
     const url = `/doctor/update/${id}`; 
     return axiosClient.patch(url, data);
 };
+
+export const getAppointmentsByDoctorId = async (id) => {
+    const url = `/doctor/appointments/${id}`;
+    return axiosClient.get(url);
+};
