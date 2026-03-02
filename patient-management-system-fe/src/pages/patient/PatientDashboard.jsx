@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const NAV_CARDS = [

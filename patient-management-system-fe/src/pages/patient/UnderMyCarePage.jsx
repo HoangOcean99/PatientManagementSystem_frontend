@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
 import axiosClient from '../../api/axiosClient';
-import LoadingSpinner from '../../components/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const RELATION_MAP = {
     father: 'Cha',

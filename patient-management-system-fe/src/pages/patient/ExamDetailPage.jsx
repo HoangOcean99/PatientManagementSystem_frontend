@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import axiosClient from '../../api/axiosClient';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const Section = ({ icon, title, iconGradient, children }) => (
