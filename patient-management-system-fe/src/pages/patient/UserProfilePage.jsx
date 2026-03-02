@@ -35,10 +35,10 @@ const UserProfilePage = () => {
             try {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id;
-                if (!userId) {
-                    navigate('/login');
-                    return;
-                }
+                // if (!userId) {
+                //     navigate('/login');
+                //     return;
+                // }
                 const res = await axiosClient.get(`/patients/${userId}`);
                 setProfile(res.data?.data || null);
             } catch (err) {

@@ -18,7 +18,7 @@ const ExamHistoryPage = () => {
             try {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id;
-                if (!userId) { navigate('/login'); return; }
+                // if (!userId) { navigate('/login'); return; }
                 const res = await axiosClient.get('/medical-records', { params: { patient_id: userId } });
                 setRecords(res.data?.data || []);
             } catch (err) {
