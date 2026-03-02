@@ -154,9 +154,8 @@ const LabQueuePage = () => {
       </div>
     )
   }
-  
-  return (
 
+  return (
     <main className="lq-main p-8">
       <motion.div
         className="lq-content"
