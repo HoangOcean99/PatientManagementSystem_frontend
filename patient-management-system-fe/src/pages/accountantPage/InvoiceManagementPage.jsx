@@ -192,10 +192,8 @@ const InvoiceManagementPage = () => {
   };
 
   return (
-    <div className="acc-inv-layout">
-      <AccountantSidebar activePage="invoices" />
-
-      <main className="acc-inv-main">
+    <div className="acc-inv-layout" style={{ width: '100vw' }}>
+      <main className="acc-inv-main p-8">
         <motion.div
           className="acc-inv-content"
           variants={containerVariants}

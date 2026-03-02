@@ -26,6 +26,9 @@ export default function PublicRoute({ children }) {
     if (userRole === "receptionist") {
       return <Navigate to="/receptionist/dashboard" replace />;
     }
+    if (userRole === "accountant") {
+      return <Navigate to="/accountant/dashboard" replace />;
+    }
 
     return <Navigate to="/login" replace />;
   }

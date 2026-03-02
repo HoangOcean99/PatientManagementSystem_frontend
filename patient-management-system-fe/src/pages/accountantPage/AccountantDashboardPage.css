@@ -1,6 +1,6 @@
 /* ============================
    AccountantDashboardPage
-   Theme: Teal / Emerald (Finance)
+   Theme: Blue / Ocean (Finance)
    ============================ */
 
 /* ===== LAYOUT ===== */
@@ -14,15 +14,12 @@
 
 .acc-dash-main {
   flex: 1;
-  margin-left: var(--acc-sidebar-width, 260px);
   min-height: 100vh;
   overflow-y: auto;
 }
 
 .acc-dash-content {
-  max-width: 1100px;
   margin: 0 auto;
-  padding: 28px 36px 48px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -30,7 +27,8 @@
 
 /* ===== WELCOME BANNER ===== */
 .acc-dash-welcome {
-  background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+  /* Chuyển sang Blue Gradient */
+  background: linear-gradient(135deg, #2563EB 0%, #1E40AF 100%);
   border-radius: 18px;
   padding: 28px 32px;
   color: #fff;
@@ -110,23 +108,24 @@
   flex-shrink: 0;
 }
 
+/* Cập nhật Icon màu xanh dương chính */
 .acc-dash-stat-card__icon--revenue {
-  background: #F0FDFA;
-  color: #0D9488;
+  background: #EFF6FF;
+  color: #2563EB;
 }
 
 .acc-dash-stat-card__icon--deposit {
   background: #DBEAFE;
-  color: #2563EB;
+  color: #1D4ED8;
 }
 
 .acc-dash-stat-card__icon--unpaid {
-  background: #FEF3C7;
-  color: #D97706;
+  background: #FFF7ED;
+  color: #EA580C;
 }
 
 .acc-dash-stat-card__icon--pending {
-  background: #FEE2E2;
+  background: #FEF2F2;
   color: #DC2626;
 }
 
@@ -168,7 +167,8 @@
   justify-content: space-between;
   padding: 16px 24px;
   border-bottom: 1px solid #F1F5F9;
-  background: #F0FDFA;
+  background: #EFF6FF;
+  /* Nhẹ nhàng với tone xanh biển */
 }
 
 .acc-dash-section__title {
@@ -182,7 +182,8 @@
 }
 
 .acc-dash-section__title svg {
-  color: #0D9488;
+  color: #2563EB;
+  /* Icon tiêu đề màu xanh dương */
 }
 
 /* ===== TRANSACTION LIST ===== */
@@ -223,13 +224,13 @@
 }
 
 .acc-dash-txn-item__type-icon--invoice {
-  background: #F0FDFA;
-  color: #0D9488;
+  background: #EFF6FF;
+  color: #3B82F6;
 }
 
 .acc-dash-txn-item__type-icon--transfer {
-  background: #FEF3C7;
-  color: #D97706;
+  background: #FFF7ED;
+  color: #EA580C;
 }
 
 .acc-dash-txn-item__info {
@@ -267,17 +268,17 @@
 
 .acc-dash-txn-item__status--confirmed,
 .acc-dash-txn-item__status--paid {
-  background: #ECFDF5;
-  color: #059669;
+  background: #F0FDF4;
+  color: #16A34A;
 }
 
 .acc-dash-txn-item__status--pending {
-  background: #FEF3C7;
-  color: #D97706;
+  background: #FFF7ED;
+  color: #EA580C;
 }
 
 .acc-dash-txn-item__status--unpaid {
-  background: #FEE2E2;
+  background: #FEF2F2;
   color: #DC2626;
 }
 
@@ -304,8 +305,8 @@
 }
 
 .acc-dash-quick-btn:hover {
-  border-color: #0D9488;
-  background: #F0FDFA;
+  border-color: #2563EB;
+  background: #EFF6FF;
   transform: translateY(-1px);
 }
 
@@ -313,8 +314,8 @@
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  background: #F0FDFA;
-  color: #0D9488;
+  background: #EFF6FF;
+  color: #2563EB;
   display: flex;
   align-items: center;
   justify-content: center;

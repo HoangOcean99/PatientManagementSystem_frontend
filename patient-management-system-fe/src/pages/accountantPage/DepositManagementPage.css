@@ -1,6 +1,6 @@
 /* ============================
    DepositManagementPage
-   Theme: Teal / Emerald
+   Theme: Blue / Ocean (Finance)
    ============================ */
 
 /* ===== LAYOUT ===== */
@@ -14,15 +14,12 @@
 
 .acc-dep-main {
   flex: 1;
-  margin-left: var(--acc-sidebar-width, 260px);
   min-height: 100vh;
   overflow-y: auto;
 }
 
 .acc-dep-content {
-  max-width: 1200px;
   margin: 0 auto;
-  padding: 28px 36px 48px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -47,7 +44,8 @@
 }
 
 .acc-dep-header__title svg {
-  color: #0D9488;
+  color: #2563EB;
+  /* Đổi từ Teal sang Blue */
 }
 
 .acc-dep-header__subtitle {
@@ -61,7 +59,8 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: #0D9488;
+  background: #2563EB;
+  /* Nút chính màu xanh biển */
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -71,11 +70,11 @@
   transition: all 0.2s ease;
   font-family: inherit;
   white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
 }
 
 .acc-dep-header__add-btn:hover {
-  background: #0F766E;
+  background: #1D4ED8;
 }
 
 /* ===== FILTERS ===== */
@@ -99,7 +98,7 @@
 }
 
 .acc-dep-filters__search:focus-within {
-  border-color: #0D9488;
+  border-color: #2563EB;
 }
 
 .acc-dep-filters__search svg {
@@ -160,7 +159,8 @@
 }
 
 .acc-dep-table thead {
-  background: #F0FDFA;
+  background: #EFF6FF;
+  /* Nền tiêu đề bảng xanh nhạt */
 }
 
 .acc-dep-table th {
@@ -191,7 +191,8 @@
 
 .acc-dep-table__code {
   font-weight: 600;
-  color: #0D9488;
+  color: #2563EB;
+  /* Mã phiếu màu xanh dương */
   font-size: 13px;
 }
 
@@ -223,17 +224,17 @@
 }
 
 .acc-dep-badge--pending {
-  background: #FEF3C7;
-  color: #D97706;
+  background: #FFF7ED;
+  color: #EA580C;
 }
 
 .acc-dep-badge--confirmed {
-  background: #ECFDF5;
-  color: #059669;
+  background: #F0FDF4;
+  color: #16A34A;
 }
 
 .acc-dep-badge--applied {
-  background: #DBEAFE;
+  background: #EFF6FF;
   color: #2563EB;
 }
 
@@ -267,27 +268,27 @@
 }
 
 .acc-dep-action-btn--view:hover {
-  color: #0D9488;
-  border-color: #0D9488;
-  background: #F0FDFA;
+  color: #2563EB;
+  border-color: #2563EB;
+  background: #EFF6FF;
 }
 
 .acc-dep-action-btn--confirm:hover {
-  color: #059669;
-  border-color: #059669;
-  background: #ECFDF5;
+  color: #16A34A;
+  border-color: #16A34A;
+  background: #F0FDF4;
 }
 
 .acc-dep-action-btn--apply:hover {
   color: #2563EB;
   border-color: #2563EB;
-  background: #DBEAFE;
+  background: #EFF6FF;
 }
 
 .acc-dep-action-btn--refund:hover {
-  color: #D97706;
-  border-color: #D97706;
-  background: #FEF3C7;
+  color: #EA580C;
+  border-color: #EA580C;
+  background: #FFF7ED;
 }
 
 /* ===== MODAL ===== */
@@ -318,7 +319,8 @@
   justify-content: space-between;
   padding: 20px 24px;
   border-bottom: 1px solid #F1F5F9;
-  background: #F0FDFA;
+  background: #EFF6FF;
+  /* Header modal xanh dương nhạt */
 }
 
 .acc-dep-modal__header h3 {
@@ -343,7 +345,7 @@
 }
 
 .acc-dep-modal__close:hover {
-  background: #FEE2E2;
+  background: #FEF2F2;
   color: #EF4444;
 }
 
@@ -376,7 +378,7 @@
 .acc-dep-modal__value--strong {
   font-weight: 700;
   font-size: 16px;
-  color: #0D9488;
+  color: #2563EB;
 }
 
 .acc-dep-modal__footer {
@@ -402,12 +404,12 @@
 }
 
 .acc-dep-modal__btn--confirm {
-  background: #059669;
+  background: #16A34A;
   color: #fff;
 }
 
 .acc-dep-modal__btn--confirm:hover {
-  background: #047857;
+  background: #15803D;
 }
 
 .acc-dep-modal__btn--apply {
@@ -420,12 +422,12 @@
 }
 
 .acc-dep-modal__btn--refund {
-  background: #D97706;
+  background: #EA580C;
   color: #fff;
 }
 
 .acc-dep-modal__btn--refund:hover {
-  background: #B45309;
+  background: #C2410C;
 }
 
 .acc-dep-modal__btn--close {
@@ -465,7 +467,7 @@
 
 .acc-dep-form-group input:focus,
 .acc-dep-form-group textarea:focus {
-  border-color: #0D9488;
+  border-color: #2563EB;
 }
 
 /* ===== FOOTER ===== */

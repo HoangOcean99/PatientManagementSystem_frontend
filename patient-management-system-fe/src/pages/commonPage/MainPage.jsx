@@ -6,11 +6,12 @@ import { ItemsDoctorSideBar } from "../../components/sidebar/ItemsDoctorSideBar"
 import { ItemsPatientSideBar } from "../../components/sidebar/ItemsPatientSideBar";
 import { ItemsLabSideBar } from "../../components/sidebar/ItemsLabSideBar";
 import { ItemsReceptionistSideBar } from "../../components/sidebar/ItemsReceptionistSideBar";
+import { ItemsAccountantSideBar } from "../../components/sidebar/ItemsAccountantSideBar";
 
 
 export default function MainPage() {
     const location = useLocation();
-    let items = '';
+    let items = [];
 
     if (location.pathname.startsWith("/admin")) {
         items = ItemsAdminSideBar;
@@ -22,6 +23,10 @@ export default function MainPage() {
         items = ItemsLabSideBar;
     } else if (location.pathname.startsWith("/receptionist")) {
         items = ItemsReceptionistSideBar;
+    } else if (location.pathname.startsWith("/accountant")) {
+        items = ItemsAccountantSideBar;
+    } else {
+        items = [];
     }
 
     return (

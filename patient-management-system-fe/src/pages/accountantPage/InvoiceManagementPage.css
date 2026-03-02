@@ -1,6 +1,6 @@
 /* ============================
    InvoiceManagementPage
-   Theme: Teal / Emerald
+   Theme: Blue / Ocean (Finance)
    ============================ */
 
 /* ===== LAYOUT ===== */
@@ -14,15 +14,12 @@
 
 .acc-inv-main {
   flex: 1;
-  margin-left: var(--acc-sidebar-width, 260px);
   min-height: 100vh;
   overflow-y: auto;
 }
 
 .acc-inv-content {
-  max-width: 1200px;
   margin: 0 auto;
-  padding: 28px 36px 48px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -46,7 +43,8 @@
 }
 
 .acc-inv-header__title svg {
-  color: #0D9488;
+  color: #2563EB;
+  /* Chuyển sang Blue */
 }
 
 .acc-inv-header__subtitle {
@@ -76,7 +74,7 @@
 }
 
 .acc-inv-filters__search:focus-within {
-  border-color: #0D9488;
+  border-color: #2563EB;
 }
 
 .acc-inv-filters__search svg {
@@ -137,7 +135,8 @@
 }
 
 .acc-inv-table thead {
-  background: #F0FDFA;
+  background: #EFF6FF;
+  /* Nền header bảng xanh dương nhạt */
 }
 
 .acc-inv-table th {
@@ -168,7 +167,8 @@
 
 .acc-inv-table__code {
   font-weight: 600;
-  color: #0D9488;
+  color: #2563EB;
+  /* Màu mã hóa đơn */
   font-size: 13px;
 }
 
@@ -182,7 +182,8 @@
 }
 
 .acc-inv-table__deposit {
-  color: #059669;
+  color: #16A34A;
+  /* Màu xanh lá cho số tiền đã cọc */
   font-weight: 600;
   white-space: nowrap;
 }
@@ -210,13 +211,13 @@
 }
 
 .acc-inv-badge--paid {
-  background: #ECFDF5;
-  color: #059669;
+  background: #F0FDF4;
+  color: #16A34A;
 }
 
 .acc-inv-badge--unpaid {
-  background: #FEF3C7;
-  color: #D97706;
+  background: #FFF7ED;
+  color: #EA580C;
 }
 
 .acc-inv-badge--cancelled {
@@ -249,14 +250,14 @@
 }
 
 .acc-inv-action-btn--view:hover {
-  color: #0D9488;
-  border-color: #0D9488;
-  background: #F0FDFA;
+  color: #2563EB;
+  border-color: #2563EB;
+  background: #EFF6FF;
 }
 
 .acc-inv-action-btn--print:hover {
-  color: #2563EB;
-  border-color: #2563EB;
+  color: #1D4ED8;
+  border-color: #1D4ED8;
   background: #DBEAFE;
 }
 
@@ -289,7 +290,8 @@
   justify-content: space-between;
   padding: 20px 24px;
   border-bottom: 1px solid #F1F5F9;
-  background: #F0FDFA;
+  background: #EFF6FF;
+  /* Header modal xanh dương */
   position: sticky;
   top: 0;
   z-index: 1;
@@ -316,7 +318,7 @@
 }
 
 .acc-inv-modal__close:hover {
-  background: #FEE2E2;
+  background: #FEF2F2;
   color: #EF4444;
 }
 
@@ -411,13 +413,14 @@
 }
 
 .acc-inv-modal__summary-row--deposit {
-  color: #059669;
+  color: #16A34A;
 }
 
 .acc-inv-modal__summary-row--total {
   font-size: 16px;
   font-weight: 800;
-  color: #0F172A;
+  color: #2563EB;
+  /* Highlight tổng tiền màu xanh dương */
   padding-top: 8px;
   border-top: 2px solid #0F172A;
 }
@@ -449,12 +452,12 @@
 }
 
 .acc-inv-modal__btn--paid {
-  background: #059669;
+  background: #16A34A;
   color: #fff;
 }
 
 .acc-inv-modal__btn--paid:hover {
-  background: #047857;
+  background: #15803D;
 }
 
 .acc-inv-modal__btn--print {
@@ -517,6 +520,7 @@
 
 /* ===== PRINT HIDE ===== */
 @media print {
+
   .acc-inv-layout,
   .acc-inv-modal-overlay {
     display: none !important;

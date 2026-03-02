@@ -61,153 +61,140 @@ const AccountantDashboardPage = () => {
   };
 
   return (
-    <div className="acc-dash-layout">
-      <AccountantSidebar activePage="dashboard" />
-
-      <main className="acc-dash-main">
-        <motion.div
-          className="acc-dash-content"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Welcome Banner */}
-          <motion.div className="acc-dash-welcome" variants={itemVariants}>
-            <h1 className="acc-dash-welcome__greeting">
-              Xin chào, Kế toán! 💰
-            </h1>
-            <p className="acc-dash-welcome__date">{getTodayFormatted()}</p>
-          </motion.div>
-
-          {/* Stat Cards */}
-          <motion.div className="acc-dash-stats" variants={itemVariants}>
-            <div className="acc-dash-stat-card">
-              <div className="acc-dash-stat-card__icon acc-dash-stat-card__icon--revenue">
-                <FiTrendingUp size={22} />
-              </div>
-              <div className="acc-dash-stat-card__info">
-                <p className="acc-dash-stat-card__label">Tổng thu hôm nay</p>
-                <p className="acc-dash-stat-card__value">{formatCurrency(stats.totalRevenue)}</p>
-              </div>
-            </div>
-
-            <div className="acc-dash-stat-card">
-              <div className="acc-dash-stat-card__icon acc-dash-stat-card__icon--deposit">
-                <FiDollarSign size={22} />
-              </div>
-              <div className="acc-dash-stat-card__info">
-                <p className="acc-dash-stat-card__label">Tổng đặt cọc</p>
-                <p className="acc-dash-stat-card__value">{formatCurrency(stats.totalDeposits)}</p>
-              </div>
-            </div>
-
-            <div className="acc-dash-stat-card">
-              <div className="acc-dash-stat-card__icon acc-dash-stat-card__icon--unpaid">
-                <FiFileText size={22} />
-              </div>
-              <div className="acc-dash-stat-card__info">
-                <p className="acc-dash-stat-card__label">Hoá đơn chưa TT</p>
-                <p className="acc-dash-stat-card__value">{stats.unpaidInvoices}</p>
-              </div>
-            </div>
-
-            <div className="acc-dash-stat-card">
-              <div className="acc-dash-stat-card__icon acc-dash-stat-card__icon--pending">
-                <FiClock size={22} />
-              </div>
-              <div className="acc-dash-stat-card__info">
-                <p className="acc-dash-stat-card__label">Chờ xác nhận CK</p>
-                <p className="acc-dash-stat-card__value">{stats.pendingTransfers}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Recent Transactions */}
-          <motion.div className="acc-dash-section" variants={itemVariants}>
-            <div className="acc-dash-section__header">
-              <h2 className="acc-dash-section__title">
-                <FiCalendar size={18} />
-                Giao dịch gần đây
-              </h2>
-            </div>
-
-            <div className="acc-dash-transactions">
-              {MOCK_RECENT_TRANSACTIONS.map((txn) => (
-                <div key={txn.id} className="acc-dash-txn-item">
-                  <div className={`acc-dash-txn-item__type-icon acc-dash-txn-item__type-icon--${txn.type}`}>
-                    {txn.type === 'deposit' && <FiDollarSign size={16} />}
-                    {txn.type === 'invoice' && <FiFileText size={16} />}
-                    {txn.type === 'transfer' && <FiCheckSquare size={16} />}
-                  </div>
-                  <div className="acc-dash-txn-item__info">
-                    <p className="acc-dash-txn-item__patient">{txn.patient}</p>
-                    <span className="acc-dash-txn-item__meta">
-                      {TYPE_LABELS[txn.type]} • {txn.date}
-                    </span>
-                  </div>
-                  <span className="acc-dash-txn-item__amount">
-                    {formatCurrency(txn.amount)}
-                  </span>
-                  <span className={`acc-dash-txn-item__status acc-dash-txn-item__status--${txn.status}`}>
-                    {STATUS_LABELS[txn.status]}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Quick Actions */}
-          <motion.div className="acc-dash-section" variants={itemVariants}>
-            <div className="acc-dash-section__header">
-              <h2 className="acc-dash-section__title">Thao tác nhanh</h2>
-            </div>
-            <div className="acc-dash-quick-actions">
-              <button className="acc-dash-quick-btn" onClick={() => navigate('/accountant/deposits')}>
-                <div className="acc-dash-quick-btn__icon">
-                  <FiDollarSign size={20} />
-                </div>
-                <div>
-                  <div className="acc-dash-quick-btn__label">Quản lý đặt cọc</div>
-                  <div className="acc-dash-quick-btn__desc">Xem và quản lý tiền cọc</div>
-                </div>
-              </button>
-              <button className="acc-dash-quick-btn" onClick={() => navigate('/accountant/invoices')}>
-                <div className="acc-dash-quick-btn__icon">
-                  <FiFileText size={20} />
-                </div>
-                <div>
-                  <div className="acc-dash-quick-btn__label">Quản lý hoá đơn</div>
-                  <div className="acc-dash-quick-btn__desc">Tạo và xuất hoá đơn</div>
-                </div>
-              </button>
-              <button className="acc-dash-quick-btn" onClick={() => navigate('/accountant/payments')}>
-                <div className="acc-dash-quick-btn__icon">
-                  <FiCheckSquare size={20} />
-                </div>
-                <div>
-                  <div className="acc-dash-quick-btn__label">Xác nhận CK</div>
-                  <div className="acc-dash-quick-btn__desc">Xác nhận chuyển khoản</div>
-                </div>
-              </button>
-              <button className="acc-dash-quick-btn" onClick={() => navigate('/accountant/profile')}>
-                <div className="acc-dash-quick-btn__icon">
-                  <FiUser size={20} />
-                </div>
-                <div>
-                  <div className="acc-dash-quick-btn__label">Hồ sơ cá nhân</div>
-                  <div className="acc-dash-quick-btn__desc">Cập nhật thông tin</div>
-                </div>
-              </button>
-            </div>
-          </motion.div>
-
-          {/* Footer */}
-          <motion.footer className="acc-dash-footer" variants={itemVariants}>
-            <p>&copy; 2026 MedSchedule. All rights reserved.</p>
-          </motion.footer>
+    <main className="acc-dash-main">
+      <motion.div
+        className="acc-dash-content p-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Welcome Banner */}
+        <motion.div className="acc-dash-welcome" variants={itemVariants}>
+          <h1 className="acc-dash-welcome__greeting">
+            Xin chào, Kế toán! 💰
+          </h1>
+          <p className="acc-dash-welcome__date">{getTodayFormatted()}</p>
         </motion.div>
-      </main>
-    </div>
+
+        {/* Stat Cards */}
+        <motion.div className="acc-dash-stats" variants={itemVariants}>
+          <div className="acc-dash-stat-card">
+            <div className="acc-dash-stat-card__icon acc-dash-stat-card__icon--revenue">
+              <FiTrendingUp size={22} />
+            </div>
+            <div className="acc-dash-stat-card__info">
+              <p className="acc-dash-stat-card__label">Tổng thu hôm nay</p>
+              <p className="acc-dash-stat-card__value">{formatCurrency(stats.totalRevenue)}</p>
+            </div>
+          </div>
+
+          <div className="acc-dash-stat-card">
+            <div className="acc-dash-stat-card__icon acc-dash-stat-card__icon--deposit">
+              <FiDollarSign size={22} />
+            </div>
+            <div className="acc-dash-stat-card__info">
+              <p className="acc-dash-stat-card__label">Tổng đặt cọc</p>
+              <p className="acc-dash-stat-card__value">{formatCurrency(stats.totalDeposits)}</p>
+            </div>
+          </div>
+
+          <div className="acc-dash-stat-card">
+            <div className="acc-dash-stat-card__icon acc-dash-stat-card__icon--unpaid">
+              <FiFileText size={22} />
+            </div>
+            <div className="acc-dash-stat-card__info">
+              <p className="acc-dash-stat-card__label">Hoá đơn chưa TT</p>
+              <p className="acc-dash-stat-card__value">{stats.unpaidInvoices}</p>
+            </div>
+          </div>
+
+          <div className="acc-dash-stat-card">
+            <div className="acc-dash-stat-card__icon acc-dash-stat-card__icon--pending">
+              <FiClock size={22} />
+            </div>
+            <div className="acc-dash-stat-card__info">
+              <p className="acc-dash-stat-card__label">Chờ xác nhận CK</p>
+              <p className="acc-dash-stat-card__value">{stats.pendingTransfers}</p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Recent Transactions */}
+        <motion.div className="acc-dash-section" variants={itemVariants}>
+          <div className="acc-dash-section__header">
+            <h2 className="acc-dash-section__title">
+              <FiCalendar size={18} />
+              Giao dịch gần đây
+            </h2>
+          </div>
+
+          <div className="acc-dash-transactions">
+            {MOCK_RECENT_TRANSACTIONS.map((txn) => (
+              <div key={txn.id} className="acc-dash-txn-item">
+                <div className={`acc-dash-txn-item__type-icon acc-dash-txn-item__type-icon--${txn.type}`}>
+                  {txn.type === 'deposit' && <FiDollarSign size={16} />}
+                  {txn.type === 'invoice' && <FiFileText size={16} />}
+                  {txn.type === 'transfer' && <FiCheckSquare size={16} />}
+                </div>
+                <div className="acc-dash-txn-item__info">
+                  <p className="acc-dash-txn-item__patient">{txn.patient}</p>
+                  <span className="acc-dash-txn-item__meta">
+                    {TYPE_LABELS[txn.type]} • {txn.date}
+                  </span>
+                </div>
+                <span className="acc-dash-txn-item__amount">
+                  {formatCurrency(txn.amount)}
+                </span>
+                <span className={`acc-dash-txn-item__status acc-dash-txn-item__status--${txn.status}`}>
+                  {STATUS_LABELS[txn.status]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Quick Actions */}
+        <motion.div className="acc-dash-section" variants={itemVariants}>
+          <div className="acc-dash-section__header">
+            <h2 className="acc-dash-section__title">Thao tác nhanh</h2>
+          </div>
+          <div className="acc-dash-quick-actions">
+            <button className="acc-dash-quick-btn" onClick={() => navigate('/accountant/deposits')}>
+              <div className="acc-dash-quick-btn__icon">
+                <FiDollarSign size={20} />
+              </div>
+              <div>
+                <div className="acc-dash-quick-btn__label">Quản lý đặt cọc</div>
+                <div className="acc-dash-quick-btn__desc">Xem và quản lý tiền cọc</div>
+              </div>
+            </button>
+            <button className="acc-dash-quick-btn" onClick={() => navigate('/accountant/invoices')}>
+              <div className="acc-dash-quick-btn__icon">
+                <FiFileText size={20} />
+              </div>
+              <div>
+                <div className="acc-dash-quick-btn__label">Quản lý hoá đơn</div>
+                <div className="acc-dash-quick-btn__desc">Tạo và xuất hoá đơn</div>
+              </div>
+            </button>
+            <button className="acc-dash-quick-btn" onClick={() => navigate('/accountant/profile')}>
+              <div className="acc-dash-quick-btn__icon">
+                <FiUser size={20} />
+              </div>
+              <div>
+                <div className="acc-dash-quick-btn__label">Hồ sơ cá nhân</div>
+                <div className="acc-dash-quick-btn__desc">Cập nhật thông tin</div>
+              </div>
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Footer */}
+        <motion.footer className="acc-dash-footer" variants={itemVariants}>
+          <p>&copy; 2026 MedSchedule. All rights reserved.</p>
+        </motion.footer>
+      </motion.div>
+    </main>
   );
 };
 

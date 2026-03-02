@@ -87,10 +87,8 @@ const DepositManagementPage = () => {
   };
 
   return (
-    <div className="acc-dep-layout">
-      <AccountantSidebar activePage="deposits" />
-
-      <main className="acc-dep-main">
+    <div className="acc-dep-layout" style={{ width: '100vw' }}>
+      <main className="acc-dep-main p-8">
         <motion.div
           className="acc-dep-content"
           variants={containerVariants}
