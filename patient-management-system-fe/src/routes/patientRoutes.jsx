@@ -1,6 +1,5 @@
 import PatientDashboard from "../pages/patient/PatientDashboard";
 import UserProfilePage from "../pages/patient/UserProfilePage";
-import ChangePasswordPage from "../pages/patient/ChangePasswordPage";
 import ExamHistoryPage from "../pages/patient/ExamHistoryPage";
 import ExamDetailPage from "../pages/patient/ExamDetailPage";
 import BookingAppointmentPage from "../pages/patient/BookingAppointmentPage";
@@ -23,14 +22,6 @@ const patientRoutes = [
         element: (
             <ProtectedRoute allowedRoles={["patient"]}>
                 <UserProfilePage />
-            </ProtectedRoute>
-        )
-    },
-    {
-        path: '/patient/change-password',
-        element: (
-            <ProtectedRoute allowedRoles={["patient"]}>
-                <ChangePasswordPage />
             </ProtectedRoute>
         )
     },
