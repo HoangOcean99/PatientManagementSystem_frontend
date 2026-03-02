@@ -149,7 +149,7 @@ const LabQueuePage = () => {
   const completedCount = labOrders.filter((l) => l.status === 'completed').length;
 
   return (
-    <div className="lq-layout">
+    <div className="lq-layout" style={{ width: '100vw' }}>
       <DoctorSidebar activePage="lab-queue" role="lab" />
 
       <main className="lq-main">
