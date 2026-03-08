@@ -2,7 +2,7 @@ import ProtectedRoute from "../components/security/ProtectedRoute";
 
 import Dashboard from "../pages/receptionistPage/Dashboard";
 import Coordinator from "../pages/receptionistPage/Coordinator";
-import ReceptionistProfile from "../pages/receptionistPage/receptionistProfile";
+import ReceptionistProfile from "../pages/receptionistPage/ReceptionistProfile";
 import QueuePatientDashboard from "../pages/receptionistPage/QueuePatientDashboard";
 
 const receptionistRoutes = [
