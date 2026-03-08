@@ -1,171 +1,152 @@
 import React, { useState } from 'react';
 import * as Icons from "lucide-react";
 
-// Component con cho từng dòng cấu hình giờ làm việc
-const WorkingDayRow = ({ day, active, start, end }) => (
-    <div className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-        <span className="text-sm font-medium text-gray-700 w-24">{day}</span>
-        <div className="flex items-center gap-4">
-            <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked={active} />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-            <div className="flex gap-2">
-                <input type="text" defaultValue={start} className="w-20 px-3 py-1.5 border border-gray-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                <input type="text" defaultValue={end} className="w-20 px-3 py-1.5 border border-gray-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500" />
-            </div>
-        </div>
-    </div>
-);
-
 const ScheduleManagement = () => {
+    // Mock dữ liệu từ bảng Departments
+    const [departments] = useState([
+        { id: '1000...', name: 'General', status: 'Active' },
+        { id: '8d8c...', name: 'Khoa Nội Tổng Quát', status: 'Active' },
+        { id: 'd1d1...', name: 'Khoa Nhi', status: 'Active' },
+        { id: 'a616...', name: 'Khoa Da Liễu', status: 'Active' },
+    ]);
+
     return (
-        <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8">
-            <div className="flex justify-between items-center">
-                <div >
-                    <h1 className="text-3xl font-bold text-gray-800">Thiết lập lịch trình toàn cầu</h1>
-                    <p className="text-gray-500 mt-1 font-medium">Thiết lập lịch chung và các sự kiện đặc biệt.</p>
+        <main className="flex-1 overflow-y-auto bg-gray-50/30">
+            {/* HEADER: Chứa các hành động quan trọng nhất */}
+            <div className="mx-auto flex justify-between items-start mb-10 p-8">
+                <div>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">CẤU HÌNH VẬN HÀNH</h1>
+                    <p className="text-slate-500 font-medium">Thiết lập tham số thời gian và quy tắc hệ thống cho toàn bộ phòng khám.</p>
                 </div>
                 <div className="flex gap-3">
-                    <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 transition-all">
-                        <Icons.Save size={18} /> Lưu thay đổi
+                    <button className="flex items-center gap-2 bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all">
+                        <Icons.History size={18} /> Xem Audit Logs
                     </button>
-                    <button className="flex items-center gap-2 border border-gray-200 bg-white text-gray-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-all">
-                        <Icons.Plus size={18} /> Thêm sự kiện mới
+                    <button className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
+                        <Icons.Save size={18} /> Áp dụng thay đổi
                     </button>
                 </div>
             </div>
 
-            {/* Top Section: Tổng quan lịch trình (Lịch mini) */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mt-10">
-                <h2 className="font-bold text-gray-800 mb-1">Tổng quan lịch trình</h2>
-                <p className="text-xs text-gray-400 mb-6">Chọn ngày để xem hoặc chỉnh sửa lịch trình.</p>
-                <div className="flex justify-center">
-                    {/* Ở đây bạn có thể dùng thư viện react-calendar, đây là giao diện giả lập */}
-                    <div className="border border-gray-100 rounded-xl p-4 w-full max-w-sm">
-                        <div className="flex justify-between items-center mb-4">
-                            <Icons.ChevronLeft size={18} className="text-gray-400 cursor-pointer" />
-                            <span className="font-bold text-sm text-gray-700">January 2026</span>
-                            <Icons.ChevronRight size={18} className="text-gray-400 cursor-pointer" />
+            <div className="max-w-6xl mx-auto grid grid-cols-12 gap-8 pb-8">
+
+                {/* CỘT TRÁI: THỜI GIAN HOẠT ĐỘNG TOÀN CỤC */}
+                <div className="col-span-12 lg:col-span-7 space-y-8">
+                    <section className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+                            <h2 className="font-extrabold text-slate-800 flex items-center gap-2">
+                                <Icons.Clock7 className="text-indigo-500" size={20} /> Cấu hình ca làm việc mặc định
+                            </h2>
+                            <div className="flex gap-2">
+                                <span className="text-[10px] bg-amber-100 text-amber-600 px-2 py-1 rounded font-bold uppercase tracking-wider">Hệ thống 2 ca</span>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-gray-400 mb-2">
-                            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                        </div>
-                        <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                            {[...Array(31)].map((_, i) => (
-                                <div key={i} className={`p-2 rounded-lg cursor-pointer hover:bg-blue-50 ${i + 1 === 26 ? 'bg-blue-600 text-white' : 'text-gray-600'}`}>
-                                    {i + 1}
+
+                        <div className="p-6 space-y-3">
+                            {['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'].map((day, idx) => (
+                                <div key={day} className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100">
+                                    <div className="flex items-center gap-3 mb-3 sm:mb-0">
+                                        <label className="relative inline-flex items-center cursor-pointer scale-90">
+                                            <input type="checkbox" className="sr-only peer" defaultChecked={idx < 6} />
+                                            <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-5 peer-checked:bg-indigo-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                                        </label>
+                                        <span className={`text-sm font-bold w-20 ${idx > 5 ? 'text-rose-500' : 'text-slate-700'}`}>{day}</span>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        {/* Ca Sáng */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter w-8">Sáng</span>
+                                            <div className="flex items-center gap-1 bg-white border border-slate-200 p-1.5 rounded-xl shadow-sm group-hover:border-indigo-200">
+                                                <input type="time" defaultValue="08:00" className="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 w-16 px-1" />
+                                                <span className="text-slate-300">/</span>
+                                                <input type="time" defaultValue="12:00" className="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 w-16 px-1" />
+                                            </div>
+                                        </div>
+
+                                        <div className="hidden sm:block h-6 w-[1px] bg-slate-200"></div>
+
+                                        {/* Ca Chiều */}
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter w-8">Chiều</span>
+                                            <div className="flex items-center gap-1 bg-white border border-slate-200 p-1.5 rounded-xl shadow-sm group-hover:border-indigo-200">
+                                                <input type="time" defaultValue="13:30" className="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 w-16 px-1" />
+                                                <span className="text-slate-300">/</span>
+                                                <input type="time" defaultValue="17:30" className="bg-transparent border-none text-xs font-bold text-slate-600 focus:ring-0 w-16 px-1" />
+                                            </div>
+                                        </div>
+
+                                        <button title="Sao chép cho các ngày khác" className="p-2 text-slate-300 hover:text-indigo-500 transition-colors opacity-0 group-hover:opacity-100">
+                                            <Icons.Copy size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Giờ hoạt động mặc định */}
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <h2 className="font-bold text-gray-800 mb-1">Giờ hoạt động mặc định</h2>
-                    <p className="text-xs text-gray-400 mb-6">Đặt giờ mở cửa tiêu chuẩn cho mỗi ngày trong tuần.</p>
-                    <div className="space-y-1">
-                        <WorkingDayRow day="Thứ Hai" active={true} start="08:00" end="17:00" />
-                        <WorkingDayRow day="Thứ Ba" active={true} start="08:00" end="17:00" />
-                        <WorkingDayRow day="Thứ Tư" active={true} start="08:00" end="17:00" />
-                        <WorkingDayRow day="Thứ Năm" active={true} start="08:00" end="17:00" />
-                        <WorkingDayRow day="Thứ Sáu" active={true} start="08:00" end="17:00" />
-                        <WorkingDayRow day="Thứ Bảy" active={false} start="08:00" end="12:00" />
-                        <WorkingDayRow day="Chủ Nhật" active={false} start="00:00" end="00:00" />
-                    </div>
+                    </section>
                 </div>
 
-                <div className="space-y-8">
-                    {/* Ngày lễ và ngoại lệ */}
-                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                        <h2 className="font-bold text-gray-800 mb-1">Ngày lễ và ngoại lệ</h2>
-                        <p className="text-xs text-gray-400 mb-6">Thêm hoặc xóa các ngày lễ và ngoại lệ khỏi lịch trình.</p>
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {['01/01/2026', '30/04/2026', '01/05/2026'].map(date => (
-                                <span key={date} className="flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold">
-                                    {date} <Icons.X size={12} className="cursor-pointer" />
-                                </span>
-                            ))}
-                        </div>
-                        <div className="flex gap-2">
-                            <div className="relative flex-1">
-                                <Icons.Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                                <input type="text" placeholder="Chọn ngày" className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none" />
-                            </div>
-                            <button className="text-xs font-bold text-blue-600 flex items-center gap-1 hover:underline">
-                                <Icons.Plus size={14} /> Thêm ngày lễ
-                            </button>
-                        </div>
-                    </div>
+                {/* CỘT PHẢI: CONFIG THEO KHOA & NGÀY NGHỈ */}
+                <div className="col-span-12 lg:col-span-5 space-y-8">
 
-                    {/* Sự kiện định kỳ */}
-                    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                        <h2 className="font-bold text-gray-800 mb-1">Sự kiện định kỳ</h2>
-                        <p className="text-xs text-gray-400 mb-6">Thiết lập các sự kiện lặp lại tự động.</p>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase">Tên sự kiện</label>
-                                <input type="text" placeholder="Ví dụ: Kiểm tra hàng tuần" className="w-full mt-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none" />
-                            </div>
-                            <div className="flex gap-4">
-                                <div className="flex-1">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Tần suất</label>
-                                    <select className="w-full mt-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none bg-white">
-                                        <option>Hàng tuần</option>
-                                        <option>Hàng tháng</option>
-                                    </select>
-                                </div>
-                                <div className="flex-1">
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase">Thời lượng (phút)</label>
-                                    <input type="number" defaultValue="60" className="w-full mt-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none" />
-                                </div>
-                            </div>
-                            <button className="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-bold shadow-blue-200 shadow-lg active:scale-95 transition-all">
-                                Lưu sự kiện
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Lịch trình hiện tại (Table) */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <h2 className="font-bold text-gray-800 mb-1">Lịch trình hiện tại</h2>
-                <p className="text-xs text-gray-400 mb-6">Tổng quan về tất cả các mục lịch trình đang hoạt động.</p>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead>
-                            <tr className="text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50">
-                                <th className="pb-4">Sự kiện</th>
-                                <th className="pb-4">Ngày</th>
-                                <th className="pb-4">Thời gian</th>
-                                <th className="pb-4">Tình trạng</th>
-                                <th className="pb-4">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-sm">
+                    {/* CẤU HÌNH NGÀY NGHỈ TOÀN HỆ THỐNG */}
+                    <section className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-200">
+                        <h2 className="font-bold mb-4 flex items-center gap-2">
+                            <Icons.CalendarOff className="text-rose-400" size={20} /> Ngày nghỉ & Lễ (Global)
+                        </h2>
+                        <div className="space-y-3 mb-6">
                             {[
-                                { name: 'Cuộc họp nhân viên', date: '15/05/2026', time: '10:00 AM', status: 'Đang hoạt động' },
-                                { name: 'Bảo trì hệ thống', date: '20/05/2026', time: '02:00 PM', status: 'Đang hoạt động' },
-                                { name: 'Ngày quốc khánh', date: '02/09/2026', time: 'Cả ngày', status: 'Ngày lễ' },
-                            ].map((item, idx) => (
-                                <tr key={idx} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                                    <td className="py-4 font-semibold text-gray-700">{item.name}</td>
-                                    <td className="py-4 text-gray-500">{item.date}</td>
-                                    <td className="py-4 text-gray-500">{item.time}</td>
-                                    <td className="py-4">
-                                        <span className={`px-2 py-1 rounded text-[10px] font-bold ${item.status === 'Ngày lễ' ? 'text-blue-400 bg-blue-50' : 'text-gray-400'}`}>
-                                            {item.status}
-                                        </span>
-                                    </td>
-                                    <td className="py-4 text-blue-600 font-bold text-xs cursor-pointer hover:underline">Chỉnh sửa</td>
-                                </tr>
+                                { label: 'Tết Nguyên Đán', date: '25/01 - 02/02' },
+                                { label: 'Giải phóng miền Nam', date: '30/04' }
+                            ].map(holiday => (
+                                <div key={holiday.label} className="flex justify-between items-center bg-white/10 p-3 rounded-xl border border-white/5 group hover:bg-white/20 transition-all">
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-bold">{holiday.label}</span>
+                                        <span className="text-[10px] text-slate-400">{holiday.date}</span>
+                                    </div>
+                                    <button className="text-white/20 group-hover:text-rose-400 transition-colors">
+                                        <Icons.XCircle size={16} />
+                                    </button>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
+                        </div>
+                        <button className="w-full py-2 bg-indigo-500/20 border border-indigo-500/30 rounded-xl text-xs font-bold hover:bg-indigo-500 transition-all flex items-center justify-center gap-2">
+                            <Icons.PlusSquare size={16} /> Thêm ngày lễ
+                        </button>
+                    </section>
+
+                    {/* THÔNG TIN TÀI CHÍNH TỔNG QUÁT (INVOICES CONFIG) */}
+                    <section className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+                        <h2 className="font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                            <Icons.CreditCard className="text-indigo-500" size={20} /> Chính sách Thanh toán
+                        </h2>
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-slate-500 uppercase">% Tiền cọc tối thiểu</span>
+                                <input type="text" defaultValue="30%" className="w-16 bg-slate-50 border-none rounded-lg py-1 px-2 text-xs font-bold text-right text-indigo-600" />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
+                        <h2 className="font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+                            <Icons.Settings2 className="text-indigo-500" size={20} /> Quy tắc phân bổ Slot
+                        </h2>
+                        <div className="grid grid-cols-1 gap-8">
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Thời lượng mỗi Slot (phút)</label>
+                                <div className="relative">
+                                    <select className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500">
+                                        <option>15 phút</option>
+                                        <option selected>30 phút</option>
+                                        <option>60 phút</option>
+                                    </select>
+                                    <Icons.ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                </div>
+                                <p className="text-[10px] text-slate-400 italic">Dựa trên duration_minutes của ClinicServices</p>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
         </main>
