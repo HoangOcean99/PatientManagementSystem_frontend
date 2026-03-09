@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
-import axiosClient from '../../api/axiosClient';
+import { generateKeyCode, linkFamilyMember } from '../../api/patientApi';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const KeyCodePage = () => {
@@ -19,8 +19,8 @@ const KeyCodePage = () => {
             const { data: authData } = await supabase.auth.getUser();
             const userId = authData?.user?.id;
             // if (!userId) { navigate('/login'); return; }
-            const res = await axiosClient.post('/family-relationships/key-code', { user_id: userId });
-            setKeyCode(res.data?.data?.key_code || res.data?.key_code || '');
+            const res = await generateKeyCode({ user_id: userId });
+            setKeyCode(res.data?.data?.key_code || res.data?.key_code || res?.key_code || '');
             toast.success('Đã tạo mã liên kết!');
         } catch (err) {
             console.error('Failed to generate key code:', err);
@@ -40,7 +40,7 @@ const KeyCodePage = () => {
             const { data: authData } = await supabase.auth.getUser();
             const userId = authData?.user?.id;
             if (!userId) { navigate('/login'); return; }
-            await axiosClient.post('/family-relationships/link', { key_code: inputCode.trim(), parent_user_id: userId });
+            await linkFamilyMember({ key_code: inputCode.trim(), parent_user_id: userId });
             toast.success('Liên kết thành công!');
             navigate('/patient/under-my-care');
         } catch (err) {

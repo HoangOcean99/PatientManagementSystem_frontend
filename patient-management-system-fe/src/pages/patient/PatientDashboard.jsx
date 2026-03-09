@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
+import { getPatients } from '../../api/patientApi';
+import { getListAppointments } from '../../api/scheduleApi';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    Calendar, FileText, UserPlus, Clock, Bell, User, Phone, Edit, Activity, Heart, Shield, Award
+} from 'lucide-react';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
@@ -53,6 +58,7 @@ const PatientDashboard = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({ appointments: null, records: null, dependents: null });
 
     useEffect(() => {
         const loadUser = async () => {
@@ -60,6 +66,26 @@ const PatientDashboard = () => {
                 const { data } = await supabase.auth.getUser();
                 if (data?.user) {
                     setUser(data.user);
+                    const userId = data.user.id;
+
+                    const [appointRes, recordRes, familyRes] = await Promise.allSettled([
+                        getListAppointments({ patient_id: userId }),
+                        axiosClient.get('/medical-records', { params: { patient_id: userId } }), /* TODO: add to patientApi */
+                        getPatients({ parent_user_id: userId }),
+                    ]);
+
+                    const appointments = appointRes.status === 'fulfilled'
+                        ? (appointRes.value.data?.data || appointRes.value?.data || []).filter(a => ['pending', 'confirmed'].includes(a.status)).length
+                        : null;
+
+                    const records = recordRes.status === 'fulfilled'
+                        ? (recordRes.value.data?.data || []).length
+                        : null;
+                    const dependents = familyRes.status === 'fulfilled'
+                        ? (familyRes.value.data?.data || []).length
+                        : null;
+
+                    setStats({ appointments, records, dependents });
                 }
             } catch (err) {
                 console.error('Failed to get user:', err);
@@ -175,7 +201,7 @@ const PatientDashboard = () => {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500">Lịch hẹn sắp tới</p>
-                                <p className="text-lg font-bold text-gray-800">—</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.appointments ?? '—'}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 p-4 rounded-xl bg-indigo-50/50 border border-indigo-100/50">
@@ -184,7 +210,7 @@ const PatientDashboard = () => {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500">Hồ sơ khám</p>
-                                <p className="text-lg font-bold text-gray-800">—</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.records ?? '—'}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 p-4 rounded-xl bg-violet-50/50 border border-violet-100/50">
@@ -193,7 +219,7 @@ const PatientDashboard = () => {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500">Người phụ thuộc</p>
-                                <p className="text-lg font-bold text-gray-800">—</p>
+                                <p className="text-lg font-bold text-gray-800">{stats.dependents ?? '—'}</p>
                             </div>
                         </div>
                     </div>

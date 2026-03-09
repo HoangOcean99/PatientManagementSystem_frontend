@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
-import axiosClient from '../../api/axiosClient';
+import { getPatients } from '../../api/patientApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
@@ -25,8 +25,8 @@ const UnderMyCarePage = () => {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id;
                 // if (!userId) { navigate('/login'); return; }
-                const res = await axiosClient.get('/family-relationships', { params: { parent_user_id: userId } });
-                setDependents(res.data?.data || []);
+                const res = await getPatients({ parent_user_id: userId });
+                setDependents(res.data?.data || res.data || []);
             } catch (err) {
                 console.error('Failed to load dependents:', err);
                 toast.error('Không thể tải danh sách người phụ thuộc');

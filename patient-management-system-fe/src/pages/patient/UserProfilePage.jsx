@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
-import axiosClient from '../../api/axiosClient';
+import { getPatientById } from '../../api/patientApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
@@ -35,12 +35,10 @@ const UserProfilePage = () => {
             try {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id;
-                // if (!userId) {
-                //     navigate('/login');
                 //     return;
                 // }
-                const res = await axiosClient.get(`/patients/${userId}`);
-                setProfile(res.data?.data || null);
+                const res = await getPatientById(userId);
+                setProfile(res.data?.data || res.data || null);
             } catch (err) {
                 console.error('Failed to load profile:', err);
                 toast.error('Không thể tải thông tin cá nhân');

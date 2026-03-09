@@ -16,3 +16,11 @@ export const deleteScheduleSlot = async (doctorId, slotId) => {
 export const updateScheduleSlot = async (doctorId, slotId, data) => {
     return axiosClient.put(`/doctor/${doctorId}/schedule/${slotId}`, data);
 };
+
+export const getListAppointments = async (params) => {
+    return axiosClient.get('/appointment/getList', { params });
+};
+
+export const createAppointment = async (data) => {
+    return axiosClient.post('/appointment/create', data);
+};

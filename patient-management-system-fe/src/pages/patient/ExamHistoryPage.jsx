@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
-import axiosClient from '../../api/axiosClient';
+import { getMedicalRecords } from '../../api/patientApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
@@ -14,21 +14,32 @@ const ExamHistoryPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
+        let isMounted = true;
         const load = async () => {
             try {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id;
                 // if (!userId) { navigate('/login'); return; }
-                const res = await axiosClient.get('/medical-records', { params: { patient_id: userId } });
-                setRecords(res.data?.data || []);
+                const res = await getMedicalRecords(userId);
+                if (isMounted) {
+                    setRecords(res.data?.data || res.data || []);
+                }
             } catch (err) {
-                console.error('Failed to load exam history:', err);
-                toast.error('Không thể tải lịch sử khám');
+                if (isMounted) {
+                    console.error('Failed to load exam history:', err);
+                    toast.error('Không thể tải lịch sử khám', { id: 'exam-history-error' });
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
         load();
+
+        return () => {
+            isMounted = false;
+        };
     }, [navigate]);
 
     const filtered = records.filter(r => {

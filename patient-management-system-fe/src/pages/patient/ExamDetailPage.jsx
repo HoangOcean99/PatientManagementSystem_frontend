@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import axiosClient from '../../api/axiosClient';
+import { supabase } from '../../../supabaseClient';
+import { getMedicalRecordDetail } from '../../api/patientApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
@@ -35,8 +36,8 @@ const ExamDetailPage = () => {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await axiosClient.get(`/medical-records/${id}`);
-                setRecord(res.data?.data || null);
+                const res = await getMedicalRecordDetail(id);
+                setRecord(res.data?.data || res.data || null);
             } catch (err) {
                 console.error('Failed to load exam detail:', err);
                 toast.error('Không thể tải chi tiết khám');
