@@ -17,7 +17,7 @@ export default function AuthCallback() {
                         case 'admin': navigate('/dashboard-admin'); break;
                         case 'patient': navigate('/dashboard-patient'); break;
                         case 'receptionist': navigate('/dashboard-receptionist'); break;
-                        case 'doctor': navigate('/dashboard-doctor'); break;
+                        case 'doctor': navigate('/doctor/dashboard'); break;
                         case 'accountant': navigate('/dashboard-accountant'); break;
                     }
                     toast.success("Đăng nhập thành công!");

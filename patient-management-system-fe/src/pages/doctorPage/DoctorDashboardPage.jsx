@@ -18,15 +18,13 @@ import './DoctorDashboardPage.css';
 
 // ===== HELPERS =====
 const STATUS_LABELS = {
-  pending: 'Chờ xác nhận',
-  confirmed: 'Đã xác nhận',
+  pending:    'Chờ xác nhận',
+  confirmed:  'Đã xác nhận',
   checked_in: 'Đã check-in',
-  ready: 'Sẵn sàng',
-  waiting: 'Chờ khám',
   in_progress: 'Đang khám',
-  completed: 'Hoàn tất',
-  cancelled: 'Đã hủy',
-  missed: 'Vắng mặt',
+  completed:  'Hoàn tất',
+  cancelled:  'Đã hủy',
+  missed:     'Vắng mặt',
 };
 
 const getGenderLabel = (g) => (g === 'male' ? 'Nam' : g === 'female' ? 'Nữ' : 'Khác');
@@ -79,16 +77,29 @@ const DoctorDashboardPage = () => {
         const response = await getAppointmentsByDoctorId(doctorId);
         const data = response.data?.data || response.data || [];
 
-        const mapped = (Array.isArray(data) ? data : []).map((appt) => ({
+        const mapped = (Array.isArray(data) ? data : []).map((appt, idx) => ({
           appointment_id: appt.appointment_id,
-          queue_number: appt.queue_number,
+          queue_number: idx + 1,
           patient_name: appt.Patients?.Users?.full_name || 'N/A',
           patient_id: appt.Patients?.patient_id || appt.patient_id,
           gender: appt.Patients?.gender || '',
           age: calculateAge(appt.Patients?.dob),
           phone: appt.Patients?.Users?.phone_number || '',
-          start_time: formatTime(appt.start_time),
-          end_time: formatTime(appt.end_time),
+          // Lấy time từ DoctorSlots (qua slot_id FK)
+          start_time: formatTime(
+            appt.DoctorSlots?.start_time ||
+            appt.DoctorSlot?.start_time ||
+            appt.start_time
+          ),
+          end_time: formatTime(
+            appt.DoctorSlots?.end_time ||
+            appt.DoctorSlot?.end_time ||
+            appt.end_time
+          ),
+          appointment_date:
+            appt.DoctorSlots?.slot_date ||
+            appt.DoctorSlot?.slot_date ||
+            appt.appointment_date,
           status: appt.status,
           service: appt.ClinicServices?.name || '',
         }));
@@ -107,7 +118,9 @@ const DoctorDashboardPage = () => {
 
   const totalToday = appointments.length;
   const completedCount = appointments.filter((a) => a.status === 'completed').length;
-  const waitingCount = appointments.filter((a) => a.status === 'waiting' || a.status === 'in_progress').length;
+  const waitingCount = appointments.filter(
+    (a) => a.status === 'checked_in' || a.status === 'in_progress'
+  ).length;
 
   return (
     <div className="dash-layout" style={{ width: '100vw' }}>
@@ -211,7 +224,7 @@ const DoctorDashboardPage = () => {
                     <span className={`dash-appt-item__status dash-appt-item__status--${appt.status}`}>
                       {STATUS_LABELS[appt.status]}
                     </span>
-                    {appt.status === 'waiting' && (
+                    {appt.status === 'checked_in' && (
                       <button
                         className="dash-appt-item__btn dash-appt-item__btn--primary"
                         onClick={() => navigate(`/doctor/examine/${appt.appointment_id}`)}

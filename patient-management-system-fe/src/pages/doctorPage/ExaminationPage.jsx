@@ -44,9 +44,11 @@ const getInitials = (name) =>
   name ? name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(-2) : '?';
 
 const STATUS_MAP = {
-  ready: { label: 'Sẵn sàng', color: 'status--ready', icon: FiLoader },
-  in_progress: { label: 'Đang khám', color: 'status--active', icon: FiPlay },
-  completed: { label: 'Hoàn tất', color: 'status--done', icon: FiCheckCircle },
+  pending:    { label: 'Chờ xác nhận', color: 'status--ready',  icon: FiLoader },
+  confirmed:  { label: 'Đã xác nhận',  color: 'status--ready',  icon: FiLoader },
+  checked_in: { label: 'Đã check-in',  color: 'status--ready',  icon: FiLoader },
+  in_progress: { label: 'Đang khám',    color: 'status--active', icon: FiPlay },
+  completed:  { label: 'Hoàn tất',      color: 'status--done',   icon: FiCheckCircle },
 };
 
 const LAB_STATUS_MAP = {
@@ -226,18 +228,30 @@ const ExaminationPage = () => {
           return;
         }
 
-        // Map appointment data
+        // Map appointment data — time lấy từ DoctorSlots qua slot_id FK
         setAppointment({
           appointment_id: currentAppt.appointment_id,
           patient_id: currentAppt.Patients?.patient_id || currentAppt.patient_id,
           doctor_id: currentAppt.doctor_id || doctorId,
           service_id: currentAppt.service_id,
-          appointment_date: currentAppt.appointment_date,
-          start_time: currentAppt.start_time,
-          end_time: currentAppt.end_time,
+          // Lấy ngày và giờ từ nested DoctorSlots
+          appointment_date:
+            currentAppt.DoctorSlots?.slot_date ||
+            currentAppt.DoctorSlot?.slot_date ||
+            currentAppt.appointment_date,
+          start_time:
+            currentAppt.DoctorSlots?.start_time ||
+            currentAppt.DoctorSlot?.start_time ||
+            currentAppt.start_time,
+          end_time:
+            currentAppt.DoctorSlots?.end_time ||
+            currentAppt.DoctorSlot?.end_time ||
+            currentAppt.end_time,
           status: currentAppt.status,
-          queue_number: currentAppt.queue_number,
           service_name: currentAppt.ClinicServices?.name || '',
+          total_price: currentAppt.total_price,
+          deposit_required: currentAppt.deposit_required,
+          deposit_paid: currentAppt.deposit_paid,
         });
 
         // Map patient data
@@ -574,7 +588,7 @@ const ExaminationPage = () => {
   const isExamStarted = appointment?.status === 'in_progress';
   const isCompleted = appointment?.status === 'completed' || recordStatus === 'completed';
 
-  const statusInfo = STATUS_MAP[appointment?.status] || STATUS_MAP.ready;
+  const statusInfo = STATUS_MAP[appointment?.status] || STATUS_MAP.checked_in || STATUS_MAP.pending;
   const StatusIcon = statusInfo.icon;
 
   const formatFollowUp = (dateStr) => {

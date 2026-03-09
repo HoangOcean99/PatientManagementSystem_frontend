@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import DoctorCard from '../../components/doctor/DoctorCard';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
@@ -6,172 +6,292 @@ import { getAllDoctors, searchDoctors } from '../../api/doctorApi';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
 
+// ===== HELPERS =====
+const SORT_OPTIONS = [
+    { key: 'name_asc',   label: 'Tên A → Z' },
+    { key: 'name_desc',  label: 'Tên Z → A' },
+    { key: 'spec_asc',   label: 'Chuyên khoa' },
+];
+
 const DoctorListingPage = () => {
     const location = useLocation();
     const isAdminView = location.pathname.includes('/admin/');
-    
+
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchInput, setSearchInput] = useState('');
     const [specialtyFilter, setSpecialtyFilter] = useState('');
+    const [departmentFilter, setDepartmentFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');           // admin-only
+    const [sortKey, setSortKey] = useState('name_asc');
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // ===== FETCH =====
     useEffect(() => {
-        fetchInitialDoctors();
+        fetchDoctors();
     }, []);
 
-    const fetchInitialDoctors = async () => {
+    const fetchDoctors = async () => {
         try {
             setLoading(true);
             const res = await getAllDoctors();
-            const fetchedData = res.data?.data || [];
-            
-            // Nếu là admin, hiển thị tất cả, còn user thì chỉ list doctor active
-            const displayData = isAdminView 
-                ? fetchedData 
-                : fetchedData.filter(d => d.Users?.status === 'active');
-                
-            setDoctors(displayData);
+            const data = res.data?.data || [];
+            // Patient: chỉ hiển thị active
+            setDoctors(isAdminView ? data : data.filter((d) => d.Users?.status === 'active'));
         } catch (error) {
-            console.error("Failed to fetch doctors:", error);
-            toast.error("Không thể tải danh sách bác sĩ.");
+            console.error('Failed to fetch doctors:', error);
+            toast.error('Không thể tải danh sách bác sĩ.');
         } finally {
             setLoading(false);
         }
     };
 
     const handleSearch = async () => {
+        setSearchTerm(searchInput);
+        if (!searchInput && !specialtyFilter) {
+            fetchDoctors();
+            return;
+        }
         try {
             setLoading(true);
-            const res = await searchDoctors(searchTerm, specialtyFilter);
-            let resultData = res.data.data || res.data || [];
+            const res = await searchDoctors(searchInput, specialtyFilter);
+            let data = res.data?.data || res.data || [];
             if (!isAdminView) {
-                resultData = resultData.filter(d => d.Users?.status === 'active');
+                data = data.filter((d) => d.Users?.status === 'active');
             }
-            setDoctors(resultData);
+            setDoctors(data);
         } catch (error) {
-            console.error("Link search error:", error);
-            toast.error("Tìm kiếm thất bại.");
+            console.error('Search error:', error);
+            toast.error('Tìm kiếm thất bại.');
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredDoctors = doctors.filter(doctor => {
-        const docName = doctor.Users?.full_name || '';
-        const docSpec = doctor.specialization || '';
-        
-        const matchesName = docName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesSpecialty = specialtyFilter 
-            ? docSpec === specialtyFilter 
-            : true;
-        
-        const matchesSpecialtyText = docSpec.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        return (matchesName || matchesSpecialtyText) && matchesSpecialty;
-    });
+    const handleReset = () => {
+        setSearchInput('');
+        setSearchTerm('');
+        setSpecialtyFilter('');
+        setDepartmentFilter('');
+        setStatusFilter('');
+        setSortKey('name_asc');
+        fetchDoctors();
+    };
 
-    const specialties = [...new Set(doctors.map(d => d.specialization).filter(Boolean))];
+    // ===== DERIVED DATA =====
+    // Unique specialties
+    const specialties = useMemo(
+        () => [...new Set(doctors.map((d) => d.specialization).filter(Boolean))].sort(),
+        [doctors]
+    );
+
+    // Unique departments từ nested Departments object
+    const departments = useMemo(
+        () => [...new Set(doctors.map((d) => d.Departments?.name).filter(Boolean))].sort(),
+        [doctors]
+    );
+
+    // Filter + sort
+    const filteredDoctors = useMemo(() => {
+        let list = doctors.filter((doc) => {
+            const name = doc.Users?.full_name?.toLowerCase() || '';
+            const spec = doc.specialization?.toLowerCase() || '';
+            const dept = doc.Departments?.name || '';
+            const status = doc.Users?.status || '';
+
+            const matchesSearch =
+                !searchTerm ||
+                name.includes(searchTerm.toLowerCase()) ||
+                spec.includes(searchTerm.toLowerCase());
+
+            const matchesSpecialty = !specialtyFilter || doc.specialization === specialtyFilter;
+            const matchesDepartment = !departmentFilter || dept === departmentFilter;
+            const matchesStatus = !statusFilter || status === statusFilter;
+
+            return matchesSearch && matchesSpecialty && matchesDepartment && matchesStatus;
+        });
+
+        // Sort
+        list = [...list].sort((a, b) => {
+            const nameA = a.Users?.full_name || '';
+            const nameB = b.Users?.full_name || '';
+            const specA = a.specialization || '';
+            const specB = b.specialization || '';
+            if (sortKey === 'name_asc') return nameA.localeCompare(nameB, 'vi');
+            if (sortKey === 'name_desc') return nameB.localeCompare(nameA, 'vi');
+            if (sortKey === 'spec_asc') return specA.localeCompare(specB, 'vi');
+            return 0;
+        });
+
+        return list;
+    }, [doctors, searchTerm, specialtyFilter, departmentFilter, statusFilter, sortKey]);
+
+    const activeCount = doctors.filter((d) => d.Users?.status === 'active').length;
+    const hasActiveFilters = searchTerm || specialtyFilter || departmentFilter || statusFilter;
 
     return (
-        <div className={`${isAdminView ? 'bg-gray-50/50' : 'bg-blue-50/30'} font-sans text-gray-700`} style={{width: '100vw'}}>
+        <div
+            className={`font-sans text-gray-700 min-h-screen ${isAdminView ? 'bg-gray-50/50' : 'bg-gradient-to-b from-blue-50/40 to-white'}`}
+            style={{ width: '100vw' }}
+        >
             {scrollbarStyles}
-            
-            {/* Header Section */}
-            <div className={`border-b border-gray-100 sticky top-0 z-30 shadow-sm relative ${isAdminView ? 'bg-white' : 'bg-white'}`}>
-                <div className="container mx-auto px-4 py-8">
-                    <div className="max-w-5xl mx-auto">
-                        <div className="text-center mb-8">
-                            <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full mb-3 ${isAdminView ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}`}>
-                                <i className={`fa-solid ${isAdminView ? 'fa-user-tie' : 'fa-stethoscope'} mr-2`}></i>
-                                {isAdminView ? 'Hệ thống Quản trị' : 'Chăm sóc sức khoẻ'}
-                            </span>
-                            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
-                                {isAdminView ? 'Quản lý Hồ sơ Bác sĩ' : 'Tìm bác sĩ giỏi'}
-                            </h1>
-                            <p className="text-gray-500 text-sm md:text-base">
-                                {isAdminView ? 'Xem, chỉnh sửa và quản lý lịch làm việc của đội ngũ y bác sĩ' : 'Đặt lịch khám với các chuyên gia y tế hàng đầu'}
-                            </p>
+
+            {/* ===== HEADER ===== */}
+            <div className={`border-b border-gray-100 sticky top-0 z-30 shadow-sm ${isAdminView ? 'bg-white' : 'bg-white/90 backdrop-blur-md'}`}>
+                <div className="max-w-6xl mx-auto px-4 py-6">
+                    {/* Title */}
+                    <div className="text-center mb-6">
+                        <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full mb-3 ${
+                            isAdminView ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
+                        }`}>
+                            <i className={`fa-solid ${isAdminView ? 'fa-user-tie' : 'fa-stethoscope'} mr-2`}></i>
+                            {isAdminView ? 'Hệ thống Quản trị' : 'Đội ngũ chuyên gia'}
+                        </span>
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-1">
+                            {isAdminView ? 'Quản lý Hồ sơ Bác sĩ' : 'Tìm bác sĩ của bạn'}
+                        </h1>
+                        <p className="text-gray-500 text-sm">
+                            {isAdminView
+                                ? `${doctors.length} bác sĩ — ${activeCount} đang hoạt động`
+                                : 'Đặt lịch khám với các chuyên gia y tế hàng đầu'}
+                        </p>
+                    </div>
+
+                    {/* Search Row */}
+                    <div className={`rounded-2xl p-2 flex flex-col md:flex-row gap-2 ${
+                        isAdminView
+                            ? 'bg-gray-50 border border-gray-200'
+                            : 'bg-white border border-gray-100 shadow-lg shadow-blue-500/5'
+                    }`}>
+                        {/* Search Input */}
+                        <div className="flex-1 relative group">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i className="fa-solid fa-magnifying-glass text-gray-400 group-focus-within:text-blue-500 transition-colors"></i>
+                            </div>
+                            <input
+                                type="text"
+                                className="block w-full pl-11 pr-4 py-3 border border-transparent rounded-xl focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 focus:outline-none transition-all placeholder-gray-400 font-medium bg-transparent text-sm"
+                                placeholder="Tìm theo tên bác sĩ hoặc chuyên khoa..."
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                            />
                         </div>
 
-                        {/* Search Bar */}
-                        <div className={`p-2 rounded-2xl shadow-lg shadow-blue-500/5 flex flex-col md:flex-row gap-2 ${isAdminView ? 'bg-gray-50/50 outline outline-1 outline-gray-200' : 'bg-white border border-gray-100'}`}>
-                            <div className="flex-1 relative group">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <i className="fa-solid fa-magnifying-glass text-gray-400 group-focus-within:text-blue-500 transition-colors"></i>
-                                </div>
-                                <input
-                                    type="text"
-                                    className="block w-full pl-11 pr-4 py-3 border border-transparent rounded-xl focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:outline-none transition-all placeholder-gray-400 font-medium bg-transparent"
-                                    placeholder="Tìm theo tên bác sĩ..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                />
+                        {/* Specialty Filter */}
+                        <div className="w-full md:w-48 relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i className="fa-solid fa-stethoscope text-gray-400 text-xs"></i>
                             </div>
-                            
-                            <div className="w-full md:w-56 relative group">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <i className="fa-solid fa-filter text-gray-400 group-focus-within:text-blue-500"></i>
-                                </div>
-                                <select 
-                                    className="block w-full pl-10 pr-8 py-3 border border-transparent rounded-xl focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:outline-none transition-all font-medium appearance-none cursor-pointer text-gray-700 hover:bg-white bg-transparent"
-                                    value={specialtyFilter}
-                                    onChange={(e) => setSpecialtyFilter(e.target.value)}
-                                >
-                                    <option value="">Tất cả chuyên khoa</option>
-                                    {specialties.map(spec => (
-                                        <option key={spec} value={spec}>{spec}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            
-                            <button 
-                                onClick={handleSearch}
-                                className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap ${
-                                    isAdminView 
-                                    ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-gray-300' 
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
-                                }`}
+                            <select
+                                className="block w-full pl-9 pr-8 py-3 border border-transparent rounded-xl focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-50 focus:outline-none transition-all font-medium appearance-none cursor-pointer text-gray-700 text-sm bg-transparent"
+                                value={specialtyFilter}
+                                onChange={(e) => setSpecialtyFilter(e.target.value)}
                             >
-                                Tìm kiếm
-                            </button>
+                                <option value="">Tất cả chuyên khoa</option>
+                                {specialties.map((s) => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
+                            </select>
                         </div>
+
+                        {/* Search Button */}
+                        <button
+                            onClick={handleSearch}
+                            className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap text-sm ${
+                                isAdminView
+                                    ? 'bg-gray-900 hover:bg-black text-white'
+                                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
+                            }`}
+                        >
+                            Tìm kiếm
+                        </button>
+                    </div>
+
+                    {/* Secondary Filter Row */}
+                    <div className="flex flex-wrap gap-2 mt-3 items-center">
+                        {/* Department Filter */}
+                        {departments.length > 0 && (
+                            <select
+                                className="text-xs font-bold px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-600 focus:outline-none focus:border-blue-400 cursor-pointer"
+                                value={departmentFilter}
+                                onChange={(e) => setDepartmentFilter(e.target.value)}
+                            >
+                                <option value="">Tất cả khoa</option>
+                                {departments.map((d) => (
+                                    <option key={d} value={d}>{d}</option>
+                                ))}
+                            </select>
+                        )}
+
+                        {/* Status Filter (Admin only) */}
+                        {isAdminView && (
+                            <select
+                                className="text-xs font-bold px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-600 focus:outline-none focus:border-blue-400 cursor-pointer"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="active">Hoạt động</option>
+                                <option value="inactive">Tạm ngưng</option>
+                            </select>
+                        )}
+
+                        {/* Sort */}
+                        <select
+                            className="text-xs font-bold px-3 py-2 bg-white border border-gray-200 rounded-xl text-gray-600 focus:outline-none focus:border-blue-400 cursor-pointer"
+                            value={sortKey}
+                            onChange={(e) => setSortKey(e.target.value)}
+                        >
+                            {SORT_OPTIONS.map((o) => (
+                                <option key={o.key} value={o.key}>{o.label}</option>
+                            ))}
+                        </select>
+
+                        {/* Active Filter Tags */}
+                        {hasActiveFilters && (
+                            <button
+                                onClick={handleReset}
+                                className="text-xs font-bold px-3 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl hover:bg-red-100 transition-all flex items-center gap-1.5"
+                            >
+                                <i className="fa-solid fa-xmark"></i>
+                                Xóa bộ lọc
+                            </button>
+                        )}
+
+                        <span className="ml-auto text-xs text-gray-400 font-medium">
+                            {filteredDoctors.length} kết quả
+                        </span>
                     </div>
                 </div>
             </div>
 
-            {/* List Section */}
-            <div className="container mx-auto px-4 md:px-8 py-10">
-                <div className="max-w-5xl mx-auto flex justify-between items-center mb-6">
-                    <h2 className="text-lg font-bold text-gray-800">
-                        {loading ? 'Đang tải dữ liệu...' : `Tìm thấy ${filteredDoctors.length} bác sĩ`}
-                    </h2>
-                </div>
-
+            {/* ===== LIST ===== */}
+            <div className="max-w-6xl mx-auto px-4 py-8">
                 {loading ? (
-                    <div className="flex justify-center items-center h-48 opacity-50">
+                    <div className="flex justify-center items-center h-52 opacity-50">
                         <LoadingSpinner />
                     </div>
                 ) : filteredDoctors.length > 0 ? (
-                    <div className="flex flex-col gap-4 max-w-5xl mx-auto">
-                        {filteredDoctors.map(doctor => (
-                            <DoctorCard key={doctor.doctor_id} doctor={doctor} isAdminView={isAdminView} />
+                    <div className="flex flex-col gap-4">
+                        {filteredDoctors.map((doctor) => (
+                            <DoctorCard
+                                key={doctor.doctor_id}
+                                doctor={doctor}
+                                isAdminView={isAdminView}
+                            />
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 max-w-5xl mx-auto shadow-sm">
+                    <div className="text-center py-24 bg-white rounded-3xl border border-gray-100 shadow-sm">
                         <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
                             <i className="fa-solid fa-user-doctor text-3xl"></i>
                         </div>
                         <h3 className="text-xl font-bold text-gray-900">Không tìm thấy bác sĩ nào</h3>
-                        <p className="text-gray-500 mt-2 text-sm">Vui lòng thử lại với từ khóa hoặc chuyên khoa khác</p>
-                        <button 
-                            onClick={() => {
-                                setSearchTerm(''); 
-                                setSpecialtyFilter('');
-                                fetchInitialDoctors();
-                            }}
-                            className="mt-6 font-bold text-blue-600 hover:text-blue-700 hover:underline px-6 py-2 bg-blue-50 rounded-xl"
+                        <p className="text-gray-500 mt-2 text-sm">Vui lòng thử lại với từ khóa hoặc bộ lọc khác</p>
+                        <button
+                            onClick={handleReset}
+                            className="mt-6 font-bold text-blue-600 hover:text-blue-700 hover:underline px-6 py-2 bg-blue-50 rounded-xl transition-all"
                         >
                             Xóa bộ lọc
                         </button>
