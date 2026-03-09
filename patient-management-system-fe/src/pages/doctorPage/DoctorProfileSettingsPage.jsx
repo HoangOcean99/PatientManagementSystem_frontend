@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiUser,
   FiSave,
@@ -13,9 +13,11 @@ import {
   FiHome,
   FiGrid,
   FiBookOpen,
+  FiInfo,
+  FiPlusCircle,
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
-import { getDoctorById, updateDoctor } from '../../api/doctorApi';
+import { getDoctorById, setupDoctor, updateDoctor } from '../../api/doctorApi';
 import { supabase } from '../../../supabaseClient';
 import { validateFullName, validatePhoneNumber } from '../../helpers/validationUtils';
 import './DoctorProfileSettingsPage.css';
@@ -38,43 +40,54 @@ const fadeVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.25 } },
   exit: { opacity: 0, y: -10, transition: { duration: 0.15 } },
 };
+const bannerVariants = {
+  hidden: { opacity: 0, y: -16, scale: 0.97 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 280, damping: 22 } },
+};
 
+// ===== COMPONENT =====
 const DoctorProfileSettingsPage = () => {
-  // Lấy doctor_id từ Supabase session (user_id = doctor_id theo schema)
   const [doctorId, setDoctorId] = useState(null);
 
-  // ===== STATE =====
-  // Editable fields (theo schema Doctors + Users)
+  // Mode: 'loading' | 'setup' | 'edit'
+  // 'setup'  → bác sĩ chưa có hồ sơ → gọi createDoctor
+  // 'edit'   → có hồ sơ → gọi updateDoctor
+  const [mode, setMode] = useState('loading');
+
+  // Editable fields
   const [profile, setProfile] = useState({
     full_name:      '',
-    email:          '',          // readonly — từ Users
+    email:          '',     // readonly — lấy từ Users/session
     phone_number:   '',
     specialization: '',
-    bio:            '',          // Doctor.bio (thay vì "description")
+    bio:            '',     // Doctors.bio
     avatar_url:     '',
+    department_id:  '',     // required khi create
+    room_id:        '',     // required khi create
   });
 
-  // Readonly info — hiển thị để bác sĩ biết nhưng không sửa được
+  // Readonly — từ FK joins sau khi load
   const [readonlyInfo, setReadonlyInfo] = useState({
-    room_number:     '',         // Rooms.room_number (qua room_id FK)
-    department_name: '',         // Departments.name (qua department_id FK)
-    doctor_id:       '',
+    room_number:     'Chưa xếp phòng',
+    department_name: 'Chưa xếp khoa',
   });
 
-  const [loading, setLoading] = useState(true);
-  const [saving,  setSaving]  = useState(false);
-  const [profileMessage, setProfileMessage] = useState(null);
-  const [errors, setErrors] = useState({});
+  const [saving,          setSaving]          = useState(false);
+  const [profileMessage,  setProfileMessage]  = useState(null);
+  const [errors,          setErrors]          = useState({});
 
-  // ===== GET DOCTOR ID từ session =====
+  // ===== 1. Lấy user_id từ Supabase session =====
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
-      const uid = data?.session?.user?.id;
+      const uid  = data?.session?.user?.id;
+      const email = data?.session?.user?.email || '';
+
       if (uid) {
         setDoctorId(uid);
+        // Pre-fill email từ session (Users.email)
+        setProfile((prev) => ({ ...prev, email }));
       } else {
-        // Fallback localStorage cho dev
         const stored = localStorage.getItem('doctor_id') || localStorage.getItem('user_id');
         setDoctorId(stored || null);
       }
@@ -82,44 +95,53 @@ const DoctorProfileSettingsPage = () => {
     getSession();
   }, []);
 
-  // ===== FETCH PROFILE =====
+  // ===== 2. Fetch profile khi có doctorId =====
   useEffect(() => {
     if (!doctorId) return;
 
     const fetchProfile = async () => {
+      setMode('loading');
       try {
-        setLoading(true);
         const res = await getDoctorById(doctorId);
         const d   = res.data?.data || res.data;
 
-        if (d) {
-          // Editable
+        if (d && d.doctor_id) {
+          // ✅ Đã có hồ sơ → edit mode
           setProfile({
             full_name:      d.Users?.full_name      || '',
-            email:          d.Users?.email          || '',
+            email:          d.Users?.email          || profile.email,
             phone_number:   d.Users?.phone_number   || '',
             specialization: d.specialization        || '',
             bio:            d.bio                   || '',
             avatar_url:     d.Users?.avatar_url     || '',
+            department_id:  d.department_id         || '',
+            room_id:        d.room_id               || '',
           });
-
-          // Readonly — phòng và khoa từ FK join
           setReadonlyInfo({
-            room_number:     d.Rooms?.room_number   || d.room_number   || 'Chưa xếp phòng',
-            department_name: d.Departments?.name    || d.department_name || 'Chưa xếp khoa',
-            doctor_id:       d.doctor_id            || doctorId,
+            room_number:     d.Rooms?.room_number   || 'Chưa xếp phòng',
+            department_name: d.Departments?.name    || 'Chưa xếp khoa',
           });
+          setMode('edit');
+        } else {
+          // ⚠️ Không có data dù request thành công → setup mode
+          setMode('setup');
         }
-      } catch (error) {
-        console.error('Failed to fetch doctor profile:', error);
-        setProfileMessage({ type: 'error', text: 'Không thể tải thông tin hồ sơ.' });
-      } finally {
-        setLoading(false);
+      } catch (err) {
+        // 404 hoặc "not found" → bác sĩ chưa khởi tạo hồ sơ
+        const status = err.response?.status;
+        if (status === 500 || status === 400) {
+          setMode('setup');
+        } else {
+          // Lỗi thực sự
+          console.error('Failed to fetch doctor profile:', err);
+          setProfileMessage({ type: 'error', text: 'Không thể kết nối đến server. Vui lòng thử lại.' });
+          setMode('edit'); // vẫn hiện form để user thử lại
+        }
       }
     };
 
     fetchProfile();
-  }, [doctorId]);
+  }, [doctorId]); // eslint-disable-line
 
   // ===== HANDLERS =====
   const handleProfileChange = (field, value) => {
@@ -133,14 +155,19 @@ const DoctorProfileSettingsPage = () => {
     const phoneError = validatePhoneNumber(profile.phone_number);
     if (nameError)  newErrors.full_name    = nameError;
     if (phoneError) newErrors.phone_number = phoneError;
+
+    if (mode === 'setup') {
+      if (!profile.specialization.trim()) newErrors.specialization = 'Vui lòng nhập chuyên khoa';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleProfileSave = async () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
     if (!doctorId) {
-      setProfileMessage({ type: 'error', text: 'Không tìm thấy ID bác sĩ.' });
+      setProfileMessage({ type: 'error', text: 'Không tìm thấy ID người dùng.' });
       return;
     }
 
@@ -148,28 +175,44 @@ const DoctorProfileSettingsPage = () => {
       setSaving(true);
       setProfileMessage(null);
 
-      // Payload theo schema — Doctors: specialization, bio
-      //                      Users: full_name, phone_number, avatar_url
       const payload = {
         full_name:      profile.full_name,
         phone_number:   profile.phone_number,
         specialization: profile.specialization,
         bio:            profile.bio,
         avatar_url:     profile.avatar_url,
+        // Chỉ gửi FK fields khi create (Admin sẽ cập nhật sau bên DoctorDetails)
+        ...(mode === 'setup' && {
+          department_id: profile.department_id || undefined,
+          room_id:       profile.room_id       || undefined,
+        }),
       };
 
-      await updateDoctor(doctorId, payload);
+      if (mode === 'setup') {
+        // 🆕 Khởi tạo hồ sơ lần đầu
+        await setupDoctor(doctorId, payload);
+        setProfileMessage({ type: 'success', text: 'Khởi tạo hồ sơ thành công! Chào mừng bạn đến với hệ thống.' });
+        setMode('edit');
+      } else {
+        // ✏️ Cập nhật thông tin
+        await updateDoctor(doctorId, payload);
+        setProfileMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
+      }
 
-      setProfileMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
-      setTimeout(() => setProfileMessage(null), 3000);
+      setTimeout(() => setProfileMessage(null), 4000);
     } catch (error) {
-      console.error('Failed to update profile:', error);
-      const msg = error.response?.data?.message || 'Cập nhật thất bại. Vui lòng thử lại.';
+      console.error('Failed to save profile:', error);
+      const msg = error.response?.data?.message || (
+        mode === 'setup' ? 'Khởi tạo thất bại. Vui lòng thử lại.' : 'Cập nhật thất bại. Vui lòng thử lại.'
+      );
       setProfileMessage({ type: 'error', text: msg });
     } finally {
       setSaving(false);
     }
   };
+
+  const isSetup = mode === 'setup';
+  const isLoadingMode = mode === 'loading';
 
   // ===== RENDER =====
   return (
@@ -191,14 +234,47 @@ const DoctorProfileSettingsPage = () => {
             </h1>
           </motion.div>
 
+          {/* ===== FIRST-TIME SETUP BANNER ===== */}
+          <AnimatePresence>
+            {isSetup && (
+              <motion.div
+                variants={bannerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 14,
+                  padding: '18px 22px',
+                  background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                  border: '1.5px solid #93c5fd',
+                  borderRadius: 16,
+                  marginBottom: 20,
+                  boxShadow: '0 4px 18px rgba(59,130,246,0.10)',
+                }}
+              >
+                <FiPlusCircle size={24} style={{ color: '#2563eb', flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <p style={{ fontWeight: 700, color: '#1e40af', fontSize: '0.97rem', marginBottom: 4 }}>
+                    Chào mừng! Hãy khởi tạo hồ sơ bác sĩ của bạn
+                  </p>
+                  <p style={{ color: '#3b82f6', fontSize: '0.845rem', lineHeight: 1.55 }}>
+                    Đây là lần đầu bạn đăng nhập. Vui lòng điền đầy đủ thông tin phía dưới.
+                    Sau khi lưu, Admin sẽ xếp phòng khám và khoa cho bạn.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Profile Card */}
-          {loading ? (
+          {isLoadingMode ? (
             <div className="prof-card" style={{ justifyContent: 'center', opacity: 0.6 }}>
               <FiLoader size={24} className="lr-spin" />
             </div>
           ) : (
             <motion.div className="prof-card" variants={itemVariants} initial="hidden" animate="visible">
-              {/* Avatar */}
               <div className="prof-card__avatar">
                 {profile.avatar_url ? (
                   <img
@@ -207,34 +283,46 @@ const DoctorProfileSettingsPage = () => {
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />
                 ) : (
-                  getInitials(profile.full_name)
+                  getInitials(profile.full_name || profile.email)
                 )}
               </div>
-
-              {/* Info */}
               <div className="prof-card__info">
-                <h2 className="prof-card__name">Bs. {profile.full_name || 'Bác sĩ'}</h2>
-                <p className="prof-card__specialty">{profile.specialization || 'Chưa cập nhật chuyên khoa'}</p>
+                <h2 className="prof-card__name">
+                  {profile.full_name ? `Bs. ${profile.full_name}` : 'Chưa có tên'}
+                </h2>
+                <p className="prof-card__specialty">
+                  {profile.specialization || (isSetup ? 'Chưa cài đặt chuyên khoa' : 'Chuyên khoa chung')}
+                </p>
                 <p className="prof-card__email">{profile.email}</p>
 
-                {/* Readonly room + department */}
-                <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <FiHome size={12} />
-                    Phòng {readonlyInfo.room_number}
-                  </span>
-                  <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <FiGrid size={12} />
-                    {readonlyInfo.department_name}
-                  </span>
-                </div>
+                {!isSetup && (
+                  <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <FiHome size={12} />
+                      Phòng {readonlyInfo.room_number}
+                    </span>
+                    <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <FiGrid size={12} />
+                      {readonlyInfo.department_name}
+                    </span>
+                  </div>
+                )}
+
+                {isSetup && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                    <FiInfo size={12} style={{ color: '#f59e0b' }} />
+                    <span style={{ fontSize: '0.78rem', color: '#b45309', fontWeight: 600 }}>
+                      Hồ sơ chưa được khởi tạo
+                    </span>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
 
-          {/* Form Section */}
+          {/* ===== FORM ===== */}
           <motion.div
-            key="profile"
+            key={mode}
             className="prof-form-section"
             variants={fadeVariants}
             initial="hidden"
@@ -243,8 +331,8 @@ const DoctorProfileSettingsPage = () => {
           >
             <div className="prof-form-section__header">
               <h3 className="prof-form-section__title">
-                <FiEdit3 size={16} />
-                Chỉnh sửa thông tin
+                {isSetup ? <FiPlusCircle size={16} /> : <FiEdit3 size={16} />}
+                {isSetup ? 'Khởi tạo hồ sơ lần đầu' : 'Chỉnh sửa thông tin'}
               </h3>
             </div>
 
@@ -271,7 +359,10 @@ const DoctorProfileSettingsPage = () => {
                       <img
                         src={profile.avatar_url}
                         alt="Avatar preview"
-                        onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
                       />
                     ) : null}
                     <div
@@ -301,7 +392,7 @@ const DoctorProfileSettingsPage = () => {
                   className={`prof-input ${errors.full_name ? 'prof-input--error' : ''}`}
                   value={profile.full_name}
                   onChange={(e) => handleProfileChange('full_name', e.target.value)}
-                  placeholder="Nhập họ và tên"
+                  placeholder="Nhập họ và tên đầy đủ"
                 />
                 {errors.full_name && <span className="prof-field__error">{errors.full_name}</span>}
               </div>
@@ -331,7 +422,7 @@ const DoctorProfileSettingsPage = () => {
                     className={`prof-input ${errors.phone_number ? 'prof-input--error' : ''}`}
                     value={profile.phone_number}
                     onChange={(e) => handleProfileChange('phone_number', e.target.value)}
-                    placeholder="Số điện thoại"
+                    placeholder="0912345678"
                   />
                   {errors.phone_number && <span className="prof-field__error">{errors.phone_number}</span>}
                 </div>
@@ -339,47 +430,77 @@ const DoctorProfileSettingsPage = () => {
 
               {/* Specialization */}
               <div className="prof-field">
-                <label className="prof-field__label">Chuyên khoa</label>
+                <label className="prof-field__label">
+                  Chuyên khoa {isSetup && <span>*</span>}
+                </label>
                 <input
                   type="text"
-                  className="prof-input"
+                  className={`prof-input ${errors.specialization ? 'prof-input--error' : ''}`}
                   value={profile.specialization}
                   onChange={(e) => handleProfileChange('specialization', e.target.value)}
-                  placeholder="Nội tổng hợp, Tim mạch..."
+                  placeholder="Nội tổng hợp, Tim mạch, Nhi khoa..."
                 />
+                {errors.specialization && <span className="prof-field__error">{errors.specialization}</span>}
               </div>
 
-              {/* Readonly: Room + Department — chỉ Admin mới đổi được */}
-              <div className="prof-field-row">
-                <div className="prof-field">
-                  <label className="prof-field__label">
-                    <FiHome size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                    Phòng khám
-                    <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4, fontSize: '0.75rem' }}>(chỉ Admin chỉnh)</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="prof-input"
-                    value={readonlyInfo.room_number}
-                    disabled
-                  />
+              {/* Room + Department info / IDs */}
+              {!isSetup ? (
+                /* EDIT mode: readonly display */
+                <div className="prof-field-row">
+                  <div className="prof-field">
+                    <label className="prof-field__label">
+                      <FiHome size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                      Phòng khám
+                      <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6, fontSize: '0.75rem' }}>
+                        (chỉ Admin chỉnh)
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      className="prof-input"
+                      value={readonlyInfo.room_number}
+                      disabled
+                    />
+                  </div>
+                  <div className="prof-field">
+                    <label className="prof-field__label">
+                      <FiGrid size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                      Khoa
+                      <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 6, fontSize: '0.75rem' }}>
+                        (chỉ Admin chỉnh)
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      className="prof-input"
+                      value={readonlyInfo.department_name}
+                      disabled
+                    />
+                  </div>
                 </div>
-                <div className="prof-field">
-                  <label className="prof-field__label">
-                    <FiGrid size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                    Khoa
-                    <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: 4, fontSize: '0.75rem' }}>(chỉ Admin chỉnh)</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="prof-input"
-                    value={readonlyInfo.department_name}
-                    disabled
-                  />
+              ) : (
+                /* SETUP mode: note rằng Admin sẽ xếp sau */
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 10,
+                    padding: '12px 16px',
+                    background: '#fefce8',
+                    border: '1px solid #fde68a',
+                    borderRadius: 12,
+                    marginBottom: 4,
+                  }}
+                >
+                  <FiInfo size={16} style={{ color: '#d97706', flexShrink: 0, marginTop: 1 }} />
+                  <p style={{ fontSize: '0.845rem', color: '#92400e', lineHeight: 1.5 }}>
+                    <strong>Phòng khám & Khoa</strong> sẽ được Admin hệ thống xếp sau khi bạn khởi tạo hồ sơ.
+                    Bạn không cần điền những thông tin này ngay bây giờ.
+                  </p>
                 </div>
-              </div>
+              )}
 
-              {/* Bio (thay description) */}
+              {/* Bio */}
               <div className="prof-field">
                 <label className="prof-field__label">
                   <FiBookOpen size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
@@ -394,15 +515,39 @@ const DoctorProfileSettingsPage = () => {
                 />
               </div>
 
-              {/* Submit */}
+              {/* Submit Button */}
               <div className="prof-form-actions">
                 <button
-                  className="prof-btn prof-btn--primary"
-                  onClick={handleProfileSave}
-                  disabled={saving || loading}
+                  className={`prof-btn ${isSetup ? 'prof-btn--setup' : 'prof-btn--primary'}`}
+                  onClick={handleSave}
+                  disabled={saving || isLoadingMode}
+                  style={isSetup ? {
+                    background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '14px 28px',
+                    borderRadius: 14,
+                    fontWeight: 700,
+                    fontSize: '0.97rem',
+                    border: 'none',
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    opacity: saving ? 0.7 : 1,
+                    boxShadow: '0 4px 18px rgba(37,99,235,0.30)',
+                    transition: 'all 0.2s',
+                  } : undefined}
                 >
-                  {saving ? <FiLoader size={16} className="lr-spin" /> : <FiSave size={16} />}
-                  {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                  {saving
+                    ? <FiLoader size={16} className="lr-spin" />
+                    : isSetup
+                      ? <FiPlusCircle size={17} />
+                      : <FiSave size={16} />}
+                  {saving
+                    ? (isSetup ? 'Đang khởi tạo...' : 'Đang lưu...')
+                    : isSetup
+                      ? 'Khởi tạo hồ sơ'
+                      : 'Lưu thay đổi'}
                 </button>
               </div>
             </div>
