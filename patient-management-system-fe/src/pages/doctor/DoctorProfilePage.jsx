@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import { getDoctorById } from '../../api/doctorApi';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 const DoctorProfilePage = () => {
@@ -37,7 +37,9 @@ const DoctorProfilePage = () => {
         }
     }, [id]);
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
+    if (loading) return <div className="relative flex-1">
+        <LoadingSpinner />
+    </div>
 
     if (!doctor) return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center" style={{ width: '100vw' }}>
@@ -71,7 +73,7 @@ const DoctorProfilePage = () => {
     const isActive = displayDoctor.status === 'active';
 
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-12 font-sans" style={{width: '100vw'}}>
+        <div className="min-h-screen bg-gray-50/50 pb-12 font-sans" style={{ width: '100vw' }}>
             {scrollbarStyles}
 
             {/* Top Navigation */}
@@ -216,8 +218,8 @@ const DoctorProfilePage = () => {
                                                 setSelectedSlot(null);
                                             }}
                                             className={`flex-shrink-0 px-4 py-3 rounded-xl border transition-all text-center min-w-[100px] ${selectedDateIndex === idx
-                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200/50'
-                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200/50'
+                                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                                                 }`}
                                         >
                                             <div className="text-xs opacity-80 mb-1">{day.date.split(',')[0]}</div>
@@ -238,8 +240,8 @@ const DoctorProfilePage = () => {
                                             key={idx}
                                             onClick={() => setSelectedSlot(slot)}
                                             className={`py-2 px-1 rounded-lg text-sm font-bold border transition-all truncate ${selectedSlot === slot
-                                                    ? 'bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-500 ring-offset-1'
-                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50'
+                                                ? 'bg-blue-50 text-blue-700 border-blue-200 ring-2 ring-blue-500 ring-offset-1'
+                                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50'
                                                 }`}
                                         >
                                             {slot}

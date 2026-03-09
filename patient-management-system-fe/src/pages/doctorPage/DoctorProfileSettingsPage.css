@@ -1,0 +1,405 @@
+/* ============================
+   DoctorProfileSettingsPage
+   Theme: White / Blue (Clinical Trust)
+   ============================ */
+
+/* ===== LAYOUT ===== */
+.prof-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--ex-bg, #F8FAFC);
+  font-family: var(--ex-font, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  color: var(--ex-text-primary, #0F172A);
+  width: 100vw;
+}
+
+.prof-main {
+  flex: 1;
+  min-height: 100vh;
+  overflow-y: auto;
+
+}
+
+.prof-content {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ===== PAGE HEADER ===== */
+.prof-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prof-header__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ex-text-primary, #0F172A);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prof-header__title svg {
+  color: var(--ex-primary, #2563EB);
+}
+
+/* ===== PROFILE CARD ===== */
+.prof-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 28px;
+  background: var(--ex-surface, #fff);
+  border: 1px solid var(--ex-border, #E2E8F0);
+  border-radius: var(--ex-radius-xl, 18px);
+  box-shadow: var(--ex-shadow-sm);
+}
+
+.prof-card__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--ex-primary, #2563EB), var(--ex-primary-dark, #1D4ED8));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  overflow: hidden;
+}
+
+.prof-card__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.prof-card__info {
+  flex: 1;
+}
+
+.prof-card__name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ex-text-primary, #0F172A);
+  margin: 0 0 4px 0;
+}
+
+.prof-card__specialty {
+  font-size: 14px;
+  color: var(--ex-primary, #2563EB);
+  font-weight: 600;
+  margin: 0 0 2px 0;
+}
+
+.prof-card__email {
+  font-size: 13px;
+  color: var(--ex-text-muted, #94A3B8);
+  margin: 0;
+}
+
+/* ===== AVATAR INPUT ===== */
+.prof-avatar-input {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.prof-avatar-input__preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--ex-border-light, #F1F5F9);
+  border: 2px dashed var(--ex-border, #E2E8F0);
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.2s ease;
+}
+
+.prof-avatar-input:hover .prof-avatar-input__preview {
+  border-color: var(--ex-primary, #2563EB);
+}
+
+.prof-avatar-input__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.prof-avatar-input__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ex-text-muted, #94A3B8);
+}
+
+.prof-avatar-input .prof-input {
+  flex: 1;
+}
+
+/* ===== FORM SECTION ===== */
+.prof-form-section {
+  background: var(--ex-surface, #fff);
+  border: 1px solid var(--ex-border, #E2E8F0);
+  border-radius: var(--ex-radius-lg, 14px);
+  box-shadow: var(--ex-shadow-sm);
+  overflow: hidden;
+}
+
+.prof-form-section__header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--ex-border-light, #F1F5F9);
+  background: var(--ex-primary-50, #F0F7FF);
+}
+
+.prof-form-section__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ex-text-primary, #0F172A);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prof-form-section__title svg {
+  color: var(--ex-primary, #2563EB);
+}
+
+.prof-form-section__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ===== FORM FIELDS ===== */
+.prof-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prof-field__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-text-secondary, #475569);
+}
+
+.prof-field__label span {
+  color: var(--ex-danger, #EF4444);
+  margin-left: 2px;
+}
+
+.prof-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--ex-border, #E2E8F0);
+  border-radius: var(--ex-radius-sm, 6px);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ex-text-primary, #0F172A);
+  background: var(--ex-surface, #fff);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.prof-input:focus {
+  border-color: var(--ex-primary, #2563EB);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.prof-input.prof-input--error {
+  border-color: var(--ex-danger, #EF4444);
+}
+
+.prof-input.prof-input--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.prof-field__error {
+  font-size: 12px;
+  color: var(--ex-danger, #EF4444);
+  margin-top: -2px;
+  font-weight: 500;
+}
+
+.prof-input::placeholder {
+  color: var(--ex-text-muted, #94A3B8);
+}
+
+.prof-input:disabled {
+  background: var(--ex-border-light, #F1F5F9);
+  color: var(--ex-text-muted, #94A3B8);
+  cursor: not-allowed;
+}
+
+.prof-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--ex-border, #E2E8F0);
+  border-radius: var(--ex-radius-sm, 6px);
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--ex-text-primary, #0F172A);
+  background: var(--ex-surface, #fff);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.prof-textarea:focus {
+  border-color: var(--ex-primary, #2563EB);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.prof-textarea::placeholder {
+  color: var(--ex-text-muted, #94A3B8);
+}
+
+.prof-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ===== BUTTONS ===== */
+.prof-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.prof-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border-radius: var(--ex-radius-md, 10px);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  border: none;
+  white-space: nowrap;
+}
+
+.prof-btn--primary {
+  background: var(--ex-primary, #2563EB);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.prof-btn--primary:hover {
+  background: var(--ex-primary-dark, #1D4ED8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.prof-btn--outline {
+  background: var(--ex-surface, #fff);
+  color: var(--ex-text-secondary, #475569);
+  border: 1.5px solid var(--ex-border, #E2E8F0);
+}
+
+.prof-btn--outline:hover {
+  background: var(--ex-surface-hover, #F1F5F9);
+  border-color: var(--ex-text-muted, #94A3B8);
+}
+
+
+
+/* ===== SUCCESS/ERROR MESSAGE ===== */
+.prof-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--ex-radius-sm, 6px);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.prof-message--success {
+  background: var(--ex-success-light, #ECFDF5);
+  color: var(--ex-success, #10B981);
+  border: 1px solid #A7F3D0;
+}
+
+.prof-message--error {
+  background: var(--ex-danger-light, #FEF2F2);
+  color: var(--ex-danger, #EF4444);
+  border: 1px solid #FECACA;
+}
+
+/* ===== FOOTER ===== */
+.prof-footer {
+  text-align: center;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--ex-border-light, #F1F5F9);
+}
+
+.prof-footer p {
+  font-size: 13px;
+  color: var(--ex-text-muted, #94A3B8);
+  margin: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .prof-main {
+    margin-left: 0;
+  }
+
+  .prof-content {
+    padding: 16px 16px 32px;
+  }
+
+  .prof-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+
+
+
+  .prof-field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .prof-form-actions {
+    flex-direction: column;
+  }
+
+  .prof-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ===== SPINNER ===== */
+@keyframes lr-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.lr-spin {
+  animation: lr-spin 1s linear infinite;
+}

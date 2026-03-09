@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const DoctorCard = ({ doctor, isAdminView = false }) => {
+const DoctorCard = ({ doctor, isAdminView = false, role }) => {
     const navigate = useNavigate();
 
     // Safety check
@@ -18,15 +18,15 @@ const DoctorCard = ({ doctor, isAdminView = false }) => {
     const handleCardClick = () => {
         if (!id) return;
         if (isAdminView) {
-            navigate(`/admin/doctors/${id}`);
+            navigate(`/admin/user-profile/${role}/${id}`);
         } else {
-            navigate(`/doctors/${id}`);
+            navigate(`/user-profile/${id}`);
         }
     };
 
     return (
-        <div 
-            onClick={handleCardClick} 
+        <div
+            onClick={handleCardClick}
             className="group bg-white rounded-2xl p-5 shadow-sm hover:shadow-xl hover:shadow-blue-500/10 border border-gray-100 transition-all duration-300 cursor-pointer flex flex-col sm:flex-row gap-5 items-center relative overflow-hidden"
         >
             {/* Thẻ trạng thái Admin xéo ở góc (Nếu ở chế độ Admin) */}
@@ -38,19 +38,18 @@ const DoctorCard = ({ doctor, isAdminView = false }) => {
 
             {/* Avatar Section */}
             <div className="relative flex-shrink-0">
-                <img 
-                    src={avatarUrl} 
-                    alt={fullName} 
+                <img
+                    src={avatarUrl}
+                    alt={fullName}
                     className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-sm bg-gray-50 border-2 border-white group-hover:border-blue-100 transition-colors"
                 />
-                <div className={`absolute -bottom-2 -right-2 text-[10px] font-bold px-2.5 py-0.5 rounded-full border-2 border-white shadow-sm flex items-center gap-1.5 ${
-                    isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                }`}>
+                <div className={`absolute -bottom-2 -right-2 text-[10px] font-bold px-2.5 py-0.5 rounded-full border-2 border-white shadow-sm flex items-center gap-1.5 ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
                     {isActive ? 'Hoạt động' : 'Tạm ngưng'}
                 </div>
             </div>
-            
+
             {/* Info Section */}
             <div className="flex-1 w-full text-center sm:text-left">
                 <div className="mb-1 flex flex-col sm:flex-row sm:items-center gap-2 justify-center sm:justify-start">
@@ -72,7 +71,7 @@ const DoctorCard = ({ doctor, isAdminView = false }) => {
                 <div className="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg mb-3">
                     {specialization}
                 </div>
-                
+
                 <p className="text-gray-500 text-sm line-clamp-2 leading-relaxed mb-3">
                     {doctor.bio || "Bác sĩ chưa cập nhật thông tin giới thiệu. Hệ thống đang chờ cập nhật dữ liệu từ chuyên gia."}
                 </p>
@@ -102,10 +101,10 @@ const DoctorCard = ({ doctor, isAdminView = false }) => {
                         </button>
                     </>
                 ) : (
-                    <button 
+                    <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/admin/doctors/${id}`);
+                            navigate(`/admin/user-profile-edit/${role}/${id}`);
                         }}
                         className="w-full sm:w-auto bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white border border-indigo-200 hover:border-indigo-600 px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 group/btn"
                     >

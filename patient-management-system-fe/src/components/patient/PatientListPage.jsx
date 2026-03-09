@@ -384,9 +384,8 @@ const PatientListPage = () => {
 
                 {/* List */}
                 {loading ? (
-                    <div className="flex flex-col justify-center items-center h-48 gap-3">
-                        <LoadingSpinner />
-                        <span className="text-sm text-blue-500/60 font-medium">Đang tải dữ liệu...</span>
+                    <div className="relative flex-1">
+                        {loading && <LoadingSpinner />}
                     </div>
                 ) : filtered.length === 0 ? (
                     <motion.div

@@ -1,0 +1,528 @@
+/* ============================
+   InvoiceManagementPage
+   Theme: Blue / Ocean (Finance)
+   ============================ */
+
+/* ===== LAYOUT ===== */
+.acc-inv-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #F8FAFC;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0F172A;
+}
+
+.acc-inv-main {
+  flex: 1;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.acc-inv-content {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ===== HEADER ===== */
+.acc-inv-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.acc-inv-header__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.acc-inv-header__title svg {
+  color: #2563EB;
+  /* Chuyển sang Blue */
+}
+
+.acc-inv-header__subtitle {
+  font-size: 14px;
+  color: #64748B;
+  margin: 4px 0 0 0;
+}
+
+/* ===== FILTERS ===== */
+.acc-inv-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.acc-inv-filters__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  max-width: 420px;
+  padding: 10px 16px;
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  transition: border-color 0.2s ease;
+}
+
+.acc-inv-filters__search:focus-within {
+  border-color: #2563EB;
+}
+
+.acc-inv-filters__search svg {
+  color: #94A3B8;
+  flex-shrink: 0;
+}
+
+.acc-inv-filters__search input {
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 14px;
+  font-family: inherit;
+  color: #0F172A;
+  width: 100%;
+}
+
+.acc-inv-filters__search input::placeholder {
+  color: #94A3B8;
+}
+
+.acc-inv-filters__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+}
+
+.acc-inv-filters__status svg {
+  color: #94A3B8;
+}
+
+.acc-inv-filters__status select {
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 14px;
+  font-family: inherit;
+  color: #0F172A;
+  cursor: pointer;
+}
+
+/* ===== TABLE ===== */
+.acc-inv-table-wrap {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.acc-inv-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.acc-inv-table thead {
+  background: #EFF6FF;
+  /* Nền header bảng xanh dương nhạt */
+}
+
+.acc-inv-table th {
+  padding: 14px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.acc-inv-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.acc-inv-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.acc-inv-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.acc-inv-table__code {
+  font-weight: 600;
+  color: #2563EB;
+  /* Màu mã hóa đơn */
+  font-size: 13px;
+}
+
+.acc-inv-table__name {
+  font-weight: 600;
+}
+
+.acc-inv-table__amount {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.acc-inv-table__deposit {
+  color: #16A34A;
+  /* Màu xanh lá cho số tiền đã cọc */
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.acc-inv-table__remaining {
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+}
+
+.acc-inv-table__empty {
+  text-align: center;
+  padding: 40px 20px !important;
+  color: #94A3B8;
+}
+
+/* ===== BADGES ===== */
+.acc-inv-badge {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.acc-inv-badge--paid {
+  background: #F0FDF4;
+  color: #16A34A;
+}
+
+.acc-inv-badge--unpaid {
+  background: #FFF7ED;
+  color: #EA580C;
+}
+
+.acc-inv-badge--cancelled {
+  background: #F1F5F9;
+  color: #64748B;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.acc-inv-table__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.acc-inv-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid #E2E8F0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748B;
+}
+
+.acc-inv-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.acc-inv-action-btn--view:hover {
+  color: #2563EB;
+  border-color: #2563EB;
+  background: #EFF6FF;
+}
+
+.acc-inv-action-btn--print:hover {
+  color: #1D4ED8;
+  border-color: #1D4ED8;
+  background: #DBEAFE;
+}
+
+/* ===== MODAL ===== */
+.acc-inv-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.acc-inv-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.acc-inv-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #F1F5F9;
+  background: #EFF6FF;
+  /* Header modal xanh dương */
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.acc-inv-modal__header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.acc-inv-modal__close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748B;
+  transition: all 0.2s ease;
+}
+
+.acc-inv-modal__close:hover {
+  background: #FEF2F2;
+  color: #EF4444;
+}
+
+.acc-inv-modal__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Info Grid */
+.acc-inv-modal__info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.acc-inv-modal__info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.acc-inv-modal__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.acc-inv-modal__value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+/* Items Table */
+.acc-inv-modal__items-table {
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.acc-inv-modal__items-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.acc-inv-modal__items-table thead {
+  background: #F8FAFC;
+}
+
+.acc-inv-modal__items-table th {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-align: left;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.acc-inv-modal__items-table td {
+  padding: 10px 14px;
+  font-size: 13px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.acc-inv-modal__items-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.acc-inv-modal__item-total {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Summary */
+.acc-inv-modal__summary {
+  border-top: 1px solid #E2E8F0;
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.acc-inv-modal__summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #475569;
+}
+
+.acc-inv-modal__summary-row--deposit {
+  color: #16A34A;
+}
+
+.acc-inv-modal__summary-row--total {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2563EB;
+  /* Highlight tổng tiền màu xanh dương */
+  padding-top: 8px;
+  border-top: 2px solid #0F172A;
+}
+
+/* Footer */
+.acc-inv-modal__footer {
+  padding: 16px 24px;
+  border-top: 1px solid #F1F5F9;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+}
+
+.acc-inv-modal__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  border: none;
+}
+
+.acc-inv-modal__btn--paid {
+  background: #16A34A;
+  color: #fff;
+}
+
+.acc-inv-modal__btn--paid:hover {
+  background: #15803D;
+}
+
+.acc-inv-modal__btn--print {
+  background: #2563EB;
+  color: #fff;
+}
+
+.acc-inv-modal__btn--print:hover {
+  background: #1D4ED8;
+}
+
+.acc-inv-modal__btn--close {
+  background: #F1F5F9;
+  color: #475569;
+}
+
+.acc-inv-modal__btn--close:hover {
+  background: #E2E8F0;
+}
+
+/* ===== FOOTER ===== */
+.acc-inv-footer {
+  text-align: center;
+}
+
+.acc-inv-footer p {
+  font-size: 13px;
+  color: #94A3B8;
+  margin: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .acc-inv-content {
+    padding: 20px 20px 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .acc-inv-main {
+    margin-left: 0;
+  }
+
+  .acc-inv-filters {
+    flex-direction: column;
+  }
+
+  .acc-inv-filters__search {
+    max-width: 100%;
+  }
+
+  .acc-inv-table-wrap {
+    overflow-x: auto;
+  }
+
+  .acc-inv-modal__info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== PRINT HIDE ===== */
+@media print {
+
+  .acc-inv-layout,
+  .acc-inv-modal-overlay {
+    display: none !important;
+  }
+}

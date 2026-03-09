@@ -7,8 +7,8 @@ import { requestRegister, verifyAndCreate } from '../../api/authApi';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import { validatePassword, validateUsername } from '../../helpers/validationUtils';
 import toast from 'react-hot-toast';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import OtpPopUp from '../../components/OtpPopUp';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import OtpPopUp from '../../components/common/OtpPopUp';
 
 const RegisterKidPage = () => {
     const navigate = useNavigate();
@@ -281,7 +281,9 @@ const RegisterKidPage = () => {
                                     ${isLoading ? "bg-gray-500 cursor-not-allowed text-white"
                                         : "bg-gray-800 hover:bg-black text-white"}`}
                             >
-                                {isLoading ? <LoadingSpinner size='20px' /> :
+                                {isLoading ? <div className="relative flex-1">
+                                    <LoadingSpinner />
+                                </div> :
                                     <div>Gửi mã OTP xác nhận</div>
                                 }
                             </button>

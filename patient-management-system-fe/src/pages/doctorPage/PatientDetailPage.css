@@ -1,56 +1,10 @@
-/* ============================
-   PatientDetailPage — Medical Dashboard
-   Theme: White / Blue (Clinical Trust)
-   ============================ */
-
-/* ===== TOKENS ===== */
-:root {
-  --pd-primary: #2563EB;
-  --pd-primary-dark: #1D4ED8;
-  --pd-primary-light: #DBEAFE;
-  --pd-primary-subtle: #EFF6FF;
-  --pd-primary-50: #F0F7FF;
-
-  --pd-bg: #F8FAFC;
-  --pd-surface: #FFFFFF;
-  --pd-surface-hover: #F1F5F9;
-
-  --pd-text-primary: #0F172A;
-  --pd-text-secondary: #475569;
-  --pd-text-muted: #94A3B8;
-
-  --pd-border: #E2E8F0;
-  --pd-border-light: #F1F5F9;
-
-  --pd-danger: #EF4444;
-  --pd-danger-light: #FEF2F2;
-  --pd-warning: #F59E0B;
-  --pd-warning-light: #FFFBEB;
-  --pd-success: #10B981;
-  --pd-success-light: #ECFDF5;
-
-  --pd-sidebar-width: 260px;
-  --pd-sidebar-bg: #FFFFFF;
-
-  --pd-radius-sm: 6px;
-  --pd-radius-md: 10px;
-  --pd-radius-lg: 14px;
-  --pd-radius-xl: 18px;
-
-  --pd-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
-  --pd-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.03);
-  --pd-shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.08), 0 4px 8px rgba(15, 23, 42, 0.04);
-
-  --pd-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-/* ===== LAYOUT ===== */
 .pd-layout {
   display: flex;
   min-height: 100vh;
   background: var(--pd-bg);
   font-family: var(--pd-font);
   color: var(--pd-text-primary);
+  width: 100vw;
 }
 
 /* ===== SIDEBAR ===== */
@@ -65,14 +19,12 @@
   display: flex;
   flex-direction: column;
   z-index: 40;
-  padding: 0;
 }
 
 .pd-sidebar__brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 24px;
   border-bottom: 1px solid var(--pd-border-light);
 }
 
@@ -165,13 +117,11 @@
 /* ===== MAIN ===== */
 .pd-main {
   flex: 1;
-  margin-left: var(--pd-sidebar-width);
   min-height: 100vh;
   overflow-y: auto;
 }
 
 .pd-content {
-  max-width: 960px;
   margin: 0 auto;
   padding: 32px 40px 48px;
   display: flex;
@@ -807,6 +757,135 @@
   .pd-section-card__body {
     padding: 16px;
   }
+}
+
+/* ===== LAB RESULTS LIST ===== */
+.pd-lab-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pd-lab-item {
+  border: 1px solid var(--pd-border);
+  border-radius: var(--pd-radius-md);
+  background: var(--pd-surface);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.pd-lab-item:hover {
+  border-color: var(--pd-primary);
+}
+
+.pd-lab-item__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--pd-bg);
+  border-bottom: 1px solid var(--pd-border-light);
+}
+
+.pd-lab-item__index {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--pd-primary-light);
+  color: var(--pd-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pd-lab-item__name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pd-text-primary);
+}
+
+.pd-lab-item__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pd-lab-status--ordered {
+  background: var(--pd-warning-light);
+  color: var(--pd-warning);
+}
+
+.pd-lab-status--processing {
+  background: var(--pd-primary-light);
+  color: var(--pd-primary);
+}
+
+.pd-lab-status--completed {
+  background: var(--pd-success-light);
+  color: var(--pd-success);
+}
+
+.pd-lab-item__summary {
+  padding: 12px 16px;
+}
+
+.pd-lab-item__summary-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pd-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.pd-lab-item__summary-text {
+  font-size: 13px;
+  color: var(--pd-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.pd-lab-item__footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--pd-border-light);
+  background: var(--pd-bg);
+}
+
+.pd-lab-item__date {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--pd-text-muted);
+  font-weight: 500;
+}
+
+.pd-lab-item__file-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pd-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.pd-lab-item__file-link:hover {
+  color: var(--pd-primary-dark);
+  text-decoration: underline;
 }
 
 /* ===== REDUCED MOTION ===== */
