@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
 import { getPatientById } from '../../api/patientApi';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const GENDER_MAP = {

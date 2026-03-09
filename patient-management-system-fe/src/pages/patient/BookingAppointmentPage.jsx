@@ -6,7 +6,7 @@ import { supabase } from "../../../supabaseClient";
 import { getAllDoctors } from "../../api/doctorApi";
 import { createAppointment } from "../../api/scheduleApi";
 import { getPatients } from "../../api/patientApi";
-import LoadingSpinner from "../../components/LoadingSpinner";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from "../../helpers/styleCss/ScrollbarStyles";
 
 const SPECIALTY_ICONS = {
@@ -270,10 +270,10 @@ const BookingAppointmentPage = () => {
                 <div key={s} className="flex items-center">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${step === s
-                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/30 scale-110"
-                        : step > s
-                          ? "bg-emerald-500 text-white"
-                          : "bg-gray-100 text-gray-400"
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-500/30 scale-110"
+                      : step > s
+                        ? "bg-emerald-500 text-white"
+                        : "bg-gray-100 text-gray-400"
                       }`}
                   >
                     {step > s ? <i className="fa-solid fa-check"></i> : s}
@@ -329,22 +329,22 @@ const BookingAppointmentPage = () => {
                     key={specialty}
                     onClick={() => handleSelectSpecialty(specialty)}
                     className={`group relative bg-white/70 backdrop-blur-sm p-6 rounded-2xl border ${form.specialty === specialty
-                        ? "border-blue-500 ring-2 ring-blue-100"
-                        : "border-white/80 hover:border-blue-200"
+                      ? "border-blue-500 ring-2 ring-blue-100"
+                      : "border-white/80 hover:border-blue-200"
                       } shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 cursor-pointer flex flex-col items-center justify-center text-center gap-4 hover:-translate-y-1`}
                   >
                     <div
                       className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all duration-300 ${form.specialty === specialty
-                          ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-110"
-                          : "bg-blue-50 text-blue-500 group-hover:scale-110 group-hover:bg-blue-100"
+                        ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-110"
+                        : "bg-blue-50 text-blue-500 group-hover:scale-110 group-hover:bg-blue-100"
                         }`}
                     >
                       <i className={`fa-solid ${getDefaultIcon(specialty)}`}></i>
                     </div>
                     <span
                       className={`font-semibold text-sm ${form.specialty === specialty
-                          ? "text-blue-700"
-                          : "text-gray-700 group-hover:text-blue-600"
+                        ? "text-blue-700"
+                        : "text-gray-700 group-hover:text-blue-600"
                         }`}
                     >
                       {specialty}
@@ -388,14 +388,14 @@ const BookingAppointmentPage = () => {
                 <button
                   onClick={() => handleSelectPatient(myself?.user_id, false)}
                   className={`w-full relative bg-white/70 backdrop-blur-sm p-5 rounded-2xl border ${form.patient_id === myself?.user_id && !form.is_dependent
-                      ? "border-blue-500 ring-2 ring-blue-100"
-                      : "border-white/80 hover:border-blue-200"
+                    ? "border-blue-500 ring-2 ring-blue-100"
+                    : "border-white/80 hover:border-blue-200"
                     } shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 cursor-pointer flex items-center gap-4 text-left group`}
                 >
                   <div
                     className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-all duration-300 flex-shrink-0 ${form.patient_id === myself?.user_id && !form.is_dependent
-                        ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30"
-                        : "bg-blue-50 text-blue-500 group-hover:bg-blue-100"
+                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30"
+                      : "bg-blue-50 text-blue-500 group-hover:bg-blue-100"
                       }`}
                   >
                     <i className="fa-solid fa-user"></i>
@@ -449,14 +449,14 @@ const BookingAppointmentPage = () => {
                         key={dep.relationship_id}
                         onClick={() => handleSelectPatient(child.user_id, true)}
                         className={`w-full relative bg-white/70 backdrop-blur-sm p-5 rounded-2xl border ${isSelected
-                            ? "border-emerald-500 ring-2 ring-emerald-100"
-                            : "border-white/80 hover:border-emerald-200"
+                          ? "border-emerald-500 ring-2 ring-emerald-100"
+                          : "border-white/80 hover:border-emerald-200"
                           } shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(16,185,129,0.08)] transition-all duration-300 cursor-pointer flex items-center gap-4 text-left group`}
                       >
                         <div
                           className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-all duration-300 flex-shrink-0 ${isSelected
-                              ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30"
-                              : "bg-emerald-50 text-emerald-500 group-hover:bg-emerald-100"
+                            ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30"
+                            : "bg-emerald-50 text-emerald-500 group-hover:bg-emerald-100"
                             }`}
                         >
                           <i className="fa-solid fa-children"></i>
@@ -522,8 +522,8 @@ const BookingAppointmentPage = () => {
                             key={d.doctor_id}
                             onClick={() => handleChange("doctor_id", d.doctor_id)}
                             className={`p-4 rounded-xl border ${form.doctor_id === d.doctor_id
-                                ? "border-blue-500 bg-blue-50/30 ring-1 ring-blue-500"
-                                : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                              ? "border-blue-500 bg-blue-50/30 ring-1 ring-blue-500"
+                              : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
                               } cursor-pointer transition-all flex items-center gap-3`}
                           >
                             <img
@@ -565,8 +565,8 @@ const BookingAppointmentPage = () => {
                       value={form.service_id}
                       onChange={(e) => handleChange("service_id", e.target.value)}
                       className={`w-full px-4 py-3 bg-white border ${errors.service_id
-                          ? "border-red-400 ring-2 ring-red-100"
-                          : "border-gray-200"
+                        ? "border-red-400 ring-2 ring-red-100"
+                        : "border-gray-200"
                         } rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all text-gray-700 font-medium shadow-sm cursor-pointer appearance-none`}
                     >
                       <option value="">— Chọn dịch vụ —</option>
@@ -602,8 +602,8 @@ const BookingAppointmentPage = () => {
                           }
                           min={new Date().toISOString().split("T")[0]}
                           className={`w-full px-4 py-3 pl-11 bg-white border ${errors.appointment_date
-                              ? "border-red-400 ring-2 ring-red-100"
-                              : "border-gray-200"
+                            ? "border-red-400 ring-2 ring-red-100"
+                            : "border-gray-200"
                             } rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all text-gray-700 font-medium shadow-sm cursor-pointer`}
                         />
                       </div>
@@ -630,8 +630,8 @@ const BookingAppointmentPage = () => {
                             handleChange("start_time", e.target.value)
                           }
                           className={`w-full px-4 py-3 pl-11 bg-white border ${errors.start_time
-                              ? "border-red-400 ring-2 ring-red-100"
-                              : "border-gray-200"
+                            ? "border-red-400 ring-2 ring-red-100"
+                            : "border-gray-200"
                             } rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all text-gray-700 font-medium shadow-sm cursor-pointer`}
                         />
                       </div>

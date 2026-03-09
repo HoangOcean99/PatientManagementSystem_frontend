@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
 import { getMedicalRecords } from '../../api/patientApi';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const ExamHistoryPage = () => {

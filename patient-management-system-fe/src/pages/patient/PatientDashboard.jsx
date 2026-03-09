@@ -5,10 +5,10 @@ import { supabase } from '../../../supabaseClient';
 import { getPatients } from '../../api/patientApi';
 import { getListAppointments } from '../../api/scheduleApi';
 import { motion, AnimatePresence } from 'framer-motion';
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import {
     Calendar, FileText, UserPlus, Clock, Bell, User, Phone, Edit, Activity, Heart, Shield, Award
 } from 'lucide-react';
-import LoadingSpinner from '../../components/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const NAV_CARDS = [
