@@ -3,6 +3,7 @@ import UserProfilePage from "../pages/patient/UserProfilePage";
 import ExamHistoryPage from "../pages/patient/ExamHistoryPage";
 import ExamDetailPage from "../pages/patient/ExamDetailPage";
 import BookingAppointmentPage from "../pages/patient/BookingAppointmentPage";
+import SelectSpecialtyPage from "../pages/patient/SelectSpecialtyPage";
 import PaymentPage from "../pages/patient/PaymentPage";
 import UnderMyCarePage from "../pages/patient/UnderMyCarePage";
 import KeyCodePage from "../pages/patient/KeyCodePage";
@@ -43,6 +44,14 @@ const patientRoutes = [
     },
     {
         path: '/patient/booking',
+        element: (
+            <ProtectedRoute allowedRoles={["patient"]}>
+                <SelectSpecialtyPage />
+            </ProtectedRoute>
+        )
+    },
+    {
+        path: '/patient/booking/details',
         element: (
             <ProtectedRoute allowedRoles={["patient"]}>
                 <BookingAppointmentPage />

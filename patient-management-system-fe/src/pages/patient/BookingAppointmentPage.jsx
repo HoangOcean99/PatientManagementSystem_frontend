@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { supabase } from "../../../supabaseClient";
@@ -27,9 +27,11 @@ const MONTHS = [
 
 const BookingAppointmentPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [doctors, setDoctors] = useState([]);
   const [services, setServices] = useState([]);
   const [dependents, setDependents] = useState([]);
+  const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [myself, setMyself] = useState(null);
 
   const [loading, setLoading] = useState(true);
@@ -98,6 +100,25 @@ const BookingAppointmentPage = () => {
     };
     load();
   }, []);
+
+  // Handle specialty from URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const specialty = params.get("specialty");
+    if (specialty) {
+      setSelectedSpecialty(specialty);
+      // Pre-select service if it matches the name or type
+      if (services.length > 0) {
+        const matchingSvc = services.find(s => 
+          s.name.toLowerCase().includes(specialty.toLowerCase()) || 
+          specialty.toLowerCase().includes(s.name.toLowerCase())
+        );
+        if (matchingSvc) {
+          setForm(prev => ({ ...prev, service_id: matchingSvc.service_id }));
+        }
+      }
+    }
+  }, [location.search, services, doctors]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -207,6 +228,13 @@ const BookingAppointmentPage = () => {
   return (
     <div className="w-full h-full overflow-y-auto bg-[#F8F9FB] p-8 font-sans">
       <div className="max-w-7xl mx-auto">
+        <button 
+          onClick={() => navigate("/patient/booking")}
+          className="mb-6 flex items-center gap-2 text-gray-500 hover:text-sky-500 transition-colors font-medium group"
+        >
+          <i className="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+          Back to Specialty Selection
+        </button>
         <MotionDiv 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -226,7 +254,15 @@ const BookingAppointmentPage = () => {
             className="lg:col-span-2 space-y-6"
           >
             <div className="bg-white rounded-3xl p-8 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-800 mb-8">Book New Appointment</h2>
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-bold text-gray-800">Book New Appointment</h2>
+                {selectedSpecialty && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 rounded-full text-xs font-bold ring-1 ring-sky-500/10 shadow-sm shadow-sky-500/5">
+                    <i className="fa-solid fa-stethoscope"></i>
+                    {selectedSpecialty}
+                  </div>
+                )}
+              </div>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
