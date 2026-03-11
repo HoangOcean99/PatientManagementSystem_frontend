@@ -1,42 +1,42 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { getListAppointments } from "../../api/scheduleApi";
+import { getAllDepartments } from "../../api/departmentsApi";
 import { supabase } from "../../../supabaseClient";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { getListAppointments } from "../../api/scheduleApi";
+import { getListAppointmentsByStatus } from "../../api/appointmentApi";
 
-const SPECIALTIES = [
-  { id: "gen", name: "Nội Tổng Quát", desc: "Khám và điều trị các bệnh nội khoa tổng quát.", icon: "fa-solid fa-heart-pulse", color: "bg-sky-50 text-sky-500" },
-  { id: "cardio", name: "Tim Mạch", desc: "Chẩn đoán và điều trị các bệnh về tim và mạch máu.", icon: "fa-solid fa-heart", color: "bg-red-50 text-red-500" },
-  { id: "derma", name: "Da Liễu", desc: "Chăm sóc và điều trị các vấn đề về da, tóc, móng.", icon: "fa-solid fa-sun", color: "bg-orange-50 text-orange-500" },
-  { id: "pedia", name: "Nhi Khoa", desc: "Khám và điều trị bệnh cho trẻ em và sơ sinh.", icon: "fa-solid fa-baby", color: "bg-pink-50 text-pink-500" },
-  { id: "ortho", name: "Chấn Thương Chỉnh Hình", desc: "Phẫu thuật và điều trị các vấn đề xương khớp.", icon: "fa-solid fa-bone", color: "bg-blue-50 text-blue-500" },
-  { id: "neuro", name: "Thần Kinh", desc: "Chẩn đoán và điều trị các bệnh liên quan đến hệ thần kinh.", icon: "fa-solid fa-brain", color: "bg-purple-50 text-purple-500" },
-];
+
 
 const SelectSpecialtyPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("upcoming");
-  const [appointments, setAppointments] = useState([]);
+  const [activeTab, setActiveTab] = useState("confirmed");
+  const [appointments, setAppointments] = useState([]); 
+  const [departments, setDepartments] = useState([]);
   const [latestAppointment, setLatestAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [appointmentsByStatus, setAppointmentsByStatus] = useState([]);
+  console.log("2. STATE ACTIVE_TAB HIỆN TẠI LÀ:", activeTab); // Lệnh test 2
 
+console.log(appointmentsByStatus);
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const res = await getListAppointments({ patient_id: user.id });
+          const res = await getListAppointments({activeTab });
+          console.log(`3. KẾT QUẢ API TRẢ VỀ CHO TAB [${activeTab}]:`, res); // Lệnh test 3
           const allApps = res.data?.data || [];
-          
+
           // Sort to find the latest
           const sorted = [...allApps].sort((a, b) => {
             const dateA = new Date(`${a.appointment_date}T${a.start_time || '00:00'}`);
             const dateB = new Date(`${b.appointment_date}T${b.start_time || '00:00'}`);
             return dateB - dateA;
           });
-          
+
           setAppointments(allApps);
           if (sorted.length > 0) {
             setLatestAppointment(sorted[0]);
@@ -48,12 +48,38 @@ const SelectSpecialtyPage = () => {
         setLoading(false);
       }
     };
+
+    const fetchDepartments = async () => {
+      try {
+        const res = await getAllDepartments();
+        setDepartments(res.data);
+      } catch (err) {
+        console.error("Failed to fetch departments:", err);
+      }
+    };
     fetchAppointments();
+    fetchDepartments();
   }, []);
 
-  const filteredSpecialties = SPECIALTIES.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.desc.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    const fetchAppointmentsByStatus = async () => {
+      try {
+        
+        const res = await getListAppointmentsByStatus(activeTab);
+        setAppointmentsByStatus(res.data?.data || res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch appointments by status:", err);
+      }
+    };
+
+    if (activeTab) {
+      fetchAppointmentsByStatus();
+    }
+  }, [activeTab]); 
+
+  const filteredDepartments = departments.filter(d =>
+    d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    d.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const MotionDiv = motion.div;
@@ -63,7 +89,7 @@ const SelectSpecialtyPage = () => {
   return (
     <div className="w-full h-full overflow-y-auto bg-[#F8F9FB] p-8 font-sans">
       <div className="max-w-7xl mx-auto">
-        <MotionDiv 
+        <MotionDiv
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
@@ -73,7 +99,7 @@ const SelectSpecialtyPage = () => {
             <p className="text-gray-500 mt-1">Vui lòng chọn chuyên khoa bạn muốn đăng ký khám.</p>
           </div>
           <div className="relative w-full md:w-80">
-            <input 
+            <input
               type="text"
               placeholder="Search specialties..."
               value={searchTerm}
@@ -84,7 +110,7 @@ const SelectSpecialtyPage = () => {
           </div>
         </MotionDiv>
 
-        {/* Quick Info: Latest Appointment */}
+        {/* //Quick Info: Latest Appointment */}
         {latestAppointment && (
           <MotionDiv
             initial={{ opacity: 0, x: -20 }}
@@ -94,11 +120,11 @@ const SelectSpecialtyPage = () => {
           >
             {/* Background Decoration */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform duration-500" />
-            
+
             <div className="w-16 h-16 bg-sky-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-sky-500/30">
               <i className="fa-solid fa-clock-rotate-left"></i>
             </div>
-            
+
             <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-6 w-full">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Last Appointment</p>
@@ -114,16 +140,15 @@ const SelectSpecialtyPage = () => {
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Status</p>
-                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                  latestAppointment.status === 'completed' ? 'bg-green-50 text-green-600' : 
-                  latestAppointment.status === 'pending' ? 'bg-sky-50 text-sky-600' : 'bg-red-50 text-red-600'
-                }`}>
+                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${latestAppointment.status === 'completed' ? 'bg-green-50 text-green-600' :
+                    latestAppointment.status === 'pending' ? 'bg-sky-50 text-sky-600' : 'bg-red-50 text-red-600'
+                  }`}>
                   {latestAppointment.status}
                 </span>
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => navigate(`/patient/exam/${latestAppointment.appointment_id}`)}
               className="px-6 py-3 bg-gray-50 hover:bg-sky-500 hover:text-white text-gray-600 font-bold rounded-xl transition-all text-sm whitespace-nowrap"
             >
@@ -134,9 +159,9 @@ const SelectSpecialtyPage = () => {
 
         {/* Specialty Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {filteredSpecialties.map((s, idx) => (
+          {filteredDepartments.map((s, idx) => (
             <MotionDiv
-              key={s.id}
+              key={s.department_id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.05 }}
@@ -160,48 +185,130 @@ const SelectSpecialtyPage = () => {
           transition={{ delay: 0.3 }}
           className="bg-white rounded-[2.5rem] p-8 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.08)] border border-gray-100"
         >
-          <div className="flex flex-wrap p-1 bg-gray-50 rounded-2xl mb-8 w-fit">
-            {["upcoming", "missed", "done"].map((tab) => (
+          {/* Thanh Tabs */}
+          <div className="flex bg-[#5ba4f8] p-1 rounded-xl mb-8 w-full max-w-3xl mx-auto shadow-sm relative">
+            {/* Vạch kẻ giữa các tab khi không active */}
+            <div className="absolute inset-y-2.5 left-1/3 w-px bg-white/30 pointer-events-none"></div>
+            <div className="absolute inset-y-2.5 right-1/3 w-px bg-white/30 pointer-events-none"></div>
+
+            {[
+              { id: "confirmed", label: "Sắp Đến" },
+              { id: "cancelled", label: "Bỏ Lỡ" },
+              { id: "completed", label: "Hoàn Thành" }
+            ].map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-8 py-3 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === tab 
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-500/25" 
-                  : "text-gray-400 hover:text-gray-600"
+                key={tab.id}  
+                onClick={() => 
+                  {
+                    console.log("1. ĐÃ CLICK VÀO TAB:", tab.id);
+                    setActiveTab(tab.id);
+                    console.log("2. activeTab SAU KHI CLICK:", activeTab);
+                  }
+                }
+                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 z-10 ${
+                  activeTab === tab.id
+                    ? "bg-white text-[#5ba4f8] shadow-sm"
+                    : "text-white hover:bg-white/10"
                 }`}
               >
-                {tab === "upcoming" ? "Up Coming" : tab === "missed" ? "Missed" : "Done"}
+                {tab.label}
               </button>
             ))}
           </div>
 
           <div className="space-y-4">
-            {appointments.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Simplified appointment cards to match visual style */}
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="group p-4 rounded-[1.5rem] border border-gray-50 bg-white hover:border-sky-100 hover:shadow-xl hover:shadow-sky-500/5 transition-all flex items-center gap-4">
-                    <div className="w-12 h-12 bg-sky-50 rounded-xl flex items-center justify-center text-sky-500">
-                      <i className="fa-solid fa-notes-medical"></i>
+            {appointmentsByStatus && appointmentsByStatus.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                {appointmentsByStatus.map((app, i) => (
+                  <MotionDiv 
+                    key={app.appointment_id || i}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.08)] hover:shadow-lg transition-all flex flex-col h-full"
+                  >
+                    {/* Header: Giờ và Trạng thái */}
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center text-[#5ba4f8] font-medium text-sm">
+                        <i className="fa-regular fa-clock mr-2"></i>
+                        {app.DoctorSlots?.start_time?.slice(0, 5)} - {app.DoctorSlots?.end_time?.slice(0, 5)}
+                      </div>
+                      
+                      {/* ĐÃ SỬA: Cho chữ và màu ăn theo tab hiện tại luôn */}
+                      <span className={`text-[12px] font-medium ${
+                          app.status  === 'pending' ? 'text-[#5ba4f8]' : app.status === 'confirmed' ? 'text-[#5ba4f8]' : app.status === 'cancelled' ? 'text-gray-500' : app.status === 'completed' ? 'text-green-500' : 'text-gray-500'
+                      }`}>
+                        {app.status === 'pending' ? 'chờ xác nhận' : app.status === 'confirmed' ? 'Đã xác nhận' : app.status === 'cancelled' ? 'Bỏ lỡ' : app.status === 'completed' ? 'Hoàn thành' : 'Chờ xác nhận'}
+                      </span> 
                     </div>
-                    <div className="flex-1 h-8 bg-gray-50 rounded-lg animate-pulse" />
-                  </div>
+
+                    {/* Body: Thông tin bệnh nhân & Dịch vụ */}
+                    <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-4">
+                      <img 
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(app.Patients?.Users?.full_name || 'BN')}&background=random&color=fff`} 
+                        alt="avatar" 
+                        className="w-[42px] h-[42px] rounded-full object-cover" 
+                      />
+                      <div>
+                        {/* //Hiển thị id appointmennt_id */}
+                        <p className="text-gray-500 text-xs mt-0.5">
+                          {app.appointment_id || "Mã lịch khám"}
+                        </p>
+                        <h4 className="font-bold text-gray-900 text-sm">
+                          {app.Patients?.Users?.full_name || "Tên Bệnh Nhân"}
+                        </h4>
+                        <p className="text-gray-500 text-xs mt-0.5">
+                          {app.ClinicServices?.name || "Khám sức khỏe tổng quát"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Footer: Thông tin Bác sĩ & Phòng khám */}
+                    <div className="space-y-2 text-[13px] text-gray-600 flex-1">
+                      <p className="flex items-start gap-2">
+                        <i className="fa-solid fa-stethoscope mt-0.5 text-gray-400 w-4"></i>
+                        <span>
+                          <strong className="font-semibold text-gray-800">
+                            BS. {app.Doctors?.Users?.full_name || "N/A"}
+                          </strong> 
+                          <span className="mx-1">•</span> 
+                          {app.ClinicServices?.Departments?.name || "Chuyên khoa"}
+                        </span>
+                      </p>
+                      <p className="flex items-start gap-2">
+                        <i className="fa-solid fa-location-dot mt-0.5 text-gray-400 w-4 ml-[1px]"></i>
+                        <span>Tầng 4, Tòa nhà A</span>
+                      </p>
+                    </div>
+
+                    {/* Nút Xem chi tiết */}
+                    <div className="flex justify-end pt-2 mt-auto">
+                      <button 
+                        onClick={() => navigate(`/patient/exam/${app.appointment_id}`)}
+                        className="text-[#5ba4f8] text-xs font-semibold hover:text-sky-600 transition-colors flex items-center gap-1"
+                      >
+                        Xem chi tiết
+                        <i className="fa-solid fa-chevron-right text-[9px] mt-[1px]"></i>
+                      </button>
+                    </div>
+                  </MotionDiv>
                 ))}
+
               </div>
             ) : (
               <div className="text-center py-20">
                 <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
                   <i className="fa-solid fa-calendar-xmark text-3xl"></i>
                 </div>
-                <p className="text-gray-400 font-medium">No appointments found in this category.</p>
+                <p className="text-gray-400 font-medium">Chưa có lịch khám nào trong danh mục này.</p>
               </div>
             )}
           </div>
         </MotionDiv>
+
       </div>
     </div>
   );
 };
-
 export default SelectSpecialtyPage;

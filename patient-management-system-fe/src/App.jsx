@@ -7,7 +7,7 @@ import { AuthProvider } from "./components/security/AuthContext";
 function App() {
   return (
     <AuthProvider>
-
+ 
       <BrowserRouter>
         <Routes>
           {commonRoutes.map((r, index) => (

@@ -7,6 +7,8 @@ import { getAllDoctors } from "../../api/doctorApi";
 import { createAppointment } from "../../api/scheduleApi";
 import { getPatients } from "../../api/patientApi";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { getAllServices } from "../../api/serviceApi";
+
 
 const RELATION_MAP = {
   father: "Cha",
@@ -27,15 +29,15 @@ const MONTHS = [
 
 const BookingAppointmentPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [doctors, setDoctors] = useState([]);
+  const location = useLocation(); 
+  const [doctors, setDoctors] = useState([]); 
   const [services, setServices] = useState([]);
-  const [dependents, setDependents] = useState([]);
-  const [selectedSpecialty, setSelectedSpecialty] = useState("");
+  const [dependents, setDependents] = useState([]); 
+  const [selectedSpecialty, setSelectedSpecialty] = useState("");  // selected specialty from URL
   const [myself, setMyself] = useState(null);
 
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false); 
 
   const [form, setForm] = useState({
     patient_id: "",
@@ -70,27 +72,23 @@ const BookingAppointmentPage = () => {
         }
 
         const [docRes, svcRes, depRes] = await Promise.all([
-          getAllDoctors(),
-          fetch("http://localhost:3000/base/test")
-            .then((r) => (r.ok ? r.json() : { data: { data: [] } }))
-            .catch(() => ({ data: { data: [] } })),
-          userId
+          getAllDoctors().catch(() => ({ data: [] })),
+          getAllServices().catch(() => ({ data: [] })),
+          userId 
             ? getPatients({ parent_user_id: userId }).catch(() => ({ data: [] }))
             : Promise.resolve({ data: [] }),
         ]);
 
-        const docs = docRes.data?.data || [];
-        setDoctors(docs);
+        const docs = docRes.data || []; 
+        setDoctors(Array.isArray(docs) ? docs : [docs]);
 
-        const loadedServices = svcRes.data?.data || [
-          { service_id: "svc_1", name: "Khám tổng quát", price: 200000, duration_minutes: 30 },
-          { service_id: "svc_2", name: "Khám chuyên khoa", price: 300000, duration_minutes: 45 },
-          { service_id: "svc_3", name: "Tái khám", price: 150000, duration_minutes: 20 },
-        ];
-        setServices(loadedServices);
+        const loadedServices = svcRes.data || [];
+        setServices(Array.isArray(loadedServices) ? loadedServices : [loadedServices]);
 
-        const loadedDependents = depRes.data?.data || depRes.data || [];
-        setDependents(loadedDependents);
+        const loadedDependents = depRes.data || [];
+        setDependents(Array.isArray(loadedDependents) ? loadedDependents : [loadedDependents]);
+
+
       } catch (err) {
         console.error("Failed to load data:", err);
         toast.error("Không thể tải dữ liệu");
@@ -102,17 +100,23 @@ const BookingAppointmentPage = () => {
   }, []);
 
   // Handle specialty from URL
-  useEffect(() => {
+ useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const specialty = params.get("specialty");
-    if (specialty) {
-      setSelectedSpecialty(specialty);
+    const specialtyFilter = params.get("specialty");
+    
+    if (specialtyFilter) {
+      setSelectedSpecialty(specialtyFilter);
       // Pre-select service if it matches the name or type
-      if (services.length > 0) {
-        const matchingSvc = services.find(s => 
-          s.name.toLowerCase().includes(specialty.toLowerCase()) || 
-          specialty.toLowerCase().includes(s.name.toLowerCase())
-        );
+      if (services.length > 0) { 
+        const matchingSvc = services.find(s => {
+          // Bọc an toàn: Nếu s không tồn tại hoặc không có trường name thì bỏ qua luôn
+          if (!s || !s.name) return false; 
+          // Dùng đúng tên biến specialtyFilter
+          const sNameLower = s.name.toLowerCase();
+          const filterLower = specialtyFilter.toLowerCase();
+          return sNameLower.includes(filterLower) || filterLower.includes(sNameLower);
+        });
+
         if (matchingSvc) {
           setForm(prev => ({ ...prev, service_id: matchingSvc.service_id }));
         }
