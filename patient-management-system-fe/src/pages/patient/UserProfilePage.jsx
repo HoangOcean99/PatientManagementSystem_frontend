@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
-import axiosClient from '../../api/axiosClient';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { getPatientById } from '../../api/patientApi';
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const GENDER_MAP = {
@@ -35,8 +35,10 @@ const UserProfilePage = () => {
             try {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id;
-                const res = await axiosClient.get(`/patients/${userId}`);
-                setProfile(res.data?.data || null);
+                //     return;
+                // }
+                const res = await getPatientById(userId);
+                setProfile(res.data?.data || res.data || null);
             } catch (err) {
                 console.error('Failed to load profile:', err);
                 toast.error('Không thể tải thông tin cá nhân');
@@ -49,7 +51,7 @@ const UserProfilePage = () => {
 
     if (loading) {
         return (
-            <div className="relative flex-1">
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
                 <LoadingSpinner />
             </div>
         );
@@ -65,12 +67,12 @@ const UserProfilePage = () => {
     };
 
     return (
-        <main className="flex-1 overflow-y-auto bg-gray-50/30">
+        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
             {scrollbarStyles}
 
             {/* Header */}
             <div className="sticky top-0 z-30 border-b border-blue-100/40" style={{ background: 'linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.9) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
-                <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex items-center gap-4">
                         <button onClick={() => navigate('/patient/dashboard')} className="w-10 h-10 rounded-xl bg-white/70 hover:bg-white border border-gray-200/60 flex items-center justify-center text-gray-500 hover:text-blue-600 transition-all shadow-sm cursor-pointer">
                             <i className="fa-solid fa-arrow-left"></i>
@@ -87,7 +89,7 @@ const UserProfilePage = () => {
             </div>
 
             {/* Content */}
-            <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
                 <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}>
 
                     {/* Avatar Card */}
@@ -120,6 +122,13 @@ const UserProfilePage = () => {
                                         )}
                                     </div>
                                 </div>
+                                <button
+                                    onClick={() => navigate('/patient/change-password')}
+                                    className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-blue-50 text-sm font-bold text-gray-600 hover:text-blue-600 transition-all cursor-pointer border border-gray-200/60 hover:border-blue-200"
+                                >
+                                    <i className="fa-solid fa-key mr-1.5 text-xs"></i>
+                                    Đổi mật khẩu
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -147,7 +156,7 @@ const UserProfilePage = () => {
                     </div>
                 </motion.div>
             </div>
-        </main>
+        </div>
     );
 };
 

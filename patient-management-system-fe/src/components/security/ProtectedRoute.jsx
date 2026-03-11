@@ -1,14 +1,14 @@
 import { Navigate } from "react-router-dom";
 import LoadingSpinner from "../common/LoadingSpinner";
 import { useAuth } from "./AuthContext";
+import { supabase } from "../../../supabaseClient";
 
 export default function ProtectedRoute({ children, allowedRoles }) {
-  const { userRole, loading } = useAuth();
-  if (loading) {
+  const { userId, userRole, loading } = useAuth();
+
+  if (loading || !supabase.auth.getSession()) {
     return (
-      <div className="relative flex-1">
-        {loading && <LoadingSpinner />}
-      </div>
+      <LoadingSpinner />
     )
   }
 

@@ -10,9 +10,11 @@ export default function AuthCallback() {
     useEffect(() => {
         const { data: listener } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                if (session) {
+                if (!session) return;
+                try {
                     const res = await axiosClient.post('/auth/sync-user-google');
                     const user = res.data.user;
+                    if (!user?.role) return;
                     switch (user.role) {
                         case 'admin': navigate('/admin/dashboard'); break;
                         case 'patient': navigate('/patient/dashboard'); break;
@@ -22,6 +24,8 @@ export default function AuthCallback() {
                         case 'lab': navigate('/lab/queue'); break;
                     }
                     toast.success("Đăng nhập thành công!");
+                } catch (err) {
+                    console.error(err);
                 }
             }
         );

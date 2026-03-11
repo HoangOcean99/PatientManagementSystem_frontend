@@ -1,6 +1,5 @@
 import * as Icons from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { signOut } from "../../api/authApi";
 import { supabase } from "../../../supabaseClient";
 
 const SidebarItem = ({ icon, label, active = false, linkPage }) => {

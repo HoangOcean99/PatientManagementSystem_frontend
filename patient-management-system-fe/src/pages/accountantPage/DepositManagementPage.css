@@ -1,0 +1,511 @@
+/* ============================
+   DepositManagementPage
+   Theme: Blue / Ocean (Finance)
+   ============================ */
+
+/* ===== LAYOUT ===== */
+.acc-dep-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #F8FAFC;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0F172A;
+}
+
+.acc-dep-main {
+  flex: 1;
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.acc-dep-content {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ===== HEADER ===== */
+.acc-dep-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.acc-dep-header__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  color: #0F172A;
+}
+
+.acc-dep-header__title svg {
+  color: #2563EB;
+  /* Đổi từ Teal sang Blue */
+}
+
+.acc-dep-header__subtitle {
+  font-size: 14px;
+  color: #64748B;
+  margin: 4px 0 0 0;
+}
+
+.acc-dep-header__add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #2563EB;
+  /* Nút chính màu xanh biển */
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.acc-dep-header__add-btn:hover {
+  background: #1D4ED8;
+}
+
+/* ===== FILTERS ===== */
+.acc-dep-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.acc-dep-filters__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  max-width: 420px;
+  padding: 10px 16px;
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+  transition: border-color 0.2s ease;
+}
+
+.acc-dep-filters__search:focus-within {
+  border-color: #2563EB;
+}
+
+.acc-dep-filters__search svg {
+  color: #94A3B8;
+  flex-shrink: 0;
+}
+
+.acc-dep-filters__search input {
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 14px;
+  font-family: inherit;
+  color: #0F172A;
+  width: 100%;
+}
+
+.acc-dep-filters__search input::placeholder {
+  color: #94A3B8;
+}
+
+.acc-dep-filters__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 10px;
+}
+
+.acc-dep-filters__status svg {
+  color: #94A3B8;
+}
+
+.acc-dep-filters__status select {
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 14px;
+  font-family: inherit;
+  color: #0F172A;
+  cursor: pointer;
+}
+
+/* ===== TABLE ===== */
+.acc-dep-table-wrap {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.acc-dep-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.acc-dep-table thead {
+  background: #EFF6FF;
+  /* Nền tiêu đề bảng xanh nhạt */
+}
+
+.acc-dep-table th {
+  padding: 14px 18px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.acc-dep-table td {
+  padding: 14px 18px;
+  font-size: 14px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.acc-dep-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.acc-dep-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.acc-dep-table__code {
+  font-weight: 600;
+  color: #2563EB;
+  /* Mã phiếu màu xanh dương */
+  font-size: 13px;
+}
+
+.acc-dep-table__name {
+  font-weight: 600;
+}
+
+.acc-dep-table__amount {
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+}
+
+.acc-dep-table__empty {
+  text-align: center;
+  padding: 40px 20px !important;
+  color: #94A3B8;
+  font-size: 14px;
+}
+
+/* ===== BADGES ===== */
+.acc-dep-badge {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.acc-dep-badge--pending {
+  background: #FFF7ED;
+  color: #EA580C;
+}
+
+.acc-dep-badge--confirmed {
+  background: #F0FDF4;
+  color: #16A34A;
+}
+
+.acc-dep-badge--applied {
+  background: #EFF6FF;
+  color: #2563EB;
+}
+
+.acc-dep-badge--refunded {
+  background: #F1F5F9;
+  color: #64748B;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.acc-dep-table__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.acc-dep-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid #E2E8F0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #64748B;
+}
+
+.acc-dep-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+.acc-dep-action-btn--view:hover {
+  color: #2563EB;
+  border-color: #2563EB;
+  background: #EFF6FF;
+}
+
+.acc-dep-action-btn--confirm:hover {
+  color: #16A34A;
+  border-color: #16A34A;
+  background: #F0FDF4;
+}
+
+.acc-dep-action-btn--apply:hover {
+  color: #2563EB;
+  border-color: #2563EB;
+  background: #EFF6FF;
+}
+
+.acc-dep-action-btn--refund:hover {
+  color: #EA580C;
+  border-color: #EA580C;
+  background: #FFF7ED;
+}
+
+/* ===== MODAL ===== */
+.acc-dep-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.acc-dep-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.acc-dep-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #F1F5F9;
+  background: #EFF6FF;
+  /* Header modal xanh dương nhạt */
+}
+
+.acc-dep-modal__header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: #0F172A;
+}
+
+.acc-dep-modal__close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748B;
+  transition: all 0.2s ease;
+}
+
+.acc-dep-modal__close:hover {
+  background: #FEF2F2;
+  color: #EF4444;
+}
+
+.acc-dep-modal__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.acc-dep-modal__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.acc-dep-modal__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748B;
+  min-width: 120px;
+}
+
+.acc-dep-modal__value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #0F172A;
+}
+
+.acc-dep-modal__value--strong {
+  font-weight: 700;
+  font-size: 16px;
+  color: #2563EB;
+}
+
+.acc-dep-modal__footer {
+  padding: 16px 24px;
+  border-top: 1px solid #F1F5F9;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.acc-dep-modal__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  border: none;
+}
+
+.acc-dep-modal__btn--confirm {
+  background: #16A34A;
+  color: #fff;
+}
+
+.acc-dep-modal__btn--confirm:hover {
+  background: #15803D;
+}
+
+.acc-dep-modal__btn--apply {
+  background: #2563EB;
+  color: #fff;
+}
+
+.acc-dep-modal__btn--apply:hover {
+  background: #1D4ED8;
+}
+
+.acc-dep-modal__btn--refund {
+  background: #EA580C;
+  color: #fff;
+}
+
+.acc-dep-modal__btn--refund:hover {
+  background: #C2410C;
+}
+
+.acc-dep-modal__btn--close {
+  background: #F1F5F9;
+  color: #475569;
+}
+
+.acc-dep-modal__btn--close:hover {
+  background: #E2E8F0;
+}
+
+/* ===== FORM ===== */
+.acc-dep-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.acc-dep-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.acc-dep-form-group input,
+.acc-dep-form-group textarea {
+  padding: 10px 14px;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #0F172A;
+  transition: border-color 0.2s ease;
+  outline: none;
+  resize: vertical;
+}
+
+.acc-dep-form-group input:focus,
+.acc-dep-form-group textarea:focus {
+  border-color: #2563EB;
+}
+
+/* ===== FOOTER ===== */
+.acc-dep-footer {
+  text-align: center;
+}
+
+.acc-dep-footer p {
+  font-size: 13px;
+  color: #94A3B8;
+  margin: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .acc-dep-content {
+    padding: 20px 20px 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .acc-dep-main {
+    margin-left: 0;
+  }
+
+  .acc-dep-header {
+    flex-direction: column;
+  }
+
+  .acc-dep-filters {
+    flex-direction: column;
+  }
+
+  .acc-dep-filters__search {
+    max-width: 100%;
+  }
+
+  .acc-dep-table-wrap {
+    overflow-x: auto;
+  }
+}

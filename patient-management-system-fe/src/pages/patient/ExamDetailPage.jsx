@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import axiosClient from '../../api/axiosClient';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { supabase } from '../../../supabaseClient';
+import { getMedicalRecordDetail } from '../../api/patientApi';
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const Section = ({ icon, title, iconGradient, children }) => (
@@ -35,8 +36,8 @@ const ExamDetailPage = () => {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await axiosClient.get(`/medical-records/${id}`);
-                setRecord(res.data?.data || null);
+                const res = await getMedicalRecordDetail(id);
+                setRecord(res.data?.data || res.data || null);
             } catch (err) {
                 console.error('Failed to load exam detail:', err);
                 toast.error('Không thể tải chi tiết khám');
@@ -49,7 +50,7 @@ const ExamDetailPage = () => {
 
     if (loading) {
         return (
-            <div className="relative flex-1">
+            <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
                 <LoadingSpinner />
             </div>
         );
@@ -76,7 +77,7 @@ const ExamDetailPage = () => {
     const labOrders = record.LabOrders || [];
 
     return (
-        <main className="flex-1 overflow-y-auto bg-gray-50/30">
+        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
             {scrollbarStyles}
 
             {/* Header */}
@@ -180,7 +181,7 @@ const ExamDetailPage = () => {
                     </Section>
                 </motion.div>
             </div>
-        </main>
+        </div>
     );
 };
 

@@ -6,9 +6,7 @@ export default function PublicRoute({ children }) {
   const { userRole, loading } = useAuth();
   if (loading) {
     return (
-      <div className="relative flex-1">
-        {loading && <LoadingSpinner />}
-      </div>
+      <LoadingSpinner />
     )
   }
 
@@ -27,6 +25,9 @@ export default function PublicRoute({ children }) {
     }
     if (userRole === "receptionist") {
       return <Navigate to="/receptionist/dashboard" replace />;
+    }
+    if (userRole === "accountant") {
+      return <Navigate to="/accountant/dashboard" replace />;
     }
 
     return <Navigate to="/login" replace />;

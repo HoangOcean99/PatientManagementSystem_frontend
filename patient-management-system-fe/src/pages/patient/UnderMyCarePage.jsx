@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
-import axiosClient from '../../api/axiosClient';
+import { getPatients } from '../../api/patientApi';
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const RELATION_MAP = {
     father: 'Cha',
@@ -24,8 +24,9 @@ const UnderMyCarePage = () => {
             try {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id;
-                const res = await axiosClient.get('/family-relationships', { params: { parent_user_id: userId } });
-                setDependents(res.data?.data || []);
+                // if (!userId) { navigate('/login'); return; }
+                const res = await getPatients({ parent_user_id: userId });
+                setDependents(res.data?.data || res.data || []);
             } catch (err) {
                 console.error('Failed to load dependents:', err);
                 toast.error('Không thể tải danh sách người phụ thuộc');
@@ -36,20 +37,13 @@ const UnderMyCarePage = () => {
         load();
     }, [navigate]);
 
-    if (loading) {
-        return (
-            <div className="relative flex-1">
-                <LoadingSpinner />
-            </div>
-        )
-    }
     return (
-        <main className="flex-1 overflow-y-auto bg-gray-50/30">
+        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
             {scrollbarStyles}
 
             {/* Header */}
             <div className="sticky top-0 z-30 border-b border-blue-100/40" style={{ background: 'linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.9) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
-                <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <button onClick={() => navigate('/patient/dashboard')} className="w-10 h-10 rounded-xl bg-white/70 hover:bg-white border border-gray-200/60 flex items-center justify-center text-gray-500 hover:text-blue-600 transition-all shadow-sm cursor-pointer">
@@ -76,8 +70,13 @@ const UnderMyCarePage = () => {
             </div>
 
             {/* Content */}
-            <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
-                {dependents.length === 0 ? (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+                {loading ? (
+                    <div className="flex flex-col justify-center items-center h-48 gap-3">
+                        <LoadingSpinner />
+                        <span className="text-sm text-blue-500/60 font-medium">Đang tải dữ liệu...</span>
+                    </div>
+                ) : dependents.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -137,7 +136,7 @@ const UnderMyCarePage = () => {
                     </div>
                 )}
             </div>
-        </main>
+        </div>
     );
 };
 
