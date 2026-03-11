@@ -6,28 +6,25 @@ import { supabase } from "../../../supabaseClient";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { getListAppointments } from "../../api/scheduleApi";
 import { getListAppointmentsByStatus } from "../../api/appointmentApi";
-
-
+import { useSearchParams } from "react-router-dom";
 
 const SelectSpecialtyPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("confirmed");
-  const [appointments, setAppointments] = useState([]); 
+  const [appointments, setAppointments] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [latestAppointment, setLatestAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [appointmentsByStatus, setAppointmentsByStatus] = useState([]);
-  console.log("2. STATE ACTIVE_TAB HIỆN TẠI LÀ:", activeTab); // Lệnh test 2
 
-console.log(appointmentsByStatus);
+  console.log(appointmentsByStatus);
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const res = await getListAppointments({activeTab });
-          console.log(`3. KẾT QUẢ API TRẢ VỀ CHO TAB [${activeTab}]:`, res); // Lệnh test 3
+          const res = await getListAppointments({ activeTab });
           const allApps = res.data?.data || [];
 
           // Sort to find the latest
@@ -64,7 +61,7 @@ console.log(appointmentsByStatus);
   useEffect(() => {
     const fetchAppointmentsByStatus = async () => {
       try {
-        
+
         const res = await getListAppointmentsByStatus(activeTab);
         setAppointmentsByStatus(res.data?.data || res.data || []);
       } catch (err) {
@@ -75,7 +72,7 @@ console.log(appointmentsByStatus);
     if (activeTab) {
       fetchAppointmentsByStatus();
     }
-  }, [activeTab]); 
+  }, [activeTab]);
 
   const filteredDepartments = departments.filter(d =>
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,7 +138,7 @@ console.log(appointmentsByStatus);
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Status</p>
                 <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${latestAppointment.status === 'completed' ? 'bg-green-50 text-green-600' :
-                    latestAppointment.status === 'pending' ? 'bg-sky-50 text-sky-600' : 'bg-red-50 text-red-600'
+                  latestAppointment.status === 'pending' ? 'bg-sky-50 text-sky-600' : 'bg-red-50 text-red-600'
                   }`}>
                   {latestAppointment.status}
                 </span>
@@ -166,7 +163,7 @@ console.log(appointmentsByStatus);
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.05 }}
               whileHover={{ y: -5, transition: { duration: 0.2 } }}
-              onClick={() => navigate(`/patient/booking/details?specialty=${encodeURIComponent(s.name)}`)}
+              onClick={() => navigate(`/patient/booking/details?specialty=${encodeURIComponent(s.name)}&departmentId=${s.department_id}`)}
               className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] cursor-pointer group transition-all"
             >
               <div className={`w-14 h-14 ${s.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
@@ -197,19 +194,17 @@ console.log(appointmentsByStatus);
               { id: "completed", label: "Hoàn Thành" }
             ].map((tab) => (
               <button
-                key={tab.id}  
-                onClick={() => 
-                  {
-                    console.log("1. ĐÃ CLICK VÀO TAB:", tab.id);
-                    setActiveTab(tab.id);
-                    console.log("2. activeTab SAU KHI CLICK:", activeTab);
-                  }
+                key={tab.id}
+                onClick={() => {
+                  console.log("1. ĐÃ CLICK VÀO TAB:", tab.id);
+                  setActiveTab(tab.id);
+                  console.log("2. activeTab SAU KHI CLICK:", activeTab);
                 }
-                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 z-10 ${
-                  activeTab === tab.id
-                    ? "bg-white text-[#5ba4f8] shadow-sm"
-                    : "text-white hover:bg-white/10"
-                }`}
+                }
+                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 z-10 ${activeTab === tab.id
+                  ? "bg-white text-[#5ba4f8] shadow-sm"
+                  : "text-white hover:bg-white/10"
+                  }`}
               >
                 {tab.label}
               </button>
@@ -219,9 +214,9 @@ console.log(appointmentsByStatus);
           <div className="space-y-4">
             {appointmentsByStatus && appointmentsByStatus.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                
+
                 {appointmentsByStatus.map((app, i) => (
-                  <MotionDiv 
+                  <MotionDiv
                     key={app.appointment_id || i}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -234,21 +229,20 @@ console.log(appointmentsByStatus);
                         <i className="fa-regular fa-clock mr-2"></i>
                         {app.DoctorSlots?.start_time?.slice(0, 5)} - {app.DoctorSlots?.end_time?.slice(0, 5)}
                       </div>
-                      
+
                       {/* ĐÃ SỬA: Cho chữ và màu ăn theo tab hiện tại luôn */}
-                      <span className={`text-[12px] font-medium ${
-                          app.status  === 'pending' ? 'text-[#5ba4f8]' : app.status === 'confirmed' ? 'text-[#5ba4f8]' : app.status === 'cancelled' ? 'text-gray-500' : app.status === 'completed' ? 'text-green-500' : 'text-gray-500'
-                      }`}>
+                      <span className={`text-[12px] font-medium ${app.status === 'pending' ? 'text-[#5ba4f8]' : app.status === 'confirmed' ? 'text-[#5ba4f8]' : app.status === 'cancelled' ? 'text-gray-500' : app.status === 'completed' ? 'text-green-500' : 'text-gray-500'
+                        }`}>
                         {app.status === 'pending' ? 'chờ xác nhận' : app.status === 'confirmed' ? 'Đã xác nhận' : app.status === 'cancelled' ? 'Bỏ lỡ' : app.status === 'completed' ? 'Hoàn thành' : 'Chờ xác nhận'}
-                      </span> 
+                      </span>
                     </div>
 
                     {/* Body: Thông tin bệnh nhân & Dịch vụ */}
                     <div className="flex items-center gap-3 mb-4 border-b border-gray-100 pb-4">
-                      <img 
-                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(app.Patients?.Users?.full_name || 'BN')}&background=random&color=fff`} 
-                        alt="avatar" 
-                        className="w-[42px] h-[42px] rounded-full object-cover" 
+                      <img
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(app.Patients?.Users?.full_name || 'BN')}&background=random&color=fff`}
+                        alt="avatar"
+                        className="w-[42px] h-[42px] rounded-full object-cover"
                       />
                       <div>
                         {/* //Hiển thị id appointmennt_id */}
@@ -271,8 +265,8 @@ console.log(appointmentsByStatus);
                         <span>
                           <strong className="font-semibold text-gray-800">
                             BS. {app.Doctors?.Users?.full_name || "N/A"}
-                          </strong> 
-                          <span className="mx-1">•</span> 
+                          </strong>
+                          <span className="mx-1">•</span>
                           {app.ClinicServices?.Departments?.name || "Chuyên khoa"}
                         </span>
                       </p>
@@ -284,7 +278,7 @@ console.log(appointmentsByStatus);
 
                     {/* Nút Xem chi tiết */}
                     <div className="flex justify-end pt-2 mt-auto">
-                      <button 
+                      <button
                         onClick={() => navigate(`/patient/exam/${app.appointment_id}`)}
                         className="text-[#5ba4f8] text-xs font-semibold hover:text-sky-600 transition-colors flex items-center gap-1"
                       >

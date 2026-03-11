@@ -1,13 +1,16 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { supabase } from "../../../supabaseClient";
-import { getAllDoctors } from "../../api/doctorApi";
-import { createAppointment } from "../../api/scheduleApi";
-import { getPatients } from "../../api/patientApi";
+// import { getAllDoctors } from "../../api/doctorApi"; 
+import { createAppointment } from "../../api/appointmentApi";
+// import { getPatients } from "../../api/patientApi";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import { getAllServices } from "../../api/serviceApi";
+// import { getAllServices } from "../../api/serviceApi";
+import { getDoctorbyDepartmentId } from "../../api/doctorApi";
+import { getServicesbyDepartmentId } from "../../api/serviceApi";
+import { getListSchedulesByDoctorIdAndDate } from "../../api/scheduleApi";
 
 
 const RELATION_MAP = {
@@ -29,15 +32,16 @@ const MONTHS = [
 
 const BookingAppointmentPage = () => {
   const navigate = useNavigate();
-  const location = useLocation(); 
-  const [doctors, setDoctors] = useState([]); 
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const [doctors, setDoctors] = useState([]);
   const [services, setServices] = useState([]);
-  const [dependents, setDependents] = useState([]); 
+  const [dependents, setDependents] = useState([]);
   const [selectedSpecialty, setSelectedSpecialty] = useState("");  // selected specialty from URL
   const [myself, setMyself] = useState(null);
-
+  const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false); 
+  const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
     patient_id: "",
@@ -50,11 +54,13 @@ const BookingAppointmentPage = () => {
   });
   const [errors, setErrors] = useState({});
 
+
+  const departmentId = searchParams.get("departmentId");
   // Calendar State
   const [viewDate, setViewDate] = useState(new Date());
 
   useEffect(() => {
-    const load = async () => {
+    const loadUserData = async () => {
       try {
         const { data: authData } = await supabase.auth.getUser();
         const userId = authData?.user?.id;
@@ -71,24 +77,13 @@ const BookingAppointmentPage = () => {
           setForm(prev => ({ ...prev, patient_id: userId, is_dependent: false }));
         }
 
-        const [docRes, svcRes, depRes] = await Promise.all([
-          getAllDoctors().catch(() => ({ data: [] })),
-          getAllServices().catch(() => ({ data: [] })),
-          userId 
-            ? getPatients({ parent_user_id: userId }).catch(() => ({ data: [] }))
-            : Promise.resolve({ data: [] }),
-        ]);
-
-        const docs = docRes.data || []; 
-        setDoctors(Array.isArray(docs) ? docs : [docs]);
-
-        const loadedServices = svcRes.data || [];
-        setServices(Array.isArray(loadedServices) ? loadedServices : [loadedServices]);
-
-        const loadedDependents = depRes.data || [];
-        setDependents(Array.isArray(loadedDependents) ? loadedDependents : [loadedDependents]);
-
-
+        // const [docRes, svcRes, depRes] = await Promise.all([
+        //   getDoctorbyDepartmentId().catch(() => ({ data: [] })),
+        //   getAllServices().catch(() => ({ data: [] })),
+        //   userId 
+        //     ? getPatients({ parent_user_id: userId }).catch(() => ({ data: [] }))
+        //     : Promise.resolve({ data: [] }),
+        // ]);
       } catch (err) {
         console.error("Failed to load data:", err);
         toast.error("Không thể tải dữ liệu");
@@ -96,21 +91,51 @@ const BookingAppointmentPage = () => {
         setLoading(false);
       }
     };
-    load();
+
+    const fetchDoctors = async () => {
+      const res = await getDoctorbyDepartmentId(departmentId);
+      setDoctors(res.data?.data || []);
+    };
+
+    const fetchServices = async () => {
+      const res = await getServicesbyDepartmentId(departmentId);
+      setServices(res.data?.data || []);
+    };
+
+    const fetchSchedules = async () => {
+      // 1. Lấy ngày hiện tại (Format YYYY-MM-DD)
+      const today = new Date();
+      const startDate = today.toISOString().split('T')[0];
+
+      // 2. Tính ngày của 90 ngày sau
+      const futureDate = new Date();
+      futureDate.setDate(today.getDate() + 90);
+      const endDate = futureDate.toISOString().split('T')[0];
+
+      // 3. Truyền vào hàm API
+      const res = await getListSchedulesByDoctorIdAndDate(form.doctor_id, startDate, endDate);
+
+      setSchedules(res.data?.data || []);
+    };
+
+    fetchDoctors();
+    fetchServices();
+    fetchSchedules();
+    loadUserData();
   }, []);
 
   // Handle specialty from URL
- useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const specialtyFilter = params.get("specialty");
-    
+
     if (specialtyFilter) {
       setSelectedSpecialty(specialtyFilter);
       // Pre-select service if it matches the name or type
-      if (services.length > 0) { 
+      if (services.length > 0) {
         const matchingSvc = services.find(s => {
           // Bọc an toàn: Nếu s không tồn tại hoặc không có trường name thì bỏ qua luôn
-          if (!s || !s.name) return false; 
+          if (!s || !s.name) return false;
           // Dùng đúng tên biến specialtyFilter
           const sNameLower = s.name.toLowerCase();
           const filterLower = specialtyFilter.toLowerCase();
@@ -184,19 +209,19 @@ const BookingAppointmentPage = () => {
   // --- Calendar Logic ---
   const currentMonth = viewDate.getMonth();
   const currentYear = viewDate.getFullYear();
-  
+
   const calendarDays = useMemo(() => {
     const days = [];
     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
     const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
-    
+
     // Padding for previous month
     for (let i = 0; i < firstDay; i++) {
-        days.push(null);
+      days.push(null);
     }
-    
+
     for (let d = 1; d <= daysInMonth; d++) {
-        days.push(d);
+      days.push(d);
     }
     return days;
   }, [currentMonth, currentYear]);
@@ -216,7 +241,7 @@ const BookingAppointmentPage = () => {
 
   // --- Time Slots Logic ---
   const timeSlots = ["09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM"];
-  
+
   const convertTo24h = (timeStr) => {
     const [time, modifier] = timeStr.split(' ');
     let [hours, minutes] = time.split(':');
@@ -232,14 +257,14 @@ const BookingAppointmentPage = () => {
   return (
     <div className="w-full h-full overflow-y-auto bg-[#F8F9FB] p-8 font-sans">
       <div className="max-w-7xl mx-auto">
-        <button 
+        <button
           onClick={() => navigate("/patient/booking")}
           className="mb-6 flex items-center gap-2 text-gray-500 hover:text-sky-500 transition-colors font-medium group"
         >
           <i className="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
-          Back to Specialty Selection
+          Quay lại chọn khoa
         </button>
-        <MotionDiv 
+        <MotionDiv
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -251,7 +276,7 @@ const BookingAppointmentPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Form */}
-          <MotionDiv 
+          <MotionDiv
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
@@ -259,7 +284,7 @@ const BookingAppointmentPage = () => {
           >
             <div className="bg-white rounded-3xl p-8 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl font-bold text-gray-800">Book New Appointment</h2>
+                <h2 className="text-xl font-bold text-gray-800">Đặt lịch khám</h2>
                 {selectedSpecialty && (
                   <div className="flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 rounded-full text-xs font-bold ring-1 ring-sky-500/10 shadow-sm shadow-sky-500/5">
                     <i className="fa-solid fa-stethoscope"></i>
@@ -267,11 +292,11 @@ const BookingAppointmentPage = () => {
                   </div>
                 )}
               </div>
-              
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-600 block">Patient</label>
+                    <label className="text-sm font-semibold text-gray-600 block">Bệnh nhân</label>
                     <div className="relative">
                       <select
                         value={form.patient_id}
@@ -282,7 +307,7 @@ const BookingAppointmentPage = () => {
                         }}
                         className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all appearance-none text-gray-700"
                       >
-                        <option value="">Select a patient</option>
+                        <option value="">Chọn bệnh nhân</option>
                         <option value={myself?.user_id}>{myself?.full_name} (Bản thân)</option>
                         {dependents.map((dep) => (
                           <option key={dep.relationship_id} value={dep.ChildUser?.user_id}>
@@ -298,14 +323,14 @@ const BookingAppointmentPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-600 block">Doctor</label>
+                    <label className="text-sm font-semibold text-gray-600 block">Bác sĩ</label>
                     <div className="relative">
                       <select
                         value={form.doctor_id}
                         onChange={(e) => handleChange("doctor_id", e.target.value)}
                         className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all appearance-none text-gray-700"
                       >
-                        <option value="">Select a provider</option>
+                        <option value="">Chọn bác sĩ</option>
                         {doctors.map((d) => (
                           <option key={d.doctor_id} value={d.doctor_id}>
                             Dr. {d.Users?.full_name} ({d.specialization})
@@ -320,14 +345,14 @@ const BookingAppointmentPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-600 block">Appointment Type</label>
+                    <label className="text-sm font-semibold text-gray-600 block">Loại dịch vụ</label>
                     <div className="relative">
                       <select
                         value={form.service_id}
                         onChange={(e) => handleChange("service_id", e.target.value)}
                         className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all appearance-none text-gray-700"
                       >
-                        <option value="">Select type</option>
+                        <option value="">Chọn dịch vụ</option>
                         {services.map((s) => (
                           <option key={s.service_id} value={s.service_id}>
                             {s.name} - {Number(s.price).toLocaleString("vi-VN")}₫
@@ -342,7 +367,7 @@ const BookingAppointmentPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-600 block">Appointment Date</label>
+                    <label className="text-sm font-semibold text-gray-600 block">Ngày khám</label>
                     <div className="relative">
                       <div className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl flex items-center gap-3 text-gray-700 cursor-default">
                         <i className="fa-regular fa-calendar text-sky-500"></i>
@@ -353,24 +378,24 @@ const BookingAppointmentPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-600 block">Appointment Time</label>
+                  <label className="text-sm font-semibold text-gray-600 block">Giờ khám</label>
                   <div className="relative">
                     <div className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl flex items-center gap-3 text-gray-700 cursor-default">
                       <i className="fa-regular fa-clock text-sky-500"></i>
                       <span className={form.start_time ? "text-gray-900 font-medium" : "text-gray-400"}>
-                        {form.start_time || "Select time on the right"}
+                        {form.start_time || "Chọn giờ khám"}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-600 block">Reasons appointment</label>
+                  <label className="text-sm font-semibold text-gray-600 block">Lý do khám</label>
                   <textarea
                     rows="4"
                     value={form.notes}
                     onChange={(e) => handleChange("notes", e.target.value)}
-                    placeholder="Add any additional notes about the appointment..."
+                    placeholder="Thêm bất kỳ ghi chú nào về lịch khám..."
                     className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-gray-700 resize-none placeholder:text-gray-400"
                   ></textarea>
                 </div>
@@ -381,7 +406,7 @@ const BookingAppointmentPage = () => {
                     disabled={submitting}
                     className="w-full py-4 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold transition-all transform active:scale-[0.98] shadow-lg shadow-sky-500/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {submitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><i className="fa-solid fa-check"></i> Confirm Appointment</>}
+                    {submitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><i className="fa-solid fa-check"></i> Xác nhận lịch khám</>}
                   </button>
                 </div>
               </form>
@@ -389,14 +414,14 @@ const BookingAppointmentPage = () => {
           </MotionDiv>
 
           {/* Right Column: Calendar & Time Slots */}
-          <MotionDiv 
+          <MotionDiv
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="space-y-8"
           >
             <div className="bg-white rounded-3xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
-              <h3 className="text-lg font-bold text-gray-800 mb-6 font-semibold">Select Date</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-6 font-semibold">Chọn ngày</h3>
               <div className="flex items-center justify-between mb-6">
                 <button type="button" onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"><i className="fa-solid fa-chevron-left text-xs"></i></button>
                 <div className="text-center"><span className="font-bold text-gray-700 block text-sm">{MONTHS[currentMonth]} {currentYear}</span></div>
@@ -417,7 +442,7 @@ const BookingAppointmentPage = () => {
             </div>
 
             <div className="bg-white rounded-3xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
-              <h3 className="text-sm font-bold text-gray-800 mb-6 font-semibold">Available Times for {new Date(form.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h3>
+              <h3 className="text-sm font-bold text-gray-800 mb-6 font-semibold">Giờ khả dụng cho {new Date(form.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {timeSlots.map((slot) => {
                   const time24h = convertTo24h(slot);
