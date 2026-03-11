@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
-import { getPatients } from '../../api/patientApi';
+import { getPatients, getMedicalRecords } from '../../api/patientApi';
 import { getListAppointments } from '../../api/scheduleApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -70,7 +70,7 @@ const PatientDashboard = () => {
 
                     const [appointRes, recordRes, familyRes] = await Promise.allSettled([
                         getListAppointments({ patient_id: userId }),
-                        axiosClient.get('/medical-records', { params: { patient_id: userId } }), /* TODO: add to patientApi */
+                        getMedicalRecords(userId),
                         getPatients({ parent_user_id: userId }),
                     ]);
 
@@ -98,7 +98,7 @@ const PatientDashboard = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+            <div className="flex-1 h-full flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
                 <LoadingSpinner />
             </div>
         );
@@ -112,7 +112,7 @@ const PatientDashboard = () => {
     };
 
     return (
-        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+        <div className="flex-1 h-full overflow-y-auto w-full font-sans relative" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
             {scrollbarStyles}
 
             {/* Header */}

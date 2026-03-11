@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { supabase } from "../../../supabaseClient";
 import { getAllDoctors } from "../../api/doctorApi";
-import { createAppointment } from "../../api/scheduleApi";
+import { createAppointment, getDoctorSchedule } from "../../api/scheduleApi";
 import { getPatients } from "../../api/patientApi";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
@@ -37,13 +37,16 @@ const BookingAppointmentPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
   const [form, setForm] = useState({
     patient_id: "",
     is_dependent: false,
     doctor_id: "",
     service_id: "",
+    slot_id: "",
     appointment_date: new Date().toISOString().split("T")[0],
-    start_time: "",
     notes: "",
   });
   const [errors, setErrors] = useState({});
@@ -125,13 +128,36 @@ const BookingAppointmentPage = () => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
+  // Fetch available slots when doctor + date changes
+  useEffect(() => {
+    if (!form.doctor_id || !form.appointment_date) {
+      setAvailableSlots([]);
+      return;
+    }
+    const fetchSlots = async () => {
+      setLoadingSlots(true);
+      try {
+        const res = await getDoctorSchedule(form.doctor_id, form.appointment_date);
+        const slots = res.data?.data || res.data || [];
+        // Only show unbooked slots
+        setAvailableSlots(slots.filter(s => !s.is_booked));
+      } catch (err) {
+        console.error('Failed to load slots:', err);
+        setAvailableSlots([]);
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
+    fetchSlots();
+  }, [form.doctor_id, form.appointment_date]);
+
   const validate = () => {
     const errs = {};
     if (!form.patient_id) errs.patient_id = "Vui lòng chọn bệnh nhân";
     if (!form.doctor_id) errs.doctor_id = "Vui lòng chọn bác sĩ";
     if (!form.service_id) errs.service_id = "Vui lòng chọn dịch vụ";
     if (!form.appointment_date) errs.appointment_date = "Vui lòng chọn ngày";
-    if (!form.start_time) errs.start_time = "Vui lòng chọn giờ";
+    if (!form.slot_id) errs.slot_id = "Vui lòng chọn khung giờ";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -146,19 +172,16 @@ const BookingAppointmentPage = () => {
     try {
       setSubmitting(true);
       const selectedSvc = services.find((s) => String(s.service_id) === String(form.service_id));
-      const duration = selectedSvc?.duration_minutes || 30;
-      const [h, m] = form.start_time.split(":").map(Number);
-      const endMin = h * 60 + m + duration;
-      const end_time = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
+      const totalPrice = selectedSvc?.price || 0;
+      const depositRequired = Math.round(totalPrice * 0.3); // 30% deposit
 
       const payload = {
         patient_id: form.patient_id,
         doctor_id: form.doctor_id,
         service_id: form.service_id,
-        appointment_date: form.appointment_date,
-        start_time: form.start_time,
-        end_time,
-        notes: form.notes,
+        slot_id: form.slot_id,
+        total_price: totalPrice,
+        deposit_required: depositRequired,
         status: "pending",
       };
 
@@ -211,19 +234,11 @@ const BookingAppointmentPage = () => {
   };
 
   // --- Time Slots Logic ---
-  const timeSlots = ["09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM"];
-  
-  const convertTo24h = (timeStr) => {
-    const [time, modifier] = timeStr.split(' ');
-    let [hours, minutes] = time.split(':');
-    if (hours === '12') hours = '00';
-    if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
-    return `${String(hours).padStart(2, '0')}:${minutes}`;
-  };
+  const selectedSlot = availableSlots.find(s => s.slot_id === form.slot_id);
 
   const MotionDiv = motion.div;
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
+  if (loading) return <div className="flex-1 h-full flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
 
   return (
     <div className="w-full h-full overflow-y-auto bg-[#F8F9FB] p-8 font-sans">
@@ -349,15 +364,16 @@ const BookingAppointmentPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-600 block">Appointment Time</label>
+                  <label className="text-sm font-semibold text-gray-600 block">Time Slot</label>
                   <div className="relative">
                     <div className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl flex items-center gap-3 text-gray-700 cursor-default">
                       <i className="fa-regular fa-clock text-sky-500"></i>
-                      <span className={form.start_time ? "text-gray-900 font-medium" : "text-gray-400"}>
-                        {form.start_time || "Select time on the right"}
+                      <span className={selectedSlot ? "text-gray-900 font-medium" : "text-gray-400"}>
+                        {selectedSlot ? `${selectedSlot.start_time} — ${selectedSlot.end_time}` : "Select time on the right"}
                       </span>
                     </div>
                   </div>
+                  {errors.slot_id && <p className="text-xs text-red-500 mt-1">{errors.slot_id}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -413,16 +429,23 @@ const BookingAppointmentPage = () => {
             </div>
 
             <div className="bg-white rounded-3xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
-              <h3 className="text-sm font-bold text-gray-800 mb-6 font-semibold">Available Times for {new Date(form.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {timeSlots.map((slot) => {
-                  const time24h = convertTo24h(slot);
-                  const isSelected = form.start_time === time24h;
-                  return (
-                    <button key={slot} type="button" onClick={() => handleChange("start_time", time24h)} className={`py-3 px-1 rounded-xl text-[10px] font-bold border transition-all text-center ${isSelected ? 'bg-white border-sky-500 text-gray-900 border-2 shadow-sm' : 'bg-white border-gray-100 text-gray-400 hover:border-sky-300 hover:text-sky-600 hover:bg-sky-50/30'}`}>{slot}</button>
-                  );
-                })}
-              </div>
+              <h3 className="text-sm font-bold text-gray-800 mb-6 font-semibold">Available Slots for {new Date(form.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h3>
+              {!form.doctor_id ? (
+                <p className="text-sm text-gray-400 text-center py-8">Select a doctor first</p>
+              ) : loadingSlots ? (
+                <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-sky-500/30 border-t-sky-500 rounded-full animate-spin"></div></div>
+              ) : availableSlots.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-8">No available slots for this date</p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {availableSlots.map((slot) => {
+                    const isSelected = form.slot_id === slot.slot_id;
+                    return (
+                      <button key={slot.slot_id} type="button" onClick={() => handleChange("slot_id", slot.slot_id)} className={`py-3 px-1 rounded-xl text-[10px] font-bold border transition-all text-center ${isSelected ? 'bg-white border-sky-500 text-gray-900 border-2 shadow-sm' : 'bg-white border-gray-100 text-gray-400 hover:border-sky-300 hover:text-sky-600 hover:bg-sky-50/30'}`}>{slot.start_time} — {slot.end_time}</button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </MotionDiv>
         </div>

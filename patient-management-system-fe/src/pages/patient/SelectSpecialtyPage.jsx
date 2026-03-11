@@ -58,7 +58,7 @@ const SelectSpecialtyPage = () => {
 
   const MotionDiv = motion.div;
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
+  if (loading) return <div className="flex-1 h-full flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
 
   return (
     <div className="w-full h-full overflow-y-auto bg-[#F8F9FB] p-8 font-sans">

@@ -50,7 +50,7 @@ const ExamDetailPage = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+            <div className="flex-1 h-full flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
                 <LoadingSpinner />
             </div>
         );
@@ -58,7 +58,7 @@ const ExamDetailPage = () => {
 
     if (!record) {
         return (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+            <div className="flex-1 h-full flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
                 <div className="text-center">
                     <i className="fa-solid fa-file-circle-xmark text-4xl text-gray-300 mb-4"></i>
                     <p className="text-gray-500 font-medium">Không tìm thấy hồ sơ</p>
@@ -77,7 +77,7 @@ const ExamDetailPage = () => {
     const labOrders = record.LabOrders || [];
 
     return (
-        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+        <div className="flex-1 h-full overflow-y-auto w-full font-sans relative" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
             {scrollbarStyles}
 
             {/* Header */}
