@@ -1,6 +1,7 @@
 import React from 'react';
 
 const Dashboard = () => {
+    
     return (
         <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8">
             <div className="flex justify-between items-center mb-8">
