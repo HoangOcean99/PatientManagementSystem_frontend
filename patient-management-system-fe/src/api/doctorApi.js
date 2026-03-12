@@ -21,7 +21,6 @@ export const getDoctorById = async (id, params = {}) => {
 
 
 export const setupDoctor = async (id, data) => {
-    // Tạo hồ sơ bác sĩ lần đầu — doctor_id = user_id từ Supabase auth
     const url = `/doctor/setup/${id}`;
     return axiosClient.post(url, data);
 };

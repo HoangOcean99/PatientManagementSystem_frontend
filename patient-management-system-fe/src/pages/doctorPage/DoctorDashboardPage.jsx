@@ -14,17 +14,18 @@ import {
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import { getAppointmentsByDoctorId } from '../../api/doctorApi';
+import { supabase } from '../../../supabaseClient';
 import './DoctorDashboardPage.css';
 
 // ===== HELPERS =====
 const STATUS_LABELS = {
-  pending:    'Chờ xác nhận',
-  confirmed:  'Đã xác nhận',
+  pending: 'Chờ xác nhận',
+  confirmed: 'Đã xác nhận',
   checked_in: 'Đã check-in',
   in_progress: 'Đang khám',
-  completed:  'Hoàn tất',
-  cancelled:  'Đã hủy',
-  missed:     'Vắng mặt',
+  completed: 'Hoàn tất',
+  cancelled: 'Đã hủy',
+  missed: 'Vắng mặt',
 };
 
 const getGenderLabel = (g) => (g === 'male' ? 'Nam' : g === 'female' ? 'Nữ' : 'Khác');
@@ -64,16 +65,41 @@ const itemVariants = {
 const DoctorDashboardPage = () => {
   const navigate = useNavigate();
 
+  const [doctorId, setDoctorId] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // ===== Lấy doctor_id từ Supabase session =====
   useEffect(() => {
+    const getSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const uid = data?.session?.user?.id;
+        if (uid) {
+          setDoctorId(uid);
+        } else {
+          console.error('[DoctorDashboard] Không tìm thấy session');
+          setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('[DoctorDashboard] Session error:', err);
+        setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+        setLoading(false);
+      }
+    };
+    getSession();
+  }, []);
+
+  // ===== Fetch appointments khi có doctorId =====
+  useEffect(() => {
+    if (!doctorId) return;
+
     const fetchAppointments = async () => {
       try {
         setLoading(true);
         setError(null);
-        const doctorId = localStorage.getItem('doctor_id') || '85be2ff0-0b7d-489f-a63a-9a0538338773';
         const response = await getAppointmentsByDoctorId(doctorId);
         const data = response.data?.data || response.data || [];
 
@@ -82,8 +108,8 @@ const DoctorDashboardPage = () => {
           queue_number: idx + 1,
           patient_name: appt.Patients?.Users?.full_name || 'N/A',
           patient_id: appt.Patients?.patient_id || appt.patient_id,
-          gender: appt.Patients?.gender || '',
-          age: calculateAge(appt.Patients?.dob),
+          gender: appt.Patients?.Users?.gender || '',
+          age: calculateAge(appt.Patients?.Users?.dob) || 'Không rõ',
           phone: appt.Patients?.Users?.phone_number || '',
           // Lấy time từ DoctorSlots (qua slot_id FK)
           start_time: formatTime(
@@ -114,7 +140,7 @@ const DoctorDashboardPage = () => {
     };
 
     fetchAppointments();
-  }, []);
+  }, [doctorId]);
 
   const totalToday = appointments.length;
   const completedCount = appointments.filter((a) => a.status === 'completed').length;

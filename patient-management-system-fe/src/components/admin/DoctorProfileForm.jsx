@@ -1,27 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import axiosClient from '../../api/axiosClient';
-
-// ===== HELPER: Load rooms từ API =====
-// Backend cần có endpoint GET /rooms hoặc trả rooms trong doctor detail
-const fetchRooms = async () => {
-    try {
-        const res = await axiosClient.get('/rooms');
-        return res.data?.data || res.data || [];
-    } catch {
-        return [];
-    }
-};
-
-const fetchDepartments = async () => {
-    try {
-        const res = await axiosClient.get('/departments');
-        return res.data?.data || res.data || [];
-    } catch {
-        return [];
-    }
-};
+import { getAllDepartments } from '../../api/departmentApi';
+import { getListActiveRooms } from '../../api/roomApi';
 
 // ===== COMPONENT =====
 const DoctorProfileForm = ({ doctor, onSave, isAdmin }) => {
@@ -33,32 +14,36 @@ const DoctorProfileForm = ({ doctor, onSave, isAdmin }) => {
 
     // ===== Load Rooms & Departments =====
     useEffect(() => {
-        const load = async () => {
+        const loadMeta = async () => {
             setLoadingMeta(true);
-            const [r, d] = await Promise.all([fetchRooms(), fetchDepartments()]);
-            setRooms(r);
-            setDepartments(d);
-            setLoadingMeta(false);
+            try {
+                const [rRes, dRes] = await Promise.all([getListActiveRooms(), getAllDepartments()]);
+                const r = rRes.data?.data || rRes.data || [];
+                const d = dRes.data?.data || dRes.data || [];
+                setRooms(Array.isArray(r) ? r : []);
+                setDepartments(Array.isArray(d) ? d : []);
+            } catch (err) {
+                console.error("Failed to load metadata dropdowns:", err);
+            } finally {
+                setLoadingMeta(false);
+            }
         };
-        load();
+        loadMeta();
     }, []);
 
-    // ===== Pre-fill form từ doctor object =====
-    // Doctor schema: doctor_id, department_id, room_id, specialization, bio
-    // Joined:        Users.full_name, Users.email, Users.phone_number, Users.avatar_url, Users.status
-    //                Rooms.room_number, Departments.name
+
     useEffect(() => {
         if (doctor) {
             reset({
-                full_name:     doctor.Users?.full_name     || '',
-                email:         doctor.Users?.email         || '',
-                phone_number:  doctor.Users?.phone_number  || '',
-                avatar_url:    doctor.Users?.avatar_url    || '',
-                specialization: doctor.specialization      || '',
-                department_id:  doctor.department_id       || '',
-                room_id:        doctor.room_id             || '',
-                bio:            doctor.bio                 || '',
-                status:         doctor.Users?.status       || 'active',
+                full_name: doctor.Users?.full_name || '',
+                email: doctor.Users?.email || '',
+                phone_number: doctor.Users?.phone_number || '',
+                avatar_url: doctor.Users?.avatar_url || '',
+                specialization: doctor.specialization || '',
+                department_id: doctor.department_id || '',
+                room_id: doctor.Rooms?.room_id || '',
+                bio: doctor.bio || '',
+                status: doctor.Users?.status || 'active',
             });
         }
     }, [doctor, reset]);
@@ -167,11 +152,9 @@ const DoctorProfileForm = ({ doctor, onSave, isAdmin }) => {
                     {errors.specialization && <p className="text-red-500 text-xs mt-1">{errors.specialization.message}</p>}
                 </div>
 
-                {/* Department — FK: department_id → Departments */}
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                         Khoa <span className="text-red-500">*</span>
-                        <span className="text-gray-400 font-normal ml-1 text-xs">(department_id)</span>
                     </label>
                     {loadingMeta ? (
                         <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-400 text-sm">
@@ -190,7 +173,6 @@ const DoctorProfileForm = ({ doctor, onSave, isAdmin }) => {
                             ))}
                         </select>
                     ) : (
-                        // Fallback nếu API chưa có endpoint departments
                         <input
                             {...register('department_id')}
                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none"
@@ -200,11 +182,9 @@ const DoctorProfileForm = ({ doctor, onSave, isAdmin }) => {
                     {errors.department_id && <p className="text-red-500 text-xs mt-1">{errors.department_id.message}</p>}
                 </div>
 
-                {/* Room — FK: room_id → Rooms.room_number (thay room_number free text cũ) */}
                 <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                         Phòng khám <span className="text-red-500">*</span>
-                        <span className="text-gray-400 font-normal ml-1 text-xs">(room_id)</span>
                     </label>
                     {loadingMeta ? (
                         <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-400 text-sm">

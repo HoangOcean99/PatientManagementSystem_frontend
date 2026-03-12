@@ -116,7 +116,7 @@ const DoctorProfileSettingsPage = () => {
           if (stored) {
             setDoctorId(stored);
           } else {
-            // Thᾒ1c sự không có session
+            // sự không có session
             setAuthError(true);
             setMode('setup');
           }

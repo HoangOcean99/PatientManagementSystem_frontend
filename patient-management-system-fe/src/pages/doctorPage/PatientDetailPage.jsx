@@ -339,7 +339,7 @@ const PatientDetailPage = () => {
   }
 
   return (
-    <div className="pd-layout" style={{}}>
+    <div className="pd-layout" style={{ width: '100vw' }}>
       {/* ===== SIDEBAR ===== */}
       <DoctorSidebar activePage="schedule" />
 
@@ -488,18 +488,18 @@ const PatientDetailPage = () => {
                   Chưa có lịch sử khám bệnh.
                 </p>
               ) : (
-              <div className="pd-tabs">
-                {records.map((rec, idx) => (
-                  <button
-                    key={rec.record_id || rec.appointment_id || idx}
-                    className={`pd-tab ${idx === activeRecordIndex ? 'pd-tab--active' : ''}`}
-                    onClick={() => setActiveRecordIndex(idx)}
-                  >
-                    <FiCalendar size={14} />
-                    <span>{rec.appointment_date ? formatDate(rec.appointment_date) : `Lần ${idx + 1}`}</span>
-                  </button>
-                ))}
-              </div>
+                <div className="pd-tabs">
+                  {records.map((rec, idx) => (
+                    <button
+                      key={rec.record_id || rec.appointment_id || idx}
+                      className={`pd-tab ${idx === activeRecordIndex ? 'pd-tab--active' : ''}`}
+                      onClick={() => setActiveRecordIndex(idx)}
+                    >
+                      <FiCalendar size={14} />
+                      <span>{rec.appointment_date ? formatDate(rec.appointment_date) : `Lần ${idx + 1}`}</span>
+                    </button>
+                  ))}
+                </div>
               )}
               {/* Tab Content */}
               <AnimatePresence mode="wait">

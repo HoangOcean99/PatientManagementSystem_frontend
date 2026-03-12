@@ -1,7 +1,6 @@
 import axiosClient from "./axiosClient";
 
 export const getDoctorSchedule = async (doctorId, date) => {
-    // API mock hoặc thực tế
     return axiosClient.get(`/doctor/${doctorId}/schedule`, { params: { date } });
 };
 
