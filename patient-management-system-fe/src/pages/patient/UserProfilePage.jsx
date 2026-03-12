@@ -76,6 +76,7 @@ const UserProfilePage = () => {
     const startEdit = () => {
         const user = profile?.Users || {};
         setForm({
+            username: user.username || '',
             full_name: user.full_name || '',
             phone_number: user.phone_number || '',
             dob: profile?.dob || '',
@@ -222,6 +223,12 @@ const UserProfilePage = () => {
                                 </div>
                                 <div className="px-6 py-5 space-y-4">
                                     <EditField
+                                        label="Tên đăng nhập"
+                                        value={form.username}
+                                        onChange={(v) => setForm(p => ({ ...p, username: v }))}
+                                        placeholder="user123"
+                                    />
+                                    <EditField
                                         label="Họ và tên"
                                         value={form.full_name}
                                         onChange={(v) => setForm(p => ({ ...p, full_name: v }))}
@@ -316,6 +323,7 @@ const UserProfilePage = () => {
                                     </h3>
                                 </div>
                                 <div className="px-6 py-2">
+                                    <InfoRow icon="fa-id-badge" label="Tài khoản" value={user.username} iconColor="text-gray-400" />
                                     <InfoRow icon="fa-user" label="Họ và tên" value={user.full_name} />
                                     <InfoRow icon="fa-envelope" label="Email" value={user.email} iconColor="text-indigo-400" />
                                     <InfoRow icon="fa-phone" label="Số điện thoại" value={user.phone_number} iconColor="text-sky-400" />
