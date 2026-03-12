@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -21,172 +21,11 @@ import {
   FiPlay,
   FiExternalLink,
 } from 'react-icons/fi';
+import DoctorSidebar from '../../components/doctor/DoctorSidebar';
+import medicalRecordApi from '../../api/medicalRecordApi';
 import './PatientDetailPage.css';
 
-// ===== MOCK DATA (replace with API calls) =====
-const MOCK_PATIENT = {
-  // From Users table
-  user_id: 'dcd6557e-e9e2-412a-9dad-2a9a1ada2e94',
-  full_name: 'Nguyễn Văn A',
-  email: 'nguyenvana@example.com',
-  phone_number: '0901234567',
-  avatar_url: null,
-  // From Patients table
-  patient_id: 'dcd6557e-e9e2-412a-9dad-2a9a1ada2e94',
-  dob: '1990-01-01',
-  gender: 'male',
-  address: '123 Đường ABC, Quận 1, TP.HCM',
-  allergies: 'Phấn hoa, Penicillin',
-  medical_history_summary:
-    'Tiểu đường type 2. Tình trạng bệnh nền hiện tại: Ổn định, đang dùng thuốc.',
-};
 
-const MOCK_RECORDS = [
-  {
-    // Appointments + MedicalRecords
-    appointment_id: 'a-004',
-    record_id: 'r-004',
-    appointment_date: '2026-01-25',
-    status: 'completed',
-    symptoms: 'Bệnh nhân có biểu hiện sốt nhẹ, ho khan, đau họng.',
-    diagnosis: 'Viêm họng cấp.',
-    doctor_notes:
-      'Tình trạng tổng thể ổn định. Khuyên bệnh nhân nghỉ ngơi đầy đủ và uống nhiều nước.',
-    // Prescriptions
-    prescriptions: [
-      {
-        prescription_id: 'pr-001',
-        medication_name: 'Paracetamol',
-        dosage: '500mg',
-        instructions: '2 lần/ngày',
-      },
-      {
-        prescription_id: 'pr-002',
-        medication_name: 'Amoxicillin',
-        dosage: '250mg',
-        instructions: '3 lần/ngày',
-      },
-      {
-        prescription_id: 'pr-003',
-        medication_name: 'Thuốc giảm đau',
-        dosage: '1 viên',
-        instructions: 'Khi đau',
-      },
-    ],
-    // LabOrders
-    lab_orders: [
-      {
-        lab_order_id: 'l-001',
-        test_name: 'CRP',
-        result_summary: 'Kết quả CRP: 7.9 mg/L — Cao hơn bình thường, có dấu hiệu viêm.',
-        result_file_url: 'https://example.com/results/crp-001.pdf',
-        status: 'completed',
-        created_at: '2026-01-25T10:30:00',
-      },
-      {
-        lab_order_id: 'l-002',
-        test_name: 'WBC',
-        result_summary: 'Bạch cầu: 12.5 K/uL — Tăng nhẹ, phù hợp với tình trạng viêm nhiễm.',
-        result_file_url: null,
-        status: 'completed',
-        created_at: '2026-01-25T10:45:00',
-      },
-    ],
-  },
-  {
-    appointment_id: 'a-003',
-    record_id: 'r-003',
-    appointment_date: '2026-01-24',
-    status: 'completed',
-    symptoms: 'Đau đầu kéo dài, mất ngủ, chóng mặt khi đứng dậy.',
-    diagnosis: 'Thiếu máu não, rối loạn tiền đình.',
-    doctor_notes:
-      'Cần theo dõi huyết áp. Hẹn tái khám sau 2 tuần. Tránh thay đổi tư thế đột ngột.',
-    prescriptions: [
-      {
-        prescription_id: 'pr-004',
-        medication_name: 'Betahistine',
-        dosage: '16mg',
-        instructions: '2 lần/ngày sau ăn',
-      },
-      {
-        prescription_id: 'pr-005',
-        medication_name: 'Vitamin B12',
-        dosage: '500mcg',
-        instructions: '1 lần/ngày',
-      },
-    ],
-    lab_orders: [
-      {
-        lab_order_id: 'l-003',
-        test_name: 'Công thức máu',
-        result_summary: 'Hồng cầu, bạch cầu, tiểu cầu trong giới hạn bình thường.',
-        result_file_url: 'https://example.com/results/cbc-003.pdf',
-        status: 'completed',
-        created_at: '2026-01-24T09:15:00',
-      },
-    ],
-  },
-  {
-    appointment_id: 'a-002',
-    record_id: 'r-002',
-    appointment_date: '2025-08-25',
-    status: 'completed',
-    symptoms: 'Đau bụng vùng thượng vị, buồn nôn sau ăn.',
-    diagnosis: 'Viêm dạ dày cấp.',
-    doctor_notes: 'Hạn chế đồ cay nóng, ăn đúng giờ. Tái khám sau 1 tháng.',
-    prescriptions: [
-      {
-        prescription_id: 'pr-006',
-        medication_name: 'Omeprazole',
-        dosage: '20mg',
-        instructions: '1 lần/ngày trước ăn sáng',
-      },
-      {
-        prescription_id: 'pr-007',
-        medication_name: 'Domperidone',
-        dosage: '10mg',
-        instructions: '3 lần/ngày trước ăn',
-      },
-    ],
-    lab_orders: [],
-  },
-  {
-    appointment_id: 'a-001',
-    record_id: 'r-001',
-    appointment_date: '2025-03-10',
-    status: 'completed',
-    symptoms: 'Khám tổng quát định kỳ, không triệu chứng bất thường.',
-    diagnosis: 'Sức khỏe bình thường. Đường huyết cần theo dõi.',
-    doctor_notes: 'Duy trì chế độ ăn kiêng đường. Tái khám kiểm tra đường huyết sau 3 tháng.',
-    prescriptions: [
-      {
-        prescription_id: 'pr-008',
-        medication_name: 'Metformin',
-        dosage: '500mg',
-        instructions: '2 lần/ngày sau ăn',
-      },
-    ],
-    lab_orders: [
-      {
-        lab_order_id: 'l-004',
-        test_name: 'HbA1c',
-        result_summary: 'HbA1c: 6.8% — Tiền tiểu đường, cần theo dõi chế độ ăn.',
-        result_file_url: 'https://example.com/results/hba1c-004.pdf',
-        status: 'completed',
-        created_at: '2025-03-10T11:00:00',
-      },
-      {
-        lab_order_id: 'l-005',
-        test_name: 'Glucose (đói)',
-        result_summary: 'Glucose lúc đói: 126 mg/dL — Trên ngưỡng bình thường.',
-        result_file_url: null,
-        status: 'completed',
-        created_at: '2025-03-10T11:20:00',
-      },
-    ],
-  },
-];
 
 // ===== HELPERS =====
 const formatDate = (dateStr) => {
@@ -369,20 +208,142 @@ const PatientDetailPage = () => {
   const navigate = useNavigate();
   const { patientId } = useParams();
 
-  // TODO: Replace with API call using patientId
-  const patient = MOCK_PATIENT;
-  const records = MOCK_RECORDS;
+  // ===== API STATE =====
+  const [patient, setPatient] = useState(null);
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [activeRecordIndex, setActiveRecordIndex] = useState(0);
-  const activeRecord = records[activeRecordIndex];
+
+  // ===== FETCH DATA =====
+  useEffect(() => {
+    if (!patientId) return;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Lấy tất cả medical records của patient — bạn end join Patients → Users
+        const recordsRes = await medicalRecordApi.getMedicalRecordsByPatientId(patientId);
+        const rawRecords = recordsRes.data?.data || recordsRes.data || [];
+
+        // Map records và extract patient info từ record đầu tiên
+        const mappedRecords = (Array.isArray(rawRecords) ? rawRecords : []).map((rec) => ({
+          record_id: rec.record_id,
+          appointment_id: rec.appointment_id,
+          // Lấy ngày từ slot nếu có join, fallback về created_at
+          appointment_date:
+            rec.Appointments?.DoctorSlots?.slot_date ||
+            rec.Appointments?.DoctorSlot?.slot_date ||
+            rec.created_at?.split('T')[0] ||
+            '',
+          status: rec.status || 'completed',
+          symptoms: rec.symptoms || '',
+          diagnosis: rec.diagnosis || '',
+          doctor_notes: rec.doctor_notes || '',
+          prescriptions: (rec.Prescriptions || []).map((p) => ({
+            prescription_id: p.prescription_id,
+            medication_name: p.medication_name || '',
+            dosage: p.dosage || '',
+            instructions: p.instructions || '',
+            reminder_schedule: p.reminder_schedule || '',
+          })),
+          lab_orders: (rec.LabOrders || []).map((l) => ({
+            lab_order_id: l.lab_order_id,
+            test_name: l.test_name || '',
+            result_summary: l.result_summary || '',
+            result_file_url: l.result_file_url || '',
+            status: l.status || 'ordered',
+            created_at: l.created_at || '',
+          })),
+        }));
+
+        setRecords(mappedRecords);
+
+        // Lấy patient info từ record đầu tiên nếu có
+        if (rawRecords.length > 0) {
+          const first = rawRecords[0];
+          setPatient({
+            patient_id: first.patient_id || patientId,
+            full_name: first.Patients?.Users?.full_name || 'N/A',
+            email: first.Patients?.Users?.email || '',
+            phone_number: first.Patients?.Users?.phone_number || '',
+            avatar_url: first.Patients?.Users?.avatar_url || null,
+            dob: first.Patients?.dob || '',
+            gender: first.Patients?.gender || '',
+            address: first.Patients?.address || '',
+            allergies: first.Patients?.allergies || '',
+            medical_history_summary: first.Patients?.medical_history_summary || '',
+          });
+        } else {
+          // Không có record — hiển thị patient rỗng
+          setPatient({
+            patient_id: patientId,
+            full_name: 'Bệnh nhân',
+            email: '', phone_number: '', avatar_url: null,
+            dob: '', gender: '', address: '', allergies: '',
+            medical_history_summary: '',
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load patient data:', err);
+        setError('Không thể tải dữ liệu bệnh nhân. Vui lòng thử lại.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [patientId]);
+
+
+  const activeRecord = records[activeRecordIndex] || null;
 
   const handleGoBack = () => {
     navigate(-1);
   };
 
+  // ===== LOADING STATE =====
+  if (loading) {
+    return (
+      <div className="pd-layout">
+        <main className="pd-main">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 12 }}>
+            <FiActivity size={28} style={{ color: '#3b82f6', animation: 'spin 1s linear infinite' }} />
+            <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Đang tải hồ sơ bệnh nhân...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // ===== ERROR STATE =====
+  if (error || !patient) {
+    return (
+      <div className="pd-layout">
+        <DoctorSidebar activePage="schedule" />
+        <main className="pd-main">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 12 }}>
+            <FiAlertCircle size={28} style={{ color: '#ef4444' }} />
+            <p style={{ color: '#ef4444', fontSize: '0.95rem', marginBottom: 12 }}>{error || 'Không tìm thấy bệnh nhân.'}</p>
+            <button className="pd-btn-back" onClick={handleGoBack}>
+              <FiArrowLeft size={16} /> Quay lại
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className="pd-layout">
-      <main className="pd-main p-8">
+    <div className="pd-layout" style={{}}>
+      {/* ===== SIDEBAR ===== */}
+      <DoctorSidebar activePage="schedule" />
+
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="pd-main">
         <motion.div
           className="pd-content"
           variants={containerVariants}
@@ -401,7 +362,7 @@ const PatientDetailPage = () => {
               </button>
               <button
                 className="pd-btn-exam"
-                onClick={() => navigate(`/doctor/examine/${records[0]?.appointment_id || 'new'}`)}
+                onClick={() => navigate(`/doctor/examine/${records[0]?.appointment_id || ''}`)}
               >
                 <FiPlay size={16} />
                 Bắt đầu khám
@@ -521,20 +482,24 @@ const PatientDetailPage = () => {
                 </span>
               </div>
 
-              {/* Date Tabs */}
+              {records.length === 0 ? (
+                <p style={{ color: '#94a3b8', fontSize: '0.9rem', padding: '16px 0' }}>
+                  Chưa có lịch sử khám bệnh.
+                </p>
+              ) : (
               <div className="pd-tabs">
                 {records.map((rec, idx) => (
                   <button
-                    key={rec.appointment_id}
+                    key={rec.record_id || rec.appointment_id || idx}
                     className={`pd-tab ${idx === activeRecordIndex ? 'pd-tab--active' : ''}`}
                     onClick={() => setActiveRecordIndex(idx)}
                   >
                     <FiCalendar size={14} />
-                    <span>{formatDate(rec.appointment_date)}</span>
+                    <span>{rec.appointment_date ? formatDate(rec.appointment_date) : `Lần ${idx + 1}`}</span>
                   </button>
                 ))}
               </div>
-
+              )}
               {/* Tab Content */}
               <AnimatePresence mode="wait">
                 {activeRecord && (

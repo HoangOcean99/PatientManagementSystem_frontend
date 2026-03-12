@@ -98,7 +98,7 @@ const UnderMyCarePage = () => {
             if (!payload.medical_history_summary) delete payload.medical_history_summary;
 
             await addDependent(payload);
-            toast.success('Thêm người phụ thuộc thành công!');
+            toast.success('ứngười phụ thuộc thành công!');
             setForm(INITIAL_FORM);
             setShowForm(false);
             setLoading(true);
@@ -132,14 +132,7 @@ const UnderMyCarePage = () => {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setShowForm(true)}
-                                className="px-5 py-2.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 cursor-pointer flex items-center gap-2 text-sm"
-                                style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
-                            >
-                                <i className="fa-solid fa-user-plus"></i>
-                                Thêm mới
-                            </button>
+                         
                             <button
                                 onClick={() => navigate('/patient/under-my-care/key')}
                                 className="px-5 py-2.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer flex items-center gap-2 text-sm"

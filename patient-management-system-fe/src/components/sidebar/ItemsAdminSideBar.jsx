@@ -29,10 +29,11 @@ export const ItemsAdminSideBar = [
     {
         icon: "Briefcase",
         label: "Quản lý dịch vụ",
-        linkPage: '/admin/service-management',
+        linkPage: '/admin/department-management',
         matchPages: [
-            '/admin/service-management',
-            '/admin/service-detail',
+            '/admin/department-management',
+            '/admin/clinic-services-management',
+            '/admin/clinic-service-detail'
         ]
     },
     {

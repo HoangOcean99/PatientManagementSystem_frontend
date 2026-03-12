@@ -4,9 +4,12 @@ import { supabase } from '../../supabaseClient';
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000',
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
   }
 });
+
 axiosClient.interceptors.request.use(
   async (config) => {
     const { data } = await supabase.auth.getSession();

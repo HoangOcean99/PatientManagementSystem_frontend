@@ -16,15 +16,13 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // ===== HELPERS =====
 const STATUS_LABELS = {
-  pending: 'Chờ xác nhận',
-  confirmed: 'Đã xác nhận',
+  pending:    'Chờ xác nhận',
+  confirmed:  'Đã xác nhận',
   checked_in: 'Đã check-in',
-  ready: 'Sẵn sàng',
-  waiting: 'Chờ khám',
   in_progress: 'Đang khám',
-  completed: 'Hoàn tất',
-  cancelled: 'Đã hủy',
-  missed: 'Vắng mặt',
+  completed:  'Hoàn tất',
+  cancelled:  'Đã hủy',
+  missed:     'Vắng mặt',
 };
 
 const getGenderLabel = (g) => (g === 'male' ? 'Nam' : g === 'female' ? 'Nữ' : 'Khác');
@@ -53,11 +51,10 @@ const formatTime = (t) => {
 };
 
 const FILTER_OPTIONS = [
-  { key: 'all', label: 'Tất cả' },
-  { key: 'waiting', label: 'Chờ khám' },
-  { key: 'ready', label: 'Sẵn sàng' },
+  { key: 'all',        label: 'Tất cả' },
+  { key: 'checked_in', label: 'Đã check-in' },
   { key: 'in_progress', label: 'Đang khám' },
-  { key: 'completed', label: 'Hoàn tất' },
+  { key: 'completed',  label: 'Hoàn tất' },
 ];
 
 // ===== ANIMATION =====
@@ -90,16 +87,29 @@ const DoctorSchedulePage = () => {
         const response = await getAppointmentsByDoctorId(doctorId);
         const data = response.data?.data || response.data || [];
 
-        const mapped = (Array.isArray(data) ? data : []).map((appt) => ({
+        const mapped = (Array.isArray(data) ? data : []).map((appt, idx) => ({
           appointment_id: appt.appointment_id,
-          queue_number: appt.queue_number,
+          queue_number: idx + 1,
           patient_name: appt.Patients?.Users?.full_name || 'N/A',
           patient_id: appt.Patients?.patient_id || appt.patient_id,
           gender: appt.Patients?.gender || '',
           age: calculateAge(appt.Patients?.dob),
           phone: appt.Patients?.Users?.phone_number || '',
-          start_time: formatTime(appt.start_time),
-          end_time: formatTime(appt.end_time),
+          // Lấy time từ DoctorSlots (qua slot_id FK)
+          start_time: formatTime(
+            appt.DoctorSlots?.start_time ||
+            appt.DoctorSlot?.start_time ||
+            appt.start_time
+          ),
+          end_time: formatTime(
+            appt.DoctorSlots?.end_time ||
+            appt.DoctorSlot?.end_time ||
+            appt.end_time
+          ),
+          appointment_date:
+            appt.DoctorSlots?.slot_date ||
+            appt.DoctorSlot?.slot_date ||
+            appt.appointment_date,
           status: appt.status,
           service: appt.ClinicServices?.name || '',
         }));
@@ -242,7 +252,7 @@ const DoctorSchedulePage = () => {
                         </td>
                         <td data-label="Hành động">
                           <div className="sched-actions">
-                            {(appt.status === 'waiting' || appt.status === 'ready') && (
+                            {(appt.status === 'checked_in' || appt.status === 'confirmed') && (
                               <button
                                 className="sched-action-btn sched-action-btn--start"
                                 onClick={() => navigate(`/doctor/examine/${appt.appointment_id}`)}

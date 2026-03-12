@@ -16,6 +16,11 @@ export const labOrderApi = {
         return await axiosClient.get(`/lab-orders/${labOrderId}`);
     },
 
+    // Lấy lab orders theo record_id
+    getLabOrdersByRecordId: async (recordId) => {
+        return await axiosClient.get(`/lab-orders/record/${recordId}`);
+    },
+
     // Cập nhật lab order (status, result_summary, result_file_url)
     updateLabOrder: async (labOrderId, data) => {
         return await axiosClient.patch(`/lab-orders/${labOrderId}`, data);

@@ -26,12 +26,14 @@ export const validatePassword = (password) => {
 export const validateFullName = (fullName) => {
     if (!fullName || !fullName.trim()) return "Họ tên không được để trống";
     if (fullName.trim().length < 6) return "Họ tên phải có ít nhất 6 ký tự";
-    
-    const regex = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄễỆệỈỉỊịỌọỎỏỐốỒồỔổỖỗỘộỚớỜờỞởỠỡỢợỤụỦủỨứỪừỬửỮữỰựỲỳỴỵỶỷỸỹ ]+$/;
+
+    // \p{L} matches any Unicode letter (covers all Vietnamese chars, no manual list needed)
+    const regex = /^[\p{L} ]+$/u;
     if (!regex.test(fullName)) return "Họ tên không được chứa số hoặc ký tự đặc biệt";
-    
+
     return null;
 };
+
 
 export const validatePhoneNumber = (phoneNumber, isRequired = false) => {
     if (!phoneNumber) {

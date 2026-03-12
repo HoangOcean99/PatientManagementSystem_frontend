@@ -35,22 +35,24 @@ const UserProfileEdit = () => {
     }, [id]);
 
     const handleSaveProfile = async (formData) => {
-        // Thực hiện lưu API
+        // Gửi lên API — formData có: full_name, phone_number, avatar_url,
+        // specialization, department_id, room_id, bio, status
         await updateDoctor(id, formData);
 
         // Cập nhật local state
         setDoctor(prev => ({
             ...prev,
             specialization: formData.specialization,
-            room_number: formData.room_number,
-            bio: formData.bio,
+            department_id:  formData.department_id,
+            room_id:        formData.room_id,
+            bio:            formData.bio,
             Users: {
                 ...prev.Users,
-                full_name: formData.full_name,
+                full_name:    formData.full_name,
                 phone_number: formData.phone_number,
-                avatar_url: formData.avatar_url,
-                status: formData.status
-            }
+                avatar_url:   formData.avatar_url,
+                status:       formData.status,
+            },
         }));
     };
 

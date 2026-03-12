@@ -1,10 +1,11 @@
 import ProtectedRoute from '../components/security/ProtectedRoute';
 import AdminDashboard from '../pages/adminPage/AdminDashboard';
 import AdminProfile from '../pages/adminPage/AdminProfile';
+import ClinicServiceDetail from '../pages/adminPage/ClinicServiceDetail';
+import ClinicServicesManagement from '../pages/adminPage/ClinicServicesManagement';
+import DepartmentManagement from '../pages/adminPage/DepartmentManagement';
 import RoleSelection from '../pages/adminPage/RoleSelection';
 import ScheduleManagement from '../pages/adminPage/ScheduleManagement';
-import ServiceDetail from '../pages/adminPage/ServiceDetail';
-import ServiceManagement from '../pages/adminPage/ServiceManagement';
 import UserManagement from '../pages/adminPage/UserManagement';
 import UserProfileEdit from '../pages/adminPage/UserProfileEdit';
 import UserProfileManagement from '../pages/adminPage/UserProfileManagement';
@@ -59,18 +60,26 @@ const adminRoutes = [
         )
     },
     {
-        path: '/admin/service-management',
+        path: '/admin/department-management',
         element: (
             <ProtectedRoute allowedRoles={["admin"]}>
-                <ServiceManagement />
+                <DepartmentManagement />
             </ProtectedRoute>
         )
     },
     {
-        path: '/admin/service-detail/:service',
+        path: '/admin/clinic-services-management/:department',
         element: (
             <ProtectedRoute allowedRoles={["admin"]}>
-                <ServiceDetail />
+                <ClinicServicesManagement />
+            </ProtectedRoute>
+        )
+    },
+    {
+        path: '/admin/clinic-service-detail/:clinicServiceId',
+        element: (
+            <ProtectedRoute allowedRoles={["admin"]}>
+                <ClinicServiceDetail />
             </ProtectedRoute>
         )
     },
