@@ -309,7 +309,6 @@ const PatientDetailPage = () => {
   if (loading) {
     return (
       <div className="pd-layout">
-        <DoctorSidebar activePage="schedule" />
         <main className="pd-main">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 12 }}>
             <FiActivity size={28} style={{ color: '#3b82f6', animation: 'spin 1s linear infinite' }} />

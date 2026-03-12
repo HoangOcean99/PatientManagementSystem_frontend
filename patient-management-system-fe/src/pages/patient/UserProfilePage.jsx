@@ -196,13 +196,6 @@ const UserProfilePage = () => {
                                             Chỉnh sửa
                                         </button>
                                     )}
-                                    <button
-                                        onClick={() => navigate('/patient/change-password')}
-                                        className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-blue-50 text-sm font-bold text-gray-600 hover:text-blue-600 transition-all cursor-pointer border border-gray-200/60 hover:border-blue-200"
-                                    >
-                                        <i className="fa-solid fa-key mr-1.5 text-xs"></i>
-                                        Đổi mật khẩu
-                                    </button>
                                 </div>
                             </div>
                         </div>
