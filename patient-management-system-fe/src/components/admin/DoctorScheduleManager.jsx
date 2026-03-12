@@ -1,242 +1,605 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { getDoctorSchedule, addScheduleSlot, deleteScheduleSlot } from '../../api/scheduleApi';
+import {
+    listDoctorSlots,
+    createDoctorSlot,
+    updateDoctorSlot,
+    deleteDoctorSlot,
+} from '../../api/doctorSlotApi';
 import LoadingSpinner from '../LoadingSpinner';
+import './DoctorScheduleManager.css';
 
 // ===== HELPERS =====
 const formatTime = (t) => (t ? t.slice(0, 5) : '');
 
-const getNext7Days = () => {
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() + i);
-        days.push(d.toISOString().split('T')[0]); // YYYY-MM-DD
-    }
-    return days;
-};
-
-const formatDateLabel = (dateStr) => {
-    if (!dateStr) return { dayLabel: '', dateLabel: '' };
+const formatDateVN = (dateStr) => {
+    if (!dateStr) return '';
     const d = new Date(dateStr + 'T00:00:00');
-    const today = new Date();
-    const tom   = new Date(); tom.setDate(today.getDate() + 1);
-    const isSame = (a, b) =>
-        a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
-    const dayLabel  = isSame(d, today) ? 'Hôm nay' : isSame(d, tom) ? 'Ngày mai'
-        : d.toLocaleDateString('vi-VN', { weekday: 'short' });
-    const dateLabel = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-    return { dayLabel, dateLabel };
+    return d.toLocaleDateString('vi-VN', {
+        weekday: 'short',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    });
 };
 
-// ===== COMPONENT =====
+const getToday = () => new Date().toISOString().split('T')[0];
+
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
+
+// ===== SCROLLABLE 24H TIME PICKER =====
+const ScrollTimePicker = ({ value, onChange, label, iconClass, iconColorClass }) => {
+    const [hour, minute] = (value || '08:00').split(':');
+    const hourRef = useRef(null);
+    const minuteRef = useRef(null);
+
+    const scrollToActive = useCallback((ref, idx) => {
+        if (!ref.current) return;
+        const item = ref.current.children[idx];
+        if (item) {
+            ref.current.scrollTo({
+                top: item.offsetTop - ref.current.offsetTop - (ref.current.clientHeight / 2) + (item.clientHeight / 2),
+                behavior: 'smooth',
+            });
+        }
+    }, []);
+
+    useEffect(() => {
+        const hIdx = HOURS.indexOf(hour);
+        const mIdx = MINUTES.indexOf(minute);
+        if (hIdx >= 0) scrollToActive(hourRef, hIdx);
+        if (mIdx >= 0) scrollToActive(minuteRef, mIdx);
+    }, []);
+
+    const handleHour = (h) => {
+        onChange(`${h}:${minute}`);
+    };
+    const handleMinute = (m) => {
+        onChange(`${hour}:${m}`);
+    };
+
+    return (
+        <div className="dsm-form-group">
+            <label className="dsm-form-label">
+                <i className={`${iconClass} ${iconColorClass}`} />
+                {label}
+            </label>
+            <div className="dsm-time-picker">
+                <div className="dsm-time-picker__col" ref={hourRef}>
+                    {HOURS.map((h) => (
+                        <button
+                            key={h}
+                            type="button"
+                            className={`dsm-time-picker__item ${h === hour ? 'dsm-time-picker__item--active' : ''}`}
+                            onClick={() => handleHour(h)}
+                        >
+                            {h}
+                        </button>
+                    ))}
+                </div>
+                <div className="dsm-time-picker__sep">:</div>
+                <div className="dsm-time-picker__col" ref={minuteRef}>
+                    {MINUTES.map((m) => (
+                        <button
+                            key={m}
+                            type="button"
+                            className={`dsm-time-picker__item ${m === minute ? 'dsm-time-picker__item--active' : ''}`}
+                            onClick={() => handleMinute(m)}
+                        >
+                            {m}
+                        </button>
+                    ))}
+                </div>
+                <div className="dsm-time-picker__preview">
+                    {hour}:{minute}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ===== MINI SPINNER =====
+const MiniSpinner = () => <div className="dsm-mini-spinner" />;
+
+// ===== MAIN COMPONENT =====
 const DoctorScheduleManager = ({ doctorId }) => {
-    const days = getNext7Days();
-    const [selectedDate, setSelectedDate] = useState(days[0]);
-    // slots: DoctorSlots[] — schema: slot_id, doctor_id, slot_date, start_time, end_time, is_booked
+    // ---- Data ----
     const [slots, setSlots] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Add form
-    const [showAddForm, setShowAddForm] = useState(false);
-    const [newStartTime, setNewStartTime]   = useState('08:00');
-    const [newEndTime,   setNewEndTime]     = useState('09:00');
-    const [adding, setAdding] = useState(false);
+    // ---- Filters ----
+    const [filterDate, setFilterDate] = useState(getToday());
+    const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'available' | 'booked'
 
-    // ===== FETCH SLOTS từ API thực =====
+    // ---- Sort ----
+    const [sortField, setSortField] = useState('start_time'); // 'slot_date' | 'start_time'
+    const [sortDir, setSortDir] = useState('asc');
+
+    // ---- Create/Edit modal ----
+    const [showModal, setShowModal] = useState(false);
+    const [editingSlot, setEditingSlot] = useState(null); // null → create mode
+    const [formData, setFormData] = useState({ slot_date: '', start_time: '08:00', end_time: '09:00' });
+    const [saving, setSaving] = useState(false);
+
+    // ---- Delete confirm ----
+    const [deleteSlot, setDeleteSlot] = useState(null);
+    const [deleting, setDeleting] = useState(false);
+
+    // ===== FETCH =====
     const fetchSlots = useCallback(async () => {
-        if (!doctorId || !selectedDate) return;
+        if (!doctorId) return;
         try {
             setLoading(true);
-            const res  = await getDoctorSchedule(doctorId, selectedDate);
+            const params = { doctor_id: doctorId };
+            if (filterDate) params.slot_date = filterDate;
+            const res = await listDoctorSlots(params);
             const data = res.data?.data || res.data || [];
             setSlots(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error('Failed to fetch slots:', err);
-            toast.error('Không thể tải lịch làm việc');
+            toast.error('Không thể tải danh sách slot');
         } finally {
             setLoading(false);
         }
-    }, [doctorId, selectedDate]);
+    }, [doctorId, filterDate]);
 
     useEffect(() => {
         fetchSlots();
     }, [fetchSlots]);
 
-    // ===== ADD SLOT =====
-    const handleAddSlot = async () => {
-        if (!newStartTime || !newEndTime) {
+    // ===== FILTERED + SORTED =====
+    const displaySlots = useMemo(() => {
+        let result = [...slots];
+
+        // Status filter
+        if (filterStatus === 'available') result = result.filter((s) => !s.is_booked);
+        if (filterStatus === 'booked') result = result.filter((s) => s.is_booked);
+
+        // Sort
+        result.sort((a, b) => {
+            const aVal = a[sortField] || '';
+            const bVal = b[sortField] || '';
+            if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        return result;
+    }, [slots, filterStatus, sortField, sortDir]);
+
+    // ===== STATS =====
+    const totalSlots = slots.length;
+    const bookedSlots = slots.filter((s) => s.is_booked).length;
+    const availableSlots = totalSlots - bookedSlots;
+
+    // ===== SORT HANDLER =====
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortField(field);
+            setSortDir('asc');
+        }
+    };
+
+    const SortIcon = ({ field }) => {
+        if (sortField !== field) {
+            return <i className="fa-solid fa-sort dsm-sort-icon dsm-sort-icon--inactive" />;
+        }
+        return sortDir === 'asc'
+            ? <i className="fa-solid fa-sort-up dsm-sort-icon dsm-sort-icon--active" />
+            : <i className="fa-solid fa-sort-down dsm-sort-icon dsm-sort-icon--active" />;
+    };
+
+    // ===== OPEN CREATE =====
+    const openCreateModal = () => {
+        setEditingSlot(null);
+        setFormData({
+            slot_date: filterDate || getToday(),
+            start_time: '08:00',
+            end_time: '09:00',
+        });
+        setShowModal(true);
+    };
+
+    // ===== OPEN EDIT =====
+    const openEditModal = (slot) => {
+        setEditingSlot(slot);
+        setFormData({
+            slot_date: slot.slot_date || '',
+            start_time: formatTime(slot.start_time) || '08:00',
+            end_time: formatTime(slot.end_time) || '09:00',
+        });
+        setShowModal(true);
+    };
+
+    // ===== SAVE (Create or Update) =====
+    const handleSave = async () => {
+        // Validation
+        if (!formData.slot_date) {
+            toast.error('Vui lòng chọn ngày');
+            return;
+        }
+        if (!formData.start_time || !formData.end_time) {
             toast.error('Vui lòng nhập đủ giờ bắt đầu và kết thúc');
             return;
         }
-        if (newStartTime >= newEndTime) {
+        if (formData.start_time >= formData.end_time) {
             toast.error('Giờ bắt đầu phải trước giờ kết thúc!');
             return;
         }
+
         try {
-            setAdding(true);
-            await addScheduleSlot(doctorId, selectedDate, newStartTime, newEndTime);
-            toast.success('Thêm slot thành công!');
-            setShowAddForm(false);
-            setNewStartTime('08:00');
-            setNewEndTime('09:00');
-            fetchSlots(); // Reload
+            setSaving(true);
+            if (editingSlot) {
+                await updateDoctorSlot(editingSlot.slot_id, {
+                    slot_date: formData.slot_date,
+                    start_time: formData.start_time,
+                    end_time: formData.end_time,
+                });
+                toast.success('Cập nhật slot thành công!');
+            } else {
+                await createDoctorSlot({
+                    doctor_id: doctorId,
+                    slot_date: formData.slot_date,
+                    start_time: formData.start_time,
+                    end_time: formData.end_time,
+                });
+                toast.success('Tạo slot mới thành công!');
+            }
+            setShowModal(false);
+            setEditingSlot(null);
+            fetchSlots();
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Lỗi khi thêm slot.');
+            const msg = err.response?.data?.message || (editingSlot ? 'Lỗi khi cập nhật slot.' : 'Lỗi khi tạo slot.');
+            toast.error(msg);
         } finally {
-            setAdding(false);
+            setSaving(false);
         }
     };
 
-    // ===== DELETE SLOT =====
-    const handleDeleteSlot = async (slotId) => {
-        if (!window.confirm('Bạn muốn xóa slot này?')) return;
+    // ===== DELETE =====
+    const handleConfirmDelete = async () => {
+        if (!deleteSlot) return;
         try {
-            await deleteScheduleSlot(doctorId, slotId);
+            setDeleting(true);
+            await deleteDoctorSlot(deleteSlot.slot_id);
             toast.success('Xóa slot thành công!');
+            setDeleteSlot(null);
             fetchSlots();
         } catch (err) {
             toast.error(err.response?.data?.message || 'Lỗi khi xóa slot.');
+        } finally {
+            setDeleting(false);
         }
     };
 
+    // ===== CLEAR FILTERS =====
+    const handleClearFilters = () => {
+        setFilterDate('');
+        setFilterStatus('all');
+    };
+
+    // ===== FORM INPUT HANDLER =====
+    const updateForm = (field, value) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
+    // ===== RENDER =====
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-sm">
-                        <i className="fa-solid fa-calendar-alt"></i>
-                    </span>
-                    Quản lý lịch làm việc (DoctorSlots)
-                </h3>
-            </div>
-
-            {/* Date Selector — 7 ngày tới */}
-            <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar mb-6">
-                {days.map((day) => {
-                    const { dayLabel, dateLabel } = formatDateLabel(day);
-                    const isSelected = day === selectedDate;
-                    return (
-                        <button
-                            key={day}
-                            onClick={() => { setSelectedDate(day); setShowAddForm(false); }}
-                            className={`flex-shrink-0 px-4 py-3 rounded-xl border transition-all text-center min-w-[90px] ${
-                                isSelected
-                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200'
-                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                            }`}
-                        >
-                            <div className="text-xs opacity-80 mb-1">{dayLabel}</div>
-                            <div className="font-bold text-base whitespace-nowrap">{dateLabel}</div>
-                        </button>
-                    );
-                })}
-            </div>
-
-            {/* Slots Area */}
-            <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-                <div className="flex justify-between items-center mb-5">
-                    <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm">
-                        <i className="fa-regular fa-clock text-blue-500"></i>
-                        Ca làm việc — {new Date(selectedDate + 'T00:00:00').toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit' })}
-                    </h4>
-                    <button
-                        onClick={() => setShowAddForm(!showAddForm)}
-                        className="bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 flex items-center gap-2"
-                    >
-                        <i className={`fa-solid ${showAddForm ? 'fa-times' : 'fa-plus'}`}></i>
-                        {showAddForm ? 'Hủy' : 'Thêm Slot Mới'}
+        <>
+            <div className="dsm-wrapper">
+                {/* ===== Header ===== */}
+                <div className="dsm-header">
+                    <h3 className="dsm-header__title">
+                        <span className="dsm-header__icon">
+                            <i className="fa-solid fa-calendar-alt" />
+                        </span>
+                        Quản lý lịch làm việc
+                    </h3>
+                    <button className="dsm-add-btn" onClick={openCreateModal}>
+                        <i className="fa-solid fa-plus" />
+                        Thêm Slot Mới
                     </button>
                 </div>
 
-                {/* Add Form */}
-                {showAddForm && (
-                    <div className="bg-white p-4 rounded-xl border border-blue-100 mb-5 shadow-sm flex flex-wrap items-end gap-4">
-                        <div className="flex-1 min-w-[120px]">
-                            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">
-                                Giờ bắt đầu (start_time)
-                            </label>
-                            <input
-                                type="time"
-                                value={newStartTime}
-                                onChange={(e) => setNewStartTime(e.target.value)}
-                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-bold"
-                            />
+                {/* ===== Stats Row ===== */}
+                <div className="dsm-stats-row">
+                    <div className="dsm-stat-card dsm-stat-card--total">
+                        <div className="dsm-stat-icon dsm-stat-icon--total">
+                            <i className="fa-solid fa-layer-group" />
                         </div>
-                        <div className="flex-1 min-w-[120px]">
-                            <label className="block text-xs font-bold text-gray-500 mb-1 uppercase tracking-wider">
-                                Giờ kết thúc (end_time)
-                            </label>
-                            <input
-                                type="time"
-                                value={newEndTime}
-                                onChange={(e) => setNewEndTime(e.target.value)}
-                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-bold"
-                            />
+                        <div>
+                            <div className="dsm-stat-value dsm-stat-value--total">{totalSlots}</div>
+                            <div className="dsm-stat-label">Tổng slot</div>
                         </div>
-                        <button
-                            onClick={handleAddSlot}
-                            disabled={adding}
-                            className="bg-blue-600 text-white px-6 py-2.5 h-[44px] rounded-lg font-bold hover:bg-blue-700 transition disabled:opacity-60 flex items-center gap-2"
+                    </div>
+                    <div className="dsm-stat-card dsm-stat-card--avail">
+                        <div className="dsm-stat-icon dsm-stat-icon--avail">
+                            <i className="fa-solid fa-check-circle" />
+                        </div>
+                        <div>
+                            <div className="dsm-stat-value dsm-stat-value--avail">{availableSlots}</div>
+                            <div className="dsm-stat-label">Còn trống</div>
+                        </div>
+                    </div>
+                    <div className="dsm-stat-card dsm-stat-card--booked">
+                        <div className="dsm-stat-icon dsm-stat-icon--booked">
+                            <i className="fa-solid fa-clock" />
+                        </div>
+                        <div>
+                            <div className="dsm-stat-value dsm-stat-value--booked">{bookedSlots}</div>
+                            <div className="dsm-stat-label">Đã đặt</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ===== Toolbar (Filters) ===== */}
+                <div className="dsm-toolbar">
+                    <div className="dsm-filter-group">
+                        <span className="dsm-filter-label">
+                            <i className="fa-regular fa-calendar" />
+                            Ngày:
+                        </span>
+                        <input
+                            type="date"
+                            value={filterDate}
+                            onChange={(e) => setFilterDate(e.target.value)}
+                            className="dsm-date-input"
+                        />
+                    </div>
+                    <div className="dsm-filter-group">
+                        <span className="dsm-filter-label">
+                            <i className="fa-solid fa-filter" />
+                            Trạng thái:
+                        </span>
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="dsm-status-select"
                         >
-                            {adding && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
-                            {adding ? 'Đang lưu...' : 'Lưu Slot'}
+                            <option value="all">Tất cả</option>
+                            <option value="available">Còn trống</option>
+                            <option value="booked">Đã đặt</option>
+                        </select>
+                    </div>
+                    {(filterDate || filterStatus !== 'all') && (
+                        <button className="dsm-clear-btn" onClick={handleClearFilters}>
+                            <i className="fa-solid fa-rotate-left" />
+                            Xóa bộ lọc
                         </button>
-                    </div>
-                )}
+                    )}
+                </div>
 
-                {/* Slots List */}
-                {loading ? (
-                    <div className="flex justify-center py-10 opacity-60">
-                        <LoadingSpinner />
-                    </div>
-                ) : slots.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400">
-                        <i className="fa-regular fa-calendar-xmark text-4xl mb-3 text-gray-300 block"></i>
-                        <p className="text-sm">Chưa có slot khám nào ngày này.</p>
-                        <p className="text-xs text-gray-300 mt-1">Nhấn "Thêm Slot Mới" để tạo ca làm việc</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {slots.map((slot) => (
-                            <div
-                                key={slot.slot_id}
-                                className={`group border rounded-xl p-4 flex justify-between items-center transition-all hover:shadow-md ${
-                                    slot.is_booked
-                                        ? 'bg-orange-50 border-orange-200'
-                                        : 'bg-white border-gray-200 hover:border-blue-300'
-                                }`}
-                            >
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-gray-900 font-extrabold text-base leading-none">
-                                        {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-                                    </span>
-                                    <span className={`text-[11px] px-2 py-0.5 rounded-full inline-block w-max font-bold ${
-                                        slot.is_booked
-                                            ? 'text-orange-700 bg-orange-100'
-                                            : 'text-green-700 bg-green-100'
-                                    }`}>
-                                        {slot.is_booked ? 'Đã đặt lịch' : 'Còn trống'}
-                                    </span>
-                                </div>
-
-                                {/* Chỉ cho phép xóa slot chưa đặt */}
-                                {!slot.is_booked && (
-                                    <button
-                                        className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-600 hover:text-white transition opacity-0 group-hover:opacity-100"
-                                        onClick={() => handleDeleteSlot(slot.slot_id)}
-                                        title="Xóa slot"
-                                    >
-                                        <i className="fa-solid fa-trash-can text-xs"></i>
-                                    </button>
-                                )}
+                {/* ===== Table ===== */}
+                <div className="dsm-table-container">
+                    {loading ? (
+                        <div className="dsm-empty">
+                            <LoadingSpinner />
+                            <p className="dsm-empty__text dsm-empty__text--loading">Đang tải danh sách slot...</p>
+                        </div>
+                    ) : displaySlots.length === 0 ? (
+                        <div className="dsm-empty">
+                            <div className="dsm-empty__icon">
+                                <i className="fa-regular fa-calendar-xmark" />
                             </div>
-                        ))}
+                            <p className="dsm-empty__text">
+                                {filterDate ? `Không có slot nào ngày ${formatDateVN(filterDate)}` : 'Chưa có slot khám nào'}
+                            </p>
+                            <p className="dsm-empty__subtext">Nhấn "Thêm Slot Mới" để tạo ca làm việc</p>
+                        </div>
+                    ) : (
+                        <table className="dsm-table">
+                            <thead>
+                                <tr>
+                                    <th className="dsm-th--num">#</th>
+                                    <th
+                                        className="dsm-th--sortable"
+                                        onClick={() => handleSort('slot_date')}
+                                    >
+                                        Ngày <SortIcon field="slot_date" />
+                                    </th>
+                                    <th
+                                        className="dsm-th--sortable"
+                                        onClick={() => handleSort('start_time')}
+                                    >
+                                        Giờ bắt đầu <SortIcon field="start_time" />
+                                    </th>
+                                    <th>Giờ kết thúc</th>
+                                    <th>Trạng thái</th>
+                                    <th className="dsm-th--center">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {displaySlots.map((slot, idx) => (
+                                    <tr key={slot.slot_id}>
+                                        <td className="dsm-td--num">{idx + 1}</td>
+                                        <td className="dsm-td--date">{formatDateVN(slot.slot_date)}</td>
+                                        <td className="dsm-td--time">{formatTime(slot.start_time)}</td>
+                                        <td className="dsm-td--time">{formatTime(slot.end_time)}</td>
+                                        <td>
+                                            {slot.is_booked ? (
+                                                <span className="dsm-badge dsm-badge--booked">
+                                                    <span className="dsm-badge__dot dsm-badge__dot--booked" />
+                                                    Đã đặt lịch
+                                                </span>
+                                            ) : (
+                                                <span className="dsm-badge dsm-badge--available">
+                                                    <span className="dsm-badge__dot dsm-badge__dot--available" />
+                                                    Còn trống
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            <div className="dsm-actions-cell">
+                                                <button
+                                                    className={`dsm-action-btn dsm-action-btn--edit ${slot.is_booked ? 'dsm-action-btn--disabled' : ''}`}
+                                                    disabled={slot.is_booked}
+                                                    title={slot.is_booked ? 'Không thể sửa slot đã đặt lịch' : 'Sửa slot'}
+                                                    onClick={() => !slot.is_booked && openEditModal(slot)}
+                                                >
+                                                    <i className="fa-solid fa-pen" />
+                                                </button>
+                                                <button
+                                                    className={`dsm-action-btn dsm-action-btn--delete ${slot.is_booked ? 'dsm-action-btn--disabled' : ''}`}
+                                                    disabled={slot.is_booked}
+                                                    title={slot.is_booked ? 'Không thể xóa slot đã đặt lịch' : 'Xóa slot'}
+                                                    onClick={() => !slot.is_booked && setDeleteSlot(slot)}
+                                                >
+                                                    <i className="fa-solid fa-trash-can" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                {/* ===== Footer ===== */}
+                {!loading && displaySlots.length > 0 && (
+                    <div className="dsm-footer">
+                        <span>
+                            Hiển thị <strong>{displaySlots.length}</strong> / <strong>{slots.length}</strong> slot
+                        </span>
+                        {filterDate && (
+                            <span>
+                                <i className="fa-regular fa-calendar" />
+                                {formatDateVN(filterDate)}
+                            </span>
+                        )}
                     </div>
                 )}
             </div>
-        </div>
+
+            {/* ===== CREATE / EDIT MODAL ===== */}
+            {showModal && (
+                <div
+                    className="dsm-overlay"
+                    onClick={(e) => { if (e.target === e.currentTarget) { setShowModal(false); setEditingSlot(null); } }}
+                >
+                    <div className="dsm-modal">
+                        <div className="dsm-modal__header">
+                            <h4 className="dsm-modal__title">
+                                <i className={editingSlot ? 'fa-solid fa-pen-to-square' : 'fa-solid fa-calendar-plus'} />
+                                {editingSlot ? 'Chỉnh sửa Slot' : 'Thêm Slot Mới'}
+                            </h4>
+                            <button
+                                className="dsm-modal__close-btn"
+                                onClick={() => { setShowModal(false); setEditingSlot(null); }}
+                            >
+                                <i className="fa-solid fa-xmark" />
+                            </button>
+                        </div>
+
+                        <div className="dsm-modal__body">
+                            <div className="dsm-form-group">
+                                <label className="dsm-form-label">
+                                    <i className="fa-regular fa-calendar dsm-icon--indigo" />
+                                    Ngày (slot_date)
+                                </label>
+                                <input
+                                    type="date"
+                                    value={formData.slot_date}
+                                    onChange={(e) => updateForm('slot_date', e.target.value)}
+                                    className="dsm-form-input"
+                                />
+                            </div>
+
+                            <div className="dsm-time-row">
+                                <ScrollTimePicker
+                                    value={formData.start_time}
+                                    onChange={(v) => updateForm('start_time', v)}
+                                    label="Bắt đầu"
+                                    iconClass="fa-regular fa-clock"
+                                    iconColorClass="dsm-icon--green"
+                                />
+                                <ScrollTimePicker
+                                    value={formData.end_time}
+                                    onChange={(v) => updateForm('end_time', v)}
+                                    label="Kết thúc"
+                                    iconClass="fa-regular fa-clock"
+                                    iconColorClass="dsm-icon--orange"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="dsm-modal__footer">
+                            <button
+                                className="dsm-btn-cancel"
+                                onClick={() => { setShowModal(false); setEditingSlot(null); }}
+                            >
+                                Hủy
+                            </button>
+                            <button
+                                className="dsm-btn-save"
+                                onClick={handleSave}
+                                disabled={saving}
+                            >
+                                {saving && <MiniSpinner />}
+                                {saving ? 'Đang lưu...' : editingSlot ? 'Cập nhật' : 'Tạo Slot'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ===== DELETE CONFIRM MODAL ===== */}
+            {deleteSlot && (
+                <div
+                    className="dsm-overlay"
+                    onClick={(e) => { if (e.target === e.currentTarget && !deleting) { setDeleteSlot(null); } }}
+                >
+                    <div className="dsm-modal dsm-modal--delete">
+                        <div className="dsm-modal__header">
+                            <h4 className="dsm-modal__title dsm-modal__title--danger">
+                                <i className="fa-solid fa-triangle-exclamation" />
+                                Xác nhận xóa
+                            </h4>
+                            <button
+                                className="dsm-modal__close-btn"
+                                onClick={() => !deleting && setDeleteSlot(null)}
+                            >
+                                <i className="fa-solid fa-xmark" />
+                            </button>
+                        </div>
+
+                        <div className="dsm-modal__body dsm-modal__body--center">
+                            <div className="dsm-delete-icon">
+                                <i className="fa-solid fa-trash-can" />
+                            </div>
+                            <p className="dsm-delete-text">
+                                Bạn có chắc muốn xóa slot{' '}
+                                <strong>{formatTime(deleteSlot.start_time)} – {formatTime(deleteSlot.end_time)}</strong>{' '}
+                                ngày{' '}
+                                <strong>{formatDateVN(deleteSlot.slot_date)}</strong>?
+                                <br />
+                                <span className="dsm-delete-text__note">Hành động này không thể hoàn tác.</span>
+                            </p>
+                        </div>
+
+                        <div className="dsm-modal__footer">
+                            <button
+                                className="dsm-btn-cancel"
+                                onClick={() => !deleting && setDeleteSlot(null)}
+                            >
+                                Không, giữ lại
+                            </button>
+                            <button
+                                className="dsm-btn-delete-confirm"
+                                onClick={handleConfirmDelete}
+                                disabled={deleting}
+                            >
+                                {deleting && <MiniSpinner />}
+                                {deleting ? 'Đang xóa...' : 'Xóa slot'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 };
 
