@@ -14,9 +14,16 @@ export const searchDoctors = async (name, specialization) => {
     return axiosClient.get(url, { params });
 };
 
-export const getDoctorById = async (id) => {
+export const getDoctorById = async (id, params = {}) => {
     const url = `/doctor/detail/${id}`;
-    return axiosClient.get(url);
+    return axiosClient.get(url, { params });
+};
+
+
+export const setupDoctor = async (id, data) => {
+    // Tạo hồ sơ bác sĩ lần đầu — doctor_id = user_id từ Supabase auth
+    const url = `/doctor/setup/${id}`;
+    return axiosClient.post(url, data);
 };
 
 export const updateDoctor = async (id, data) => {
