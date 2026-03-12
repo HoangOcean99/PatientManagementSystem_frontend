@@ -14,7 +14,6 @@ import {
   FiLoader,
   FiX,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import labOrderApi from '../../api/labOrderApi';
 import './LabResultPage.css';
 
@@ -35,9 +34,9 @@ const calculateAge = (dob) => {
 };
 
 const STATUS_MAP = {
-  ordered:    { label: 'Chờ xét nghiệm', color: 'lr-status--ordered',    icon: FiClock },
-  processing: { label: 'Đang xử lý',     color: 'lr-status--processing', icon: FiActivity },
-  completed:  { label: 'Hoàn tất',        color: 'lr-status--completed',  icon: FiCheckCircle },
+  ordered: { label: 'Chờ xét nghiệm', color: 'lr-status--ordered', icon: FiClock },
+  processing: { label: 'Đang xử lý', color: 'lr-status--processing', icon: FiActivity },
+  completed: { label: 'Hoàn tất', color: 'lr-status--completed', icon: FiCheckCircle },
 };
 
 // ===== ANIMATION =====
@@ -219,44 +218,33 @@ const LabResultPage = () => {
   // ===== LOADING STATE =====
   if (pageLoading) {
     return (
-      <div className="lr-layout">
-        <DoctorSidebar activePage="lab-queue" role="lab" />
-        <main className="lr-main">
-          <div className="lr-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-            <div style={{ textAlign: 'center' }}>
-              <FiLoader size={32} className="lr-spin" style={{ color: '#3b82f6', marginBottom: 16 }} />
-              <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Đang tải dữ liệu xét nghiệm...</p>
-            </div>
-          </div>
-        </main>
+      <div className="relative flex-1">
+        <LoadingSpinner />
       </div>
-    );
+    )
   }
 
   // ===== ERROR STATE =====
   if (pageError || !labOrder) {
     return (
-      <div className="lr-layout">
-        <DoctorSidebar activePage="lab-queue" role="lab" />
-        <main className="lr-main">
-          <div className="lr-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-            <div style={{ textAlign: 'center' }}>
-              <FiAlertCircle size={32} style={{ color: '#ef4444', marginBottom: 16 }} />
-              <p style={{ color: '#ef4444', fontSize: '0.95rem', marginBottom: 16 }}>
-                {pageError || 'Không tìm thấy dữ liệu.'}
-              </p>
-              <button
-                className="lr-btn lr-btn--outline"
-                onClick={() => navigate('/lab/queue')}
-                type="button"
-              >
-                <FiArrowLeft size={16} />
-                Quay lại danh sách
-              </button>
-            </div>
+      <main className="lr-main p-8">
+        <div className="lr-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <FiAlertCircle size={32} style={{ color: '#ef4444', marginBottom: 16 }} />
+            <p style={{ color: '#ef4444', fontSize: '0.95rem', marginBottom: 16 }}>
+              {pageError || 'Không tìm thấy dữ liệu.'}
+            </p>
+            <button
+              className="lr-btn lr-btn--outline"
+              onClick={() => navigate('/lab/queue')}
+              type="button"
+            >
+              <FiArrowLeft size={16} />
+              Quay lại danh sách
+            </button>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     );
   }
 
@@ -265,218 +253,214 @@ const LabResultPage = () => {
   const StatusIcon = statusInfo.icon;
 
   return (
-    <div className="lr-layout">
-      <DoctorSidebar activePage="lab-queue" role="lab" />
+    <main className="lr-main">
+      <motion.div
+        className="lr-content"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Back + Title Bar */}
+        <motion.div className="lr-topbar" variants={itemVariants}>
+          <button
+            className="lr-back-btn"
+            onClick={() => navigate('/lab/queue')}
+            type="button"
+          >
+            <FiArrowLeft size={18} />
+            Quay lại danh sách
+          </button>
+        </motion.div>
 
-      <main className="lr-main">
-        <motion.div
-          className="lr-content"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Back + Title Bar */}
-          <motion.div className="lr-topbar" variants={itemVariants}>
-            <button
-              className="lr-back-btn"
-              onClick={() => navigate('/lab/queue')}
-              type="button"
-            >
-              <FiArrowLeft size={18} />
-              Quay lại danh sách
+        {/* Toast Message */}
+        {message && (
+          <motion.div
+            className={`lr-toast lr-toast--${message.type}`}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            {message.type === 'success' ? <FiCheckCircle size={16} /> : <FiAlertCircle size={16} />}
+            <span>{message.text}</span>
+            <button className="lr-toast__close" onClick={() => setMessage(null)}>
+              <FiX size={14} />
             </button>
           </motion.div>
+        )}
 
-          {/* Toast Message */}
-          {message && (
-            <motion.div
-              className={`lr-toast lr-toast--${message.type}`}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-            >
-              {message.type === 'success' ? <FiCheckCircle size={16} /> : <FiAlertCircle size={16} />}
-              <span>{message.text}</span>
-              <button className="lr-toast__close" onClick={() => setMessage(null)}>
-                <FiX size={14} />
-              </button>
-            </motion.div>
-          )}
-
-          {/* Patient Banner */}
-          <motion.div className="lr-patient-banner" variants={itemVariants}>
-            <div className="lr-patient-banner__left">
-              <div className="lr-patient-banner__avatar">
-                <span className="lr-patient-banner__initials">
-                  {getInitials(labOrder.patient_name)}
+        {/* Patient Banner */}
+        <motion.div className="lr-patient-banner" variants={itemVariants}>
+          <div className="lr-patient-banner__left">
+            <div className="lr-patient-banner__avatar">
+              <span className="lr-patient-banner__initials">
+                {getInitials(labOrder.patient_name)}
+              </span>
+            </div>
+            <div className="lr-patient-banner__info">
+              <h1 className="lr-patient-banner__name">{labOrder.patient_name}</h1>
+              <div className="lr-patient-banner__meta">
+                <span className="lr-badge">
+                  ID: {labOrder.patient_id ? `${labOrder.patient_id.slice(0, 8)}...` : '—'}
                 </span>
+                <span className="lr-meta-sep">•</span>
+                <span>{labOrder.age ? `${labOrder.age} tuổi` : '—'}</span>
+                <span className="lr-meta-sep">•</span>
+                <span>{getGenderLabel(labOrder.gender)}</span>
               </div>
-              <div className="lr-patient-banner__info">
-                <h1 className="lr-patient-banner__name">{labOrder.patient_name}</h1>
-                <div className="lr-patient-banner__meta">
-                  <span className="lr-badge">
-                    ID: {labOrder.patient_id ? `${labOrder.patient_id.slice(0, 8)}...` : '—'}
-                  </span>
-                  <span className="lr-meta-sep">•</span>
-                  <span>{labOrder.age ? `${labOrder.age} tuổi` : '—'}</span>
-                  <span className="lr-meta-sep">•</span>
-                  <span>{getGenderLabel(labOrder.gender)}</span>
+              {labOrder.allergies && (
+                <div className="lr-patient-banner__allergy">
+                  <FiAlertCircle size={14} />
+                  <span>Dị ứng: {labOrder.allergies}</span>
                 </div>
-                {labOrder.allergies && (
-                  <div className="lr-patient-banner__allergy">
-                    <FiAlertCircle size={14} />
-                    <span>Dị ứng: {labOrder.allergies}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="lr-patient-banner__right">
-              <div className={`lr-status-badge ${statusInfo.color}`}>
-                <StatusIcon size={14} />
-                <span>{statusInfo.label}</span>
-              </div>
-
-              {labOrder.status === 'ordered' && (
-                <button
-                  className="lr-btn lr-btn--primary"
-                  onClick={handleStartProcessing}
-                  type="button"
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <FiLoader size={16} className="lr-spin" />
-                  ) : (
-                    <FiActivity size={16} />
-                  )}
-                  Bắt đầu xét nghiệm
-                </button>
               )}
-            </div>
-          </motion.div>
-
-          {/* Form Area */}
-          <div className="lr-form-grid">
-            {/* LEFT: Lab Order Info (readonly) */}
-            <div className="lr-form-col">
-              <motion.div className="lr-form-card" variants={itemVariants}>
-                <div className="lr-form-card__header">
-                  <FiFileText size={18} className="lr-form-card__icon" />
-                  <h3 className="lr-form-card__title">Thông tin chỉ định</h3>
-                </div>
-                <div className="lr-form-card__body">
-                  <div className="lr-info-row">
-                    <span className="lr-info-label">Tên xét nghiệm</span>
-                    <span className="lr-info-value lr-info-value--highlight">
-                      {labOrder.test_name}
-                    </span>
-                  </div>
-                  <div className="lr-info-row">
-                    <span className="lr-info-label">Bác sĩ chỉ định</span>
-                    <span className="lr-info-value">{labOrder.doctor_name || '—'}</span>
-                  </div>
-                  <div className="lr-info-row">
-                    <span className="lr-info-label">Mã phiếu</span>
-                    <span className="lr-info-value">
-                      {labOrder.lab_order_id ? `${labOrder.lab_order_id.slice(0, 8)}...` : '—'}
-                    </span>
-                  </div>
-                  <div className="lr-info-row">
-                    <span className="lr-info-label">Thời gian chỉ định</span>
-                    <span className="lr-info-value">
-                      {labOrder.created_at
-                        ? new Date(labOrder.created_at).toLocaleString('vi-VN')
-                        : '—'}
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* RIGHT: Result Form */}
-            <div className="lr-form-col">
-              {/* result_summary */}
-              <motion.div className="lr-form-card lr-form-card--result" variants={itemVariants}>
-                <div className="lr-form-card__header lr-form-card__header--result">
-                  <FiActivity size={18} className="lr-form-card__icon" />
-                  <h3 className="lr-form-card__title">Kết quả xét nghiệm</h3>
-                </div>
-                <div className="lr-form-card__body">
-                  <div className="lr-field">
-                    <label className="lr-field__label" htmlFor="resultSummary">
-                      Tóm tắt kết quả <span className="lr-required">*</span>
-                    </label>
-                    <textarea
-                      id="resultSummary"
-                      className="lr-textarea"
-                      placeholder="Nhập kết quả xét nghiệm chi tiết..."
-                      rows={6}
-                      value={resultSummary}
-                      onChange={(e) => setResultSummary(e.target.value)}
-                      disabled={isCompleted}
-                    />
-                  </div>
-
-                  {/* result_file_url */}
-                  <div className="lr-field">
-                    <label className="lr-field__label" htmlFor="resultFileUrl">
-                      <FiUpload size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                      File kết quả (URL)
-                    </label>
-                    <input
-                      id="resultFileUrl"
-                      type="url"
-                      className="lr-input"
-                      placeholder="https://example.com/result.pdf"
-                      value={resultFileUrl}
-                      onChange={(e) => setResultFileUrl(e.target.value)}
-                      disabled={isCompleted}
-                    />
-                    <p className="lr-field__hint">Đường dẫn tới file kết quả (PDF, hình ảnh...)</p>
-                  </div>
-                </div>
-              </motion.div>
             </div>
           </div>
 
-          {/* Action Bar */}
-          {!isCompleted && (
-            <motion.div className="lr-action-bar" variants={itemVariants}>
+          <div className="lr-patient-banner__right">
+            <div className={`lr-status-badge ${statusInfo.color}`}>
+              <StatusIcon size={14} />
+              <span>{statusInfo.label}</span>
+            </div>
+
+            {labOrder.status === 'ordered' && (
               <button
-                className="lr-btn lr-btn--outline"
-                onClick={handleSaveDraft}
+                className="lr-btn lr-btn--primary"
+                onClick={handleStartProcessing}
                 type="button"
                 disabled={saving}
               >
-                {saving ? <FiLoader size={16} className="lr-spin" /> : <FiSave size={16} />}
-                Lưu nháp
+                {saving ? (
+                  <FiLoader size={16} className="lr-spin" />
+                ) : (
+                  <FiActivity size={16} />
+                )}
+                Bắt đầu xét nghiệm
               </button>
-              <button
-                className="lr-btn lr-btn--success lr-btn--lg"
-                onClick={handleComplete}
-                type="button"
-                disabled={saving}
-              >
-                {saving ? <FiLoader size={16} className="lr-spin" /> : <FiCheckCircle size={16} />}
-                Hoàn tất xét nghiệm
-              </button>
-            </motion.div>
-          )}
-
-          {isCompleted && (
-            <motion.div className="lr-completed-banner" variants={itemVariants}>
-              <FiCheckCircle size={20} />
-              <span>Xét nghiệm đã hoàn tất. Kết quả đã được gửi cho bác sĩ chỉ định.</span>
-            </motion.div>
-          )}
-
-          {/* Footer */}
-          <motion.footer className="lr-footer" variants={itemVariants}>
-            <p>&copy; 2026 MedSchedule. All rights reserved.</p>
-          </motion.footer>
+            )}
+          </div>
         </motion.div>
-      </main>
-    </div>
+
+        {/* Form Area */}
+        <div className="lr-form-grid">
+          {/* LEFT: Lab Order Info (readonly) */}
+          <div className="lr-form-col">
+            <motion.div className="lr-form-card" variants={itemVariants}>
+              <div className="lr-form-card__header">
+                <FiFileText size={18} className="lr-form-card__icon" />
+                <h3 className="lr-form-card__title">Thông tin chỉ định</h3>
+              </div>
+              <div className="lr-form-card__body">
+                <div className="lr-info-row">
+                  <span className="lr-info-label">Tên xét nghiệm</span>
+                  <span className="lr-info-value lr-info-value--highlight">
+                    {labOrder.test_name}
+                  </span>
+                </div>
+                <div className="lr-info-row">
+                  <span className="lr-info-label">Bác sĩ chỉ định</span>
+                  <span className="lr-info-value">{labOrder.doctor_name || '—'}</span>
+                </div>
+                <div className="lr-info-row">
+                  <span className="lr-info-label">Mã phiếu</span>
+                  <span className="lr-info-value">
+                    {labOrder.lab_order_id ? `${labOrder.lab_order_id.slice(0, 8)}...` : '—'}
+                  </span>
+                </div>
+                <div className="lr-info-row">
+                  <span className="lr-info-label">Thời gian chỉ định</span>
+                  <span className="lr-info-value">
+                    {labOrder.created_at
+                      ? new Date(labOrder.created_at).toLocaleString('vi-VN')
+                      : '—'}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* RIGHT: Result Form */}
+          <div className="lr-form-col">
+            {/* result_summary */}
+            <motion.div className="lr-form-card lr-form-card--result" variants={itemVariants}>
+              <div className="lr-form-card__header lr-form-card__header--result">
+                <FiActivity size={18} className="lr-form-card__icon" />
+                <h3 className="lr-form-card__title">Kết quả xét nghiệm</h3>
+              </div>
+              <div className="lr-form-card__body">
+                <div className="lr-field">
+                  <label className="lr-field__label" htmlFor="resultSummary">
+                    Tóm tắt kết quả <span className="lr-required">*</span>
+                  </label>
+                  <textarea
+                    id="resultSummary"
+                    className="lr-textarea"
+                    placeholder="Nhập kết quả xét nghiệm chi tiết..."
+                    rows={6}
+                    value={resultSummary}
+                    onChange={(e) => setResultSummary(e.target.value)}
+                    disabled={isCompleted}
+                  />
+                </div>
+
+                {/* result_file_url */}
+                <div className="lr-field">
+                  <label className="lr-field__label" htmlFor="resultFileUrl">
+                    <FiUpload size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                    File kết quả (URL)
+                  </label>
+                  <input
+                    id="resultFileUrl"
+                    type="url"
+                    className="lr-input"
+                    placeholder="https://example.com/result.pdf"
+                    value={resultFileUrl}
+                    onChange={(e) => setResultFileUrl(e.target.value)}
+                    disabled={isCompleted}
+                  />
+                  <p className="lr-field__hint">Đường dẫn tới file kết quả (PDF, hình ảnh...)</p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Action Bar */}
+        {!isCompleted && (
+          <motion.div className="lr-action-bar" variants={itemVariants}>
+            <button
+              className="lr-btn lr-btn--outline"
+              onClick={handleSaveDraft}
+              type="button"
+              disabled={saving}
+            >
+              {saving ? <FiLoader size={16} className="lr-spin" /> : <FiSave size={16} />}
+              Lưu nháp
+            </button>
+            <button
+              className="lr-btn lr-btn--success lr-btn--lg"
+              onClick={handleComplete}
+              type="button"
+              disabled={saving}
+            >
+              {saving ? <FiLoader size={16} className="lr-spin" /> : <FiCheckCircle size={16} />}
+              Hoàn tất xét nghiệm
+            </button>
+          </motion.div>
+        )}
+
+        {isCompleted && (
+          <motion.div className="lr-completed-banner" variants={itemVariants}>
+            <FiCheckCircle size={20} />
+            <span>Xét nghiệm đã hoàn tất. Kết quả đã được gửi cho bác sĩ chỉ định.</span>
+          </motion.div>
+        )}
+
+        {/* Footer */}
+        <motion.footer className="lr-footer" variants={itemVariants}>
+          <p>&copy; 2026 MedSchedule. All rights reserved.</p>
+        </motion.footer>
+      </motion.div>
+    </main>
   );
 };
 

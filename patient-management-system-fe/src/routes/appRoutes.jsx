@@ -4,6 +4,7 @@ import commonRoutes from "./commonRoutes";
 import doctorRoutes from "./doctorRoutes";
 import labRoutes from "./labRoutes";
 import patientRoutes from "./patientRoutes";
+import receptionistRoutes from "./receptionistRoutes";
 
 const mainRoutes = [
     ...doctorRoutes,
@@ -11,7 +12,7 @@ const mainRoutes = [
     ...patientRoutes,
     ...accountantRoutes,
     ...adminRoutes,
-    ...commonRoutes
+    ...receptionistRoutes
 ];
 
 export default mainRoutes;

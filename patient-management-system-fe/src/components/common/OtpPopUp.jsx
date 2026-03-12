@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import LoadingSpinner from "./LoadingSpinner";
 import { AiOutlineClose, AiOutlineMail } from "react-icons/ai";
-import { maskEmail } from "../helpers/authUtils";
+import { maskEmail } from "../../helpers/authUtils.js";
 
 const OtpPopUp = ({
     emailParentRef,
@@ -103,7 +103,9 @@ const OtpPopUp = ({
                         ${isLoadingOtp ? "bg-blue-300 cursor-not-allowed text-white"
                             : "bg-blue-600 hover:bg-blue-700 text-white"}`}
                 >
-                    {isLoadingOtp ? <LoadingSpinner size='20px' /> :
+                    {isLoadingOtp ? <div className="relative flex-1">
+                        {loading && <LoadingSpinner />}
+                    </div> :
                         <span>Xác nhận</span>
                     }
                 </button>

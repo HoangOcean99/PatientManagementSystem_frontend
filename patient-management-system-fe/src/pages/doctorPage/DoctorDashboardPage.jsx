@@ -150,7 +150,6 @@ const DoctorDashboardPage = () => {
 
   return (
     <div className="dash-layout" style={{ width: '100vw' }}>
-      <DoctorSidebar activePage="dashboard" />
 
       <main className="dash-main">
         <motion.div

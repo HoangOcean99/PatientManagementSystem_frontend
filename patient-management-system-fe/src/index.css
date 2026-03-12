@@ -8,15 +8,83 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --ex-primary: #2563EB;
+  --ex-primary-dark: #1D4ED8;
+  --ex-primary-light: #DBEAFE;
+  --ex-primary-subtle: #EFF6FF;
+  --ex-primary-50: #F0F7FF;
+
+  --ex-bg: #F8FAFC;
+  --ex-surface: #FFFFFF;
+  --ex-surface-hover: #F1F5F9;
+
+  --ex-text-primary: #0F172A;
+  --ex-text-secondary: #475569;
+  --ex-text-muted: #94A3B8;
+
+  --ex-border: #E2E8F0;
+  --ex-border-light: #F1F5F9;
+
+  --ex-danger: #EF4444;
+  --ex-danger-light: #FEF2F2;
+  --ex-success: #10B981;
+  --ex-success-light: #ECFDF5;
+  --ex-warning: #F59E0B;
+  --ex-warning-light: #FFFBEB;
+
+  --ex-sidebar-width: 260px;
+  --ex-radius-sm: 6px;
+  --ex-radius-md: 10px;
+  --ex-radius-lg: 14px;
+  --ex-radius-xl: 18px;
+
+  --ex-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --ex-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.03);
+
+  --ex-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --pd-primary: #2563EB;
+  --pd-primary-dark: #1D4ED8;
+  --pd-primary-light: #DBEAFE;
+  --pd-primary-subtle: #EFF6FF;
+  --pd-primary-50: #F0F7FF;
+
+  --pd-bg: #F8FAFC;
+  --pd-surface: #FFFFFF;
+  --pd-surface-hover: #F1F5F9;
+
+  --pd-text-primary: #0F172A;
+  --pd-text-secondary: #475569;
+  --pd-text-muted: #94A3B8;
+
+  --pd-border: #E2E8F0;
+  --pd-border-light: #F1F5F9;
+
+  --pd-danger: #EF4444;
+  --pd-danger-light: #FEF2F2;
+  --pd-warning: #F59E0B;
+  --pd-warning-light: #FFFBEB;
+  --pd-success: #10B981;
+  --pd-success-light: #ECFDF5;
+
+  --pd-sidebar-width: 260px;
+  --pd-sidebar-bg: #FFFFFF;
+
+  --pd-radius-sm: 6px;
+  --pd-radius-md: 10px;
+  --pd-radius-lg: 14px;
+  --pd-radius-xl: 18px;
+
+  --pd-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --pd-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.03);
+  --pd-shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.08), 0 4px 8px rgba(15, 23, 42, 0.04);
+
+  --pd-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }
-
-
-

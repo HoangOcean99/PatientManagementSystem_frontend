@@ -10,10 +10,10 @@ import {
   FiLoader,
   FiAlertCircle,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import { getAppointmentsByDoctorId } from '../../api/doctorApi';
 import { supabase } from '../../../supabaseClient';
 import './DoctorSchedulePage.css';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // ===== HELPERS =====
 const STATUS_LABELS = {
@@ -158,12 +158,17 @@ const DoctorSchedulePage = () => {
       return matchSearch && matchStatus;
     });
   }, [appointments, searchTerm, statusFilter]);
-
+  if (loading) {
+    return (
+      <div className="relative flex-1">
+        <LoadingSpinner />
+      </div>
+    )
+  }
   return (
-    <div className="sched-layout" style={{ width: '100vw' }} >
-      <DoctorSidebar activePage="schedule" />
+    <div className="sched-layout">
 
-      <main className="sched-main">
+      <main className="sched-main p-8">
         <motion.div
           className="sched-content"
           variants={containerVariants}

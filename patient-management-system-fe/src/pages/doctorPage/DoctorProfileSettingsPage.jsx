@@ -18,7 +18,7 @@ import {
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import { getDoctorById, setupDoctor, updateDoctor } from '../../api/doctorApi';
-import { getAllDepartments } from '../../api/departmentApi';
+import { getAllDepartment } from '../../api/departmentApi';
 import { supabase } from '../../../supabaseClient';
 import { validateFullName, validatePhoneNumber } from '../../helpers/validationUtils';
 import './DoctorProfileSettingsPage.css';
@@ -87,7 +87,7 @@ const DoctorProfileSettingsPage = () => {
 
   // ===== Fetch departments =====
   useEffect(() => {
-    getAllDepartments()
+    getAllDepartment()
       .then((res) => {
         const list = res.data?.data || res.data || [];
         const arr = Array.isArray(list) ? list : [];
@@ -260,7 +260,6 @@ const DoctorProfileSettingsPage = () => {
   // ===== RENDER =====
   return (
     <div className="prof-layout" style={{ width: '100vw' }}>
-      <DoctorSidebar activePage="profile" />
 
       <main className="prof-main">
         <motion.div

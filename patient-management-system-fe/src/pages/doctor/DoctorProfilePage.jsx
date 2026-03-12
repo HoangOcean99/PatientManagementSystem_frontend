@@ -7,7 +7,7 @@ import {
     addScheduleSlot,
     deleteScheduleSlot,
 } from '../../api/scheduleApi';
-import LoadingSpinner from '../../components/LoadingSpinner';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 // ===== HELPERS =====

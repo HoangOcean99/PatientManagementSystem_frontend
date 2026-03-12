@@ -12,22 +12,22 @@ import {
   FiLoader,
   FiAlertCircle,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import labOrderApi from '../../api/labOrderApi';
 import './LabQueuePage.css';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // ===== HELPERS =====
 const STATUS_CONFIG = {
-  ordered:    { label: 'Chờ xét nghiệm', icon: FiClock,       className: 'lq-status--ordered' },
-  processing: { label: 'Đang xử lý',     icon: FiActivity,    className: 'lq-status--processing' },
-  completed:  { label: 'Hoàn tất',        icon: FiCheckCircle, className: 'lq-status--completed' },
+  ordered: { label: 'Chờ xét nghiệm', icon: FiClock, className: 'lq-status--ordered' },
+  processing: { label: 'Đang xử lý', icon: FiActivity, className: 'lq-status--processing' },
+  completed: { label: 'Hoàn tất', icon: FiCheckCircle, className: 'lq-status--completed' },
 };
 
 const FILTER_OPTIONS = [
-  { key: 'all',        label: 'Tất cả' },
-  { key: 'ordered',    label: 'Chờ XN' },
+  { key: 'all', label: 'Tất cả' },
+  { key: 'ordered', label: 'Chờ XN' },
   { key: 'processing', label: 'Đang xử lý' },
-  { key: 'completed',  label: 'Hoàn tất' },
+  { key: 'completed', label: 'Hoàn tất' },
 ];
 
 const getInitials = (name) =>
@@ -148,208 +148,212 @@ const LabQueuePage = () => {
   const processingCount = labOrders.filter((l) => l.status === 'processing').length;
   const completedCount = labOrders.filter((l) => l.status === 'completed').length;
 
+  if (loading) {
+    return (
+      <div className="relative flex-1">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
   return (
-    <div className="lq-layout" style={{ width: '100vw' }}>
-      <DoctorSidebar activePage="lab-queue" role="lab" />
-
-      <main className="lq-main">
-        <motion.div
-          className="lq-content"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Page Header */}
-          <motion.div className="lq-header" variants={itemVariants}>
-            <div className="lq-header__left">
-              <h1 className="lq-header__title">
-                <FiActivity size={22} />
-                Danh sách chờ xét nghiệm
-              </h1>
-              <p className="lq-header__date">{getTodayFormatted()}</p>
-            </div>
-          </motion.div>
-
-          {/* Stats Cards */}
-          <motion.div className="lq-stats" variants={itemVariants}>
-            <div className="lq-stat-card lq-stat-card--ordered">
-              <div className="lq-stat-card__icon">
-                <FiClock size={20} />
-              </div>
-              <div className="lq-stat-card__info">
-                <span className="lq-stat-card__value">{orderedCount}</span>
-                <span className="lq-stat-card__label">Chờ xét nghiệm</span>
-              </div>
-            </div>
-            <div className="lq-stat-card lq-stat-card--processing">
-              <div className="lq-stat-card__icon">
-                <FiActivity size={20} />
-              </div>
-              <div className="lq-stat-card__info">
-                <span className="lq-stat-card__value">{processingCount}</span>
-                <span className="lq-stat-card__label">Đang xử lý</span>
-              </div>
-            </div>
-            <div className="lq-stat-card lq-stat-card--completed">
-              <div className="lq-stat-card__icon">
-                <FiCheckCircle size={20} />
-              </div>
-              <div className="lq-stat-card__info">
-                <span className="lq-stat-card__value">{completedCount}</span>
-                <span className="lq-stat-card__label">Hoàn tất hôm nay</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Filter Bar */}
-          <motion.div className="lq-filters" variants={itemVariants}>
-            <div className="lq-search">
-              <FiSearch size={16} className="lq-search__icon" />
-              <input
-                type="text"
-                className="lq-search__input"
-                placeholder="Tìm theo tên bệnh nhân hoặc xét nghiệm..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="lq-filter-tabs">
-              {FILTER_OPTIONS.map((opt) => (
-                <button
-                  key={opt.key}
-                  className={`lq-filter-tab ${statusFilter === opt.key ? 'lq-filter-tab--active' : ''}`}
-                  onClick={() => setStatusFilter(opt.key)}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Table */}
-          <motion.div className="lq-table-wrap" variants={itemVariants}>
-            {loading ? (
-              <div className="lq-empty">
-                <div className="lq-empty__icon">
-                  <FiLoader size={24} className="lq-spin" />
-                </div>
-                <p className="lq-empty__text">Đang tải danh sách xét nghiệm...</p>
-              </div>
-            ) : error ? (
-              <div className="lq-empty">
-                <div className="lq-empty__icon" style={{ background: '#FEF2F2', color: '#EF4444' }}>
-                  <FiAlertCircle size={24} />
-                </div>
-                <p className="lq-empty__text" style={{ color: '#EF4444' }}>{error}</p>
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="lq-empty">
-                <div className="lq-empty__icon">
-                  <FiInbox size={24} />
-                </div>
-                <p className="lq-empty__text">Không tìm thấy yêu cầu xét nghiệm nào.</p>
-              </div>
-            ) : (
-              <>
-                <table className="lq-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Bệnh nhân</th>
-                      <th>Tên xét nghiệm</th>
-                      <th>BS chỉ định</th>
-                      <th>Thời gian</th>
-                      <th>Trạng thái</th>
-                      <th>Hành động</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((lo, idx) => {
-                      const statusConf = STATUS_CONFIG[lo.status] || STATUS_CONFIG.ordered;
-                      const StatusIcon = statusConf.icon;
-                      return (
-                        <tr key={lo.lab_order_id}>
-                          <td data-label="#">
-                            <span className="lq-queue">{idx + 1}</span>
-                          </td>
-                          <td data-label="Bệnh nhân">
-                            <div className="lq-patient-cell">
-                              <div className="lq-patient-avatar">
-                                {getInitials(lo.patient_name)}
-                              </div>
-                              <div>
-                                <div className="lq-patient-name">{lo.patient_name}</div>
-                                <div className="lq-patient-meta">
-                                  {getGenderLabel(lo.gender)} {lo.age ? `• ${lo.age} tuổi` : ''}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td data-label="Tên xét nghiệm">
-                            <span className="lq-test-name">{lo.test_name}</span>
-                          </td>
-                          <td data-label="BS chỉ định">
-                            <span className="lq-doctor-name">{lo.doctor_name || '—'}</span>
-                          </td>
-                          <td data-label="Thời gian">
-                            <span className="lq-time">{formatTime(lo.created_at)}</span>
-                          </td>
-                          <td data-label="Trạng thái">
-                            <span className={`lq-status ${statusConf.className}`}>
-                              <StatusIcon size={12} />
-                              {statusConf.label}
-                            </span>
-                          </td>
-                          <td data-label="Hành động">
-                            <div className="lq-actions">
-                              {lo.status === 'ordered' && (
-                                <button
-                                  className="lq-action-btn lq-action-btn--start"
-                                  onClick={() => navigate(`/lab/result/${lo.lab_order_id}`)}
-                                >
-                                  <FiPlay size={14} />
-                                  Tiếp nhận
-                                </button>
-                              )}
-                              {lo.status === 'processing' && (
-                                <button
-                                  className="lq-action-btn lq-action-btn--start"
-                                  onClick={() => navigate(`/lab/result/${lo.lab_order_id}`)}
-                                >
-                                  <FiPlay size={14} />
-                                  Tiếp tục
-                                </button>
-                              )}
-                              {lo.status === 'completed' && (
-                                <button
-                                  className="lq-action-btn lq-action-btn--view"
-                                  onClick={() => navigate(`/lab/result/${lo.lab_order_id}`)}
-                                >
-                                  <FiEye size={14} />
-                                  Xem kết quả
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <div className="lq-result-count">
-                  Hiển thị {filtered.length} / {labOrders.length} xét nghiệm
-                </div>
-              </>
-            )}
-          </motion.div>
-
-          {/* Footer */}
-          <motion.footer className="lq-footer" variants={itemVariants}>
-            <p>&copy; 2026 MedSchedule. All rights reserved.</p>
-          </motion.footer>
+    <main className="lq-main p-8">
+      <motion.div
+        className="lq-content"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Page Header */}
+        <motion.div className="lq-header" variants={itemVariants}>
+          <div className="lq-header__left">
+            <h1 className="lq-header__title">
+              <FiActivity size={22} />
+              Danh sách chờ xét nghiệm
+            </h1>
+            <p className="lq-header__date">{getTodayFormatted()}</p>
+          </div>
         </motion.div>
-      </main>
-    </div>
+
+        {/* Stats Cards */}
+        <motion.div className="lq-stats" variants={itemVariants}>
+          <div className="lq-stat-card lq-stat-card--ordered">
+            <div className="lq-stat-card__icon">
+              <FiClock size={20} />
+            </div>
+            <div className="lq-stat-card__info">
+              <span className="lq-stat-card__value">{orderedCount}</span>
+              <span className="lq-stat-card__label">Chờ xét nghiệm</span>
+            </div>
+          </div>
+          <div className="lq-stat-card lq-stat-card--processing">
+            <div className="lq-stat-card__icon">
+              <FiActivity size={20} />
+            </div>
+            <div className="lq-stat-card__info">
+              <span className="lq-stat-card__value">{processingCount}</span>
+              <span className="lq-stat-card__label">Đang xử lý</span>
+            </div>
+          </div>
+          <div className="lq-stat-card lq-stat-card--completed">
+            <div className="lq-stat-card__icon">
+              <FiCheckCircle size={20} />
+            </div>
+            <div className="lq-stat-card__info">
+              <span className="lq-stat-card__value">{completedCount}</span>
+              <span className="lq-stat-card__label">Hoàn tất hôm nay</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Filter Bar */}
+        <motion.div className="lq-filters" variants={itemVariants}>
+          <div className="lq-search">
+            <FiSearch size={16} className="lq-search__icon" />
+            <input
+              type="text"
+              className="lq-search__input"
+              placeholder="Tìm theo tên bệnh nhân hoặc xét nghiệm..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="lq-filter-tabs">
+            {FILTER_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                className={`lq-filter-tab ${statusFilter === opt.key ? 'lq-filter-tab--active' : ''}`}
+                onClick={() => setStatusFilter(opt.key)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Table */}
+        <motion.div className="lq-table-wrap" variants={itemVariants}>
+          {loading ? (
+            <div className="lq-empty">
+              <div className="lq-empty__icon">
+                <FiLoader size={24} className="lq-spin" />
+              </div>
+              <p className="lq-empty__text">Đang tải danh sách xét nghiệm...</p>
+            </div>
+          ) : error ? (
+            <div className="lq-empty">
+              <div className="lq-empty__icon" style={{ background: '#FEF2F2', color: '#EF4444' }}>
+                <FiAlertCircle size={24} />
+              </div>
+              <p className="lq-empty__text" style={{ color: '#EF4444' }}>{error}</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="lq-empty">
+              <div className="lq-empty__icon">
+                <FiInbox size={24} />
+              </div>
+              <p className="lq-empty__text">Không tìm thấy yêu cầu xét nghiệm nào.</p>
+            </div>
+          ) : (
+            <>
+              <table className="lq-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Bệnh nhân</th>
+                    <th>Tên xét nghiệm</th>
+                    <th>BS chỉ định</th>
+                    <th>Thời gian</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((lo, idx) => {
+                    const statusConf = STATUS_CONFIG[lo.status] || STATUS_CONFIG.ordered;
+                    const StatusIcon = statusConf.icon;
+                    return (
+                      <tr key={lo.lab_order_id}>
+                        <td data-label="#">
+                          <span className="lq-queue">{idx + 1}</span>
+                        </td>
+                        <td data-label="Bệnh nhân">
+                          <div className="lq-patient-cell">
+                            <div className="lq-patient-avatar">
+                              {getInitials(lo.patient_name)}
+                            </div>
+                            <div>
+                              <div className="lq-patient-name">{lo.patient_name}</div>
+                              <div className="lq-patient-meta">
+                                {getGenderLabel(lo.gender)} {lo.age ? `• ${lo.age} tuổi` : ''}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td data-label="Tên xét nghiệm">
+                          <span className="lq-test-name">{lo.test_name}</span>
+                        </td>
+                        <td data-label="BS chỉ định">
+                          <span className="lq-doctor-name">{lo.doctor_name || '—'}</span>
+                        </td>
+                        <td data-label="Thời gian">
+                          <span className="lq-time">{formatTime(lo.created_at)}</span>
+                        </td>
+                        <td data-label="Trạng thái">
+                          <span className={`lq-status ${statusConf.className}`}>
+                            <StatusIcon size={12} />
+                            {statusConf.label}
+                          </span>
+                        </td>
+                        <td data-label="Hành động">
+                          <div className="lq-actions">
+                            {lo.status === 'ordered' && (
+                              <button
+                                className="lq-action-btn lq-action-btn--start"
+                                onClick={() => navigate(`/lab/result/${lo.lab_order_id}`)}
+                              >
+                                <FiPlay size={14} />
+                                Tiếp nhận
+                              </button>
+                            )}
+                            {lo.status === 'processing' && (
+                              <button
+                                className="lq-action-btn lq-action-btn--start"
+                                onClick={() => navigate(`/lab/result/${lo.lab_order_id}`)}
+                              >
+                                <FiPlay size={14} />
+                                Tiếp tục
+                              </button>
+                            )}
+                            {lo.status === 'completed' && (
+                              <button
+                                className="lq-action-btn lq-action-btn--view"
+                                onClick={() => navigate(`/lab/result/${lo.lab_order_id}`)}
+                              >
+                                <FiEye size={14} />
+                                Xem kết quả
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div className="lq-result-count">
+                Hiển thị {filtered.length} / {labOrders.length} xét nghiệm
+              </div>
+            </>
+          )}
+        </motion.div>
+
+        {/* Footer */}
+        <motion.footer className="lq-footer" variants={itemVariants}>
+          <p>&copy; 2026 MedSchedule. All rights reserved.</p>
+        </motion.footer>
+      </motion.div>
+    </main>
   );
 };
 
