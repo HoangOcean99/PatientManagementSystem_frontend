@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
-import { getPatientById } from '../../api/patientApi';
+import { getPatientById, updatePatient } from '../../api/patientApi';
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
@@ -12,6 +12,12 @@ const GENDER_MAP = {
     female: { label: 'Nữ', icon: 'fa-venus', color: 'text-rose-600', bg: 'bg-rose-50' },
     other: { label: 'Khác', icon: 'fa-genderless', color: 'text-indigo-600', bg: 'bg-indigo-50' },
 };
+
+const GENDER_OPTIONS = [
+    { value: 'male', label: 'Nam' },
+    { value: 'female', label: 'Nữ' },
+    { value: 'other', label: 'Khác' },
+];
 
 const InfoRow = ({ icon, label, value, iconColor = 'text-blue-400' }) => (
     <div className="flex items-start gap-4 py-4 border-b border-gray-100 last:border-0">
@@ -25,29 +31,86 @@ const InfoRow = ({ icon, label, value, iconColor = 'text-blue-400' }) => (
     </div>
 );
 
+const EditField = ({ label, value, onChange, type = 'text', placeholder, required }) => (
+    <div className="space-y-1.5">
+        <label className="text-sm font-semibold text-gray-600">
+            {label} {required && <span className="text-red-400">*</span>}
+        </label>
+        <input
+            type={type}
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 transition-all"
+        />
+    </div>
+);
+
 const UserProfilePage = () => {
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [editing, setEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [form, setForm] = useState({});
+    const [userId, setUserId] = useState(null);
 
-    useEffect(() => {
-        const load = async () => {
-            try {
-                const { data: authData } = await supabase.auth.getUser();
-                const userId = authData?.user?.id;
-                //     return;
-                // }
-                const res = await getPatientById(userId);
-                setProfile(res.data?.data || res.data || null);
-            } catch (err) {
-                console.error('Failed to load profile:', err);
-                toast.error('Không thể tải thông tin cá nhân');
-            } finally {
-                setLoading(false);
-            }
-        };
-        load();
-    }, [navigate]);
+    const loadProfile = async () => {
+        try {
+            const { data: authData } = await supabase.auth.getUser();
+            const uid = authData?.user?.id;
+            setUserId(uid);
+            const res = await getPatientById(uid);
+            const data = res.data?.data || res.data || null;
+            setProfile(data);
+        } catch (err) {
+            console.error('Failed to load profile:', err);
+            toast.error('Không thể tải thông tin cá nhân');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { loadProfile(); }, []);
+
+    const startEdit = () => {
+        const user = profile?.Users || {};
+        setForm({
+            full_name: user.full_name || '',
+            phone_number: user.phone_number || '',
+            dob: profile?.dob || '',
+            gender: profile?.gender || 'other',
+            address: profile?.address || '',
+            allergies: profile?.allergies || '',
+            medical_history_summary: profile?.medical_history_summary || '',
+        });
+        setEditing(true);
+    };
+
+    const handleSave = async () => {
+        if (!form.full_name?.trim()) {
+            toast.error('Vui lòng nhập họ tên');
+            return;
+        }
+        try {
+            setSaving(true);
+            await updatePatient(userId, form);
+            toast.success('Cập nhật thành công!');
+            setEditing(false);
+            setLoading(true);
+            await loadProfile();
+        } catch (err) {
+            console.error('Failed to update profile:', err);
+            toast.error(err.response?.data?.message || 'Cập nhật thất bại');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCancel = () => {
+        setEditing(false);
+        setForm({});
+    };
 
     if (loading) {
         return (
@@ -122,38 +185,155 @@ const UserProfilePage = () => {
                                         )}
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => navigate('/patient/change-password')}
-                                    className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-blue-50 text-sm font-bold text-gray-600 hover:text-blue-600 transition-all cursor-pointer border border-gray-200/60 hover:border-blue-200"
-                                >
-                                    <i className="fa-solid fa-key mr-1.5 text-xs"></i>
-                                    Đổi mật khẩu
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    {!editing && (
+                                        <button
+                                            onClick={startEdit}
+                                            className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-all cursor-pointer active:scale-95 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:-translate-y-0.5"
+                                            style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)' }}
+                                        >
+                                            <i className="fa-solid fa-pen-to-square mr-1.5 text-xs"></i>
+                                            Chỉnh sửa
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => navigate('/patient/change-password')}
+                                        className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-blue-50 text-sm font-bold text-gray-600 hover:text-blue-600 transition-all cursor-pointer border border-gray-200/60 hover:border-blue-200"
+                                    >
+                                        <i className="fa-solid fa-key mr-1.5 text-xs"></i>
+                                        Đổi mật khẩu
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Info */}
-                    <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
-                        <div className="px-6 py-5 border-b border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2.5">
-                                <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm shadow-lg shadow-blue-500/25">
-                                    <i className="fa-solid fa-id-card"></i>
-                                </span>
-                                Chi tiết hồ sơ
-                            </h3>
-                        </div>
-                        <div className="px-6 py-2">
-                            <InfoRow icon="fa-user" label="Họ và tên" value={user.full_name} />
-                            <InfoRow icon="fa-envelope" label="Email" value={user.email} iconColor="text-indigo-400" />
-                            <InfoRow icon="fa-phone" label="Số điện thoại" value={user.phone_number} iconColor="text-sky-400" />
-                            <InfoRow icon="fa-cake-candles" label="Ngày sinh" value={formatDate(profile?.dob)} iconColor="text-rose-400" />
-                            <InfoRow icon="fa-venus-mars" label="Giới tính" value={g.label} iconColor="text-violet-400" />
-                            <InfoRow icon="fa-location-dot" label="Địa chỉ" value={profile?.address} iconColor="text-amber-400" />
-                            <InfoRow icon="fa-triangle-exclamation" label="Dị ứng" value={profile?.allergies} iconColor="text-red-400" />
-                            <InfoRow icon="fa-notes-medical" label="Tiền sử bệnh" value={profile?.medical_history_summary} iconColor="text-emerald-400" />
-                        </div>
-                    </div>
+                    {/* Info / Edit */}
+                    <AnimatePresence mode="wait">
+                        {editing ? (
+                            <motion.div
+                                key="edit"
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -12 }}
+                                className="bg-white/70 backdrop-blur-sm rounded-2xl border border-blue-200/60 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden"
+                            >
+                                <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2.5">
+                                        <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm shadow-lg shadow-blue-500/25">
+                                            <i className="fa-solid fa-pen"></i>
+                                        </span>
+                                        Chỉnh sửa hồ sơ
+                                    </h3>
+                                </div>
+                                <div className="px-6 py-5 space-y-4">
+                                    <EditField
+                                        label="Họ và tên"
+                                        value={form.full_name}
+                                        onChange={(v) => setForm(p => ({ ...p, full_name: v }))}
+                                        placeholder="Nguyễn Văn A"
+                                        required
+                                    />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <EditField
+                                            label="Ngày sinh"
+                                            type="date"
+                                            value={form.dob}
+                                            onChange={(v) => setForm(p => ({ ...p, dob: v }))}
+                                            required
+                                        />
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-semibold text-gray-600">Giới tính</label>
+                                            <select
+                                                value={form.gender}
+                                                onChange={(e) => setForm(p => ({ ...p, gender: e.target.value }))}
+                                                className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 transition-all cursor-pointer"
+                                            >
+                                                {GENDER_OPTIONS.map(g => (
+                                                    <option key={g.value} value={g.value}>{g.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <EditField
+                                        label="Số điện thoại"
+                                        value={form.phone_number}
+                                        onChange={(v) => setForm(p => ({ ...p, phone_number: v }))}
+                                        placeholder="0901234567"
+                                    />
+                                    <EditField
+                                        label="Địa chỉ"
+                                        value={form.address}
+                                        onChange={(v) => setForm(p => ({ ...p, address: v }))}
+                                        placeholder="123 Nguyễn Văn Cừ, Q5, TP.HCM"
+                                    />
+                                    <EditField
+                                        label="Dị ứng"
+                                        value={form.allergies}
+                                        onChange={(v) => setForm(p => ({ ...p, allergies: v }))}
+                                        placeholder="VD: Dị ứng penicillin, hải sản..."
+                                    />
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-semibold text-gray-600">Tiền sử bệnh</label>
+                                        <textarea
+                                            value={form.medical_history_summary || ''}
+                                            onChange={(e) => setForm(p => ({ ...p, medical_history_summary: e.target.value }))}
+                                            placeholder="VD: Hen suyễn từ nhỏ, đã phẫu thuật ruột thừa..."
+                                            rows={3}
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 transition-all resize-none"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="px-6 pb-6 flex items-center gap-3 justify-end">
+                                    <button
+                                        onClick={handleCancel}
+                                        className="px-5 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all active:scale-95 cursor-pointer"
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button
+                                        onClick={handleSave}
+                                        disabled={saving}
+                                        className="px-6 py-2.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/35 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                                        style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                                    >
+                                        {saving ? (
+                                            <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Đang lưu...</>
+                                        ) : (
+                                            <><i className="fa-solid fa-check"></i> Lưu thay đổi</>
+                                        )}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="view"
+                                initial={{ opacity: 0, y: 12 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -12 }}
+                                className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden"
+                            >
+                                <div className="px-6 py-5 border-b border-gray-100">
+                                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2.5">
+                                        <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-sm shadow-lg shadow-blue-500/25">
+                                            <i className="fa-solid fa-id-card"></i>
+                                        </span>
+                                        Chi tiết hồ sơ
+                                    </h3>
+                                </div>
+                                <div className="px-6 py-2">
+                                    <InfoRow icon="fa-user" label="Họ và tên" value={user.full_name} />
+                                    <InfoRow icon="fa-envelope" label="Email" value={user.email} iconColor="text-indigo-400" />
+                                    <InfoRow icon="fa-phone" label="Số điện thoại" value={user.phone_number} iconColor="text-sky-400" />
+                                    <InfoRow icon="fa-cake-candles" label="Ngày sinh" value={formatDate(profile?.dob)} iconColor="text-rose-400" />
+                                    <InfoRow icon="fa-venus-mars" label="Giới tính" value={g.label} iconColor="text-violet-400" />
+                                    <InfoRow icon="fa-location-dot" label="Địa chỉ" value={profile?.address} iconColor="text-amber-400" />
+                                    <InfoRow icon="fa-triangle-exclamation" label="Dị ứng" value={profile?.allergies} iconColor="text-red-400" />
+                                    <InfoRow icon="fa-notes-medical" label="Tiền sử bệnh" value={profile?.medical_history_summary} iconColor="text-emerald-400" />
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </motion.div>
             </div>
         </div>

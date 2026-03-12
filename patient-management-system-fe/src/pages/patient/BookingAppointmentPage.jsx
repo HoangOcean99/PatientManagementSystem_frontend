@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { supabase } from "../../../supabaseClient";
 import { getAllDoctors } from "../../api/doctorApi";
 import { createAppointment, getDoctorSchedule } from "../../api/scheduleApi";
-import { getPatients } from "../../api/patientApi";
+import { getDependents } from "../../api/patientApi";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 const RELATION_MAP = {
@@ -74,11 +74,9 @@ const BookingAppointmentPage = () => {
 
         const [docRes, svcRes, depRes] = await Promise.all([
           getAllDoctors(),
-          fetch("http://localhost:3000/base/test")
-            .then((r) => (r.ok ? r.json() : { data: { data: [] } }))
-            .catch(() => ({ data: { data: [] } })),
+          Promise.resolve({ data: [] }), // mock services
           userId
-            ? getPatients({ parent_user_id: userId }).catch(() => ({ data: [] }))
+            ? getDependents().catch(() => ({ data: [] }))
             : Promise.resolve({ data: [] }),
         ]);
 
@@ -112,8 +110,8 @@ const BookingAppointmentPage = () => {
       setSelectedSpecialty(specialty);
       // Pre-select service if it matches the name or type
       if (services.length > 0) {
-        const matchingSvc = services.find(s => 
-          s.name.toLowerCase().includes(specialty.toLowerCase()) || 
+        const matchingSvc = services.find(s =>
+          s.name.toLowerCase().includes(specialty.toLowerCase()) ||
           specialty.toLowerCase().includes(s.name.toLowerCase())
         );
         if (matchingSvc) {
@@ -122,6 +120,20 @@ const BookingAppointmentPage = () => {
       }
     }
   }, [location.search, services, doctors]);
+
+  const filteredDoctors = useMemo(() => {
+    if (!selectedSpecialty) return doctors;
+    return doctors.filter(d => {
+      const spec = d.specialization || "";
+      const deptName = d.Departments?.name || "";
+      const keyword = selectedSpecialty.toLowerCase();
+
+      return spec.toLowerCase().includes(keyword) ||
+        keyword.includes(spec.toLowerCase()) ||
+        deptName.toLowerCase().includes(keyword) ||
+        keyword.includes(deptName.toLowerCase());
+    });
+  }, [doctors, selectedSpecialty]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -203,19 +215,19 @@ const BookingAppointmentPage = () => {
   // --- Calendar Logic ---
   const currentMonth = viewDate.getMonth();
   const currentYear = viewDate.getFullYear();
-  
+
   const calendarDays = useMemo(() => {
     const days = [];
     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
     const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
-    
+
     // Padding for previous month
     for (let i = 0; i < firstDay; i++) {
-        days.push(null);
+      days.push(null);
     }
-    
+
     for (let d = 1; d <= daysInMonth; d++) {
-        days.push(d);
+      days.push(d);
     }
     return days;
   }, [currentMonth, currentYear]);
@@ -243,14 +255,14 @@ const BookingAppointmentPage = () => {
   return (
     <div className="w-full h-full overflow-y-auto bg-[#F8F9FB] p-8 font-sans">
       <div className="max-w-7xl mx-auto">
-        <button 
+        <button
           onClick={() => navigate("/patient/booking")}
           className="mb-6 flex items-center gap-2 text-gray-500 hover:text-sky-500 transition-colors font-medium group"
         >
           <i className="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
           Back to Specialty Selection
         </button>
-        <MotionDiv 
+        <MotionDiv
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -262,7 +274,7 @@ const BookingAppointmentPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column: Form */}
-          <MotionDiv 
+          <MotionDiv
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
@@ -278,7 +290,7 @@ const BookingAppointmentPage = () => {
                   </div>
                 )}
               </div>
-              
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -308,30 +320,81 @@ const BookingAppointmentPage = () => {
                     {errors.patient_id && <p className="text-xs text-red-500 mt-1">{errors.patient_id}</p>}
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-600 block">Doctor</label>
-                    <div className="relative">
-                      <select
-                        value={form.doctor_id}
-                        onChange={(e) => handleChange("doctor_id", e.target.value)}
-                        className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all appearance-none text-gray-700"
-                      >
-                        <option value="">Select a provider</option>
-                        {doctors.map((d) => (
-                          <option key={d.doctor_id} value={d.doctor_id}>
-                            Dr. {d.Users?.full_name} ({d.specialization})
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <i className="fa-solid fa-chevron-down text-xs"></i>
-                      </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-semibold text-gray-600 block">Select Doctor</label>
+                      {selectedSpecialty && (
+                        <span className="text-xs text-sky-500 font-medium bg-sky-50 px-2 py-1 rounded-md">
+                          Showing specialists in {selectedSpecialty}
+                        </span>
+                      )}
                     </div>
+
+                    {filteredDoctors.length === 0 ? (
+                      <div className="p-8 text-center bg-gray-50 border border-gray-100 rounded-2xl">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
+                          <i className="fa-solid fa-user-doctor text-xl"></i>
+                        </div>
+                        <p className="text-sm text-gray-500 font-medium">No doctors found for this specialty.</p>
+                      </div>
+                    ) : (
+                      <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory pt-2 -mx-2 px-2" style={{ scrollbarWidth: 'thin' }}>
+                        {filteredDoctors.map((doc) => {
+                          const isSelected = form.doctor_id === doc.doctor_id;
+                          return (
+                            <div
+                              key={doc.doctor_id}
+                              onClick={() => handleChange("doctor_id", doc.doctor_id)}
+                              className={`snap-start min-w-[220px] shrink-0 p-5 rounded-[1.5rem] cursor-pointer border-2 transition-all duration-300 relative group overflow-hidden ${isSelected
+                                ? 'border-sky-500 bg-sky-50/50 shadow-[0_8px_30px_rgba(14,165,233,0.15)] scale-[1.02]'
+                                : 'border-transparent bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] hover:-translate-y-1'
+                                }`}
+                            >
+                              {/* Background Decoration */}
+                              {isSelected && (
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-sky-500/10 rounded-bl-[100px] -mr-4 -mt-4 transition-transform z-0" />
+                              )}
+
+                              <div className="relative z-10 flex flex-col items-center text-center">
+                                <div className={`w-16 h-16 rounded-2xl mb-4 overflow-hidden shadow-sm transition-all duration-300 ${isSelected ? 'ring-4 ring-sky-200' : 'group-hover:ring-4 group-hover:ring-gray-100'}`}>
+                                  {doc.Users?.avatar_url ? (
+                                    <img src={doc.Users?.avatar_url} alt={doc.Users?.full_name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-slate-100 to-gray-200 flex items-center justify-center text-gray-400 font-bold text-xl">
+                                      {doc.Users?.full_name?.charAt(0) || 'D'}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <h4 className={`font-bold text-[15px] leading-tight mb-1 transition-colors ${isSelected ? 'text-sky-700' : 'text-gray-800'}`}>
+                                  Dr. {doc.Users?.full_name}
+                                </h4>
+                                <span className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider mb-2 ${isSelected ? 'bg-sky-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                                  {doc.Departments?.name || doc.specialization}
+                                </span>
+
+                                {doc.bio && (
+                                  <p className="text-[11px] text-gray-400 line-clamp-2 mt-auto leading-relaxed">
+                                    {doc.bio}
+                                  </p>
+                                )}
+
+                                {isSelected && (
+                                  <div className="absolute top-4 left-4 w-6 h-6 bg-sky-500 rounded-full flex items-center justify-center text-white text-[10px] shadow-md shadow-sky-500/30">
+                                    <i className="fa-solid fa-check"></i>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                     {errors.doctor_id && <p className="text-xs text-red-500 mt-1">{errors.doctor_id}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-600 block">Appointment Type</label>
+                    <label className="text-sm font-semibold text-gray-600 block">Medical Service</label>
                     <div className="relative">
                       <select
                         value={form.service_id}
@@ -401,7 +464,7 @@ const BookingAppointmentPage = () => {
           </MotionDiv>
 
           {/* Right Column: Calendar & Time Slots */}
-          <MotionDiv 
+          <MotionDiv
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}

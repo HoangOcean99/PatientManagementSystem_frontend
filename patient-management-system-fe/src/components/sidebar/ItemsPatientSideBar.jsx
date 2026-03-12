@@ -1,5 +1,13 @@
 export const ItemsPatientSideBar = [
     {
+        icon: 'LayoutDashboard',
+        label: "Tổng quan",
+        linkPage: "/patient/dashboard",
+        matchPages: [
+            "/patient/dashboard"
+        ]
+    },
+    {
         icon: 'User',
         label: "Hồ sơ cá nhân",
         linkPage: "/patient/profile",
