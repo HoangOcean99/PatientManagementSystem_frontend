@@ -2,7 +2,7 @@ import axios from 'axios';
 import { supabase } from '../../supabaseClient';
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL,
+  baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000',
   headers: {
     'Content-Type': 'application/json'
   }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import axiosClient from '../../api/axiosClient';
+import { createPayment } from '../../api/patientApi';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const PAY_METHODS = [
@@ -29,7 +29,7 @@ const PaymentPage = () => {
 
         try {
             setSubmitting(true);
-            await axiosClient.post('/invoices', {
+            await createPayment({
                 appointment_id: appointmentId,
                 patient_id: appointment?.patient_id,
                 total_amount: service?.price || 0,

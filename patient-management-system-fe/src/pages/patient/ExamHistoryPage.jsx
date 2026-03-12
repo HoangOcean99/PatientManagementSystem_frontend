@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
-import axiosClient from '../../api/axiosClient';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { getMedicalRecords } from '../../api/patientApi';
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const ExamHistoryPage = () => {
@@ -14,20 +14,32 @@ const ExamHistoryPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
+        let isMounted = true;
         const load = async () => {
             try {
                 const { data: authData } = await supabase.auth.getUser();
                 const userId = authData?.user?.id;
-                const res = await axiosClient.get('/medical-records', { params: { patient_id: userId } });
-                setRecords(res.data?.data || []);
+                // if (!userId) { navigate('/login'); return; }
+                const res = await getMedicalRecords(userId);
+                if (isMounted) {
+                    setRecords(res.data?.data || res.data || []);
+                }
             } catch (err) {
-                console.error('Failed to load exam history:', err);
-                toast.error('Không thể tải lịch sử khám');
+                if (isMounted) {
+                    console.error('Failed to load exam history:', err);
+                    toast.error('Không thể tải lịch sử khám', { id: 'exam-history-error' });
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
         load();
+
+        return () => {
+            isMounted = false;
+        };
     }, [navigate]);
 
     const filtered = records.filter(r => {
@@ -39,21 +51,14 @@ const ExamHistoryPage = () => {
         if (!d) return '—';
         return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
-    if (loading) {
-        return (
-            <div className="relative flex-1">
-                <LoadingSpinner />
-            </div>
-        )
-    }
 
     return (
-        <main className="flex-1 overflow-y-auto bg-gray-50/30">
+        <div className="flex-1 h-full overflow-y-auto w-full font-sans relative" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
             {scrollbarStyles}
 
             {/* Header */}
             <div className="sticky top-0 z-30 border-b border-blue-100/40" style={{ background: 'linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.9) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
-                <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div className="flex items-center gap-4 mb-5">
                         <button onClick={() => navigate('/patient/dashboard')} className="w-10 h-10 rounded-xl bg-white/70 hover:bg-white border border-gray-200/60 flex items-center justify-center text-gray-500 hover:text-blue-600 transition-all shadow-sm cursor-pointer">
                             <i className="fa-solid fa-arrow-left"></i>
@@ -83,8 +88,13 @@ const ExamHistoryPage = () => {
             </div>
 
             {/* Content */}
-            <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
-                {filtered.length === 0 ? (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+                {loading ? (
+                    <div className="flex flex-col justify-center items-center h-48 gap-3">
+                        <LoadingSpinner />
+                        <span className="text-sm text-blue-500/60 font-medium">Đang tải dữ liệu...</span>
+                    </div>
+                ) : filtered.length === 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -147,7 +157,7 @@ const ExamHistoryPage = () => {
                     </div>
                 )}
             </div>
-        </main>
+        </div>
     );
 };
 
