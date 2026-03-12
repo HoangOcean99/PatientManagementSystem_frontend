@@ -94,7 +94,8 @@ const UserProfilePage = () => {
         }
         try {
             setSaving(true);
-            await updatePatient(userId, form);
+            const updateId = profile.patient_id || userId;
+            await updatePatient(updateId, form);
             toast.success('Cập nhật thành công!');
             setEditing(false);
             setLoading(true);
