@@ -11,7 +11,7 @@ import { useSearchParams } from "react-router-dom";
 const SelectSpecialtyPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("confirmed");
+  const [activeTab, setActiveTab] = useState("pending");
   const [appointments, setAppointments] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [latestAppointment, setLatestAppointment] = useState(null);
@@ -83,6 +83,19 @@ const SelectSpecialtyPage = () => {
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
 
+  const getDepartmentUI = (name) => {
+    const lowerName = name?.toLowerCase() || "";
+    if (lowerName.includes("sản") || lowerName.includes("phụ")) return { icon: "fa-solid fa-person-pregnant", color: "bg-pink-50 text-pink-500" };
+    if (lowerName.includes("nhi")) return { icon: "fa-solid fa-baby", color: "bg-yellow-50 text-yellow-500" };
+    if (lowerName.includes("răng") || lowerName.includes("hàm")) return { icon: "fa-solid fa-tooth", color: "bg-teal-50 text-teal-500" };
+    if (lowerName.includes("da liễu")) return { icon: "fa-solid fa-spa", color: "bg-purple-50 text-purple-500" };
+    if (lowerName.includes("mắt")) return { icon: "fa-solid fa-eye", color: "bg-emerald-50 text-emerald-500" };
+    if (lowerName.includes("tai mũi họng")) return { icon: "fa-solid fa-ear-listen", color: "bg-orange-50 text-orange-500" };
+    if (lowerName.includes("nội") || lowerName.includes("tổng quát") || lowerName.includes("general")) return { icon: "fa-solid fa-stethoscope", color: "bg-sky-50 text-sky-500" };
+
+    // Mặc định nếu không khớp từ khóa nào
+    return { icon: "fa-solid fa-user-doctor", color: "bg-gray-50 text-gray-500" };
+  };
   return (
     <div className="w-full h-full overflow-y-auto bg-[#F8F9FB] p-8 font-sans">
       <div className="max-w-7xl mx-auto">
@@ -92,13 +105,13 @@ const SelectSpecialtyPage = () => {
           className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
         >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Chọn Chuyên Khoa</h1>
-            <p className="text-gray-500 mt-1">Vui lòng chọn chuyên khoa bạn muốn đăng ký khám.</p>
+            <h1 className="text-3xl font-bold text-gray-900">Chọn Khoa</h1>
+            <p className="text-gray-500 mt-1">Vui lòng chọn khoa bạn muốn đăng ký khám.</p>
           </div>
           <div className="relative w-full md:w-80">
             <input
               type="text"
-              placeholder="Search specialties..."
+              placeholder="Search departments..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full h-12 pl-12 pr-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all shadow-sm"
@@ -156,23 +169,34 @@ const SelectSpecialtyPage = () => {
 
         {/* Specialty Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {filteredDepartments.map((s, idx) => (
-            <MotionDiv
-              key={s.department_id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.05 }}
-              whileHover={{ y: -5, transition: { duration: 0.2 } }}
-              onClick={() => navigate(`/patient/booking/details?specialty=${encodeURIComponent(s.name)}&departmentId=${s.department_id}`)}
-              className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] cursor-pointer group transition-all"
-            >
-              <div className={`w-14 h-14 ${s.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                <i className={`${s.icon} text-2xl`}></i>
-              </div>
-              <h3 className="text-lg font-bold text-gray-800 mb-2">{s.name}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>
-            </MotionDiv>
-          ))}
+          {filteredDepartments.map((s, idx) => {
+            // Gọi hàm để lấy icon và màu sắc tương ứng với tên khoa
+            const ui = getDepartmentUI(s.name);
+
+            return (
+              <MotionDiv
+                key={s.department_id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                onClick={() => navigate(`/patient/booking/details?specialty=${encodeURIComponent(s.name)}&departmentId=${s.department_id}`)}
+                className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] cursor-pointer group transition-all"
+              >
+                {/* Áp dụng màu và icon từ hàm getDepartmentUI */}
+                <div className={`w-14 h-14 ${ui.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                  <i className={`${ui.icon} text-2xl`}></i>
+                </div>
+
+                <h3 className="text-lg font-bold text-gray-800 mb-2">{s.name}</h3>
+
+                {/* Nếu backend có s.description thì hiện, không thì hiện dòng text mặc định */}
+                <p className="text-sm text-gray-500 leading-relaxed line-clamp-2">
+                  {s.description || "Khám và chẩn đoán chuyên sâu với đội ngũ bác sĩ hàng đầu."}
+                </p>
+              </MotionDiv>
+            );
+          })}
         </div>
 
         {/* Appointment History Tabs */}
@@ -183,31 +207,39 @@ const SelectSpecialtyPage = () => {
           className="bg-white rounded-[2.5rem] p-8 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.08)] border border-gray-100"
         >
           {/* Thanh Tabs */}
-          <div className="flex bg-[#5ba4f8] p-1 rounded-xl mb-8 w-full max-w-3xl mx-auto shadow-sm relative">
-            {/* Vạch kẻ giữa các tab khi không active */}
-            <div className="absolute inset-y-2.5 left-1/3 w-px bg-white/30 pointer-events-none"></div>
-            <div className="absolute inset-y-2.5 right-1/3 w-px bg-white/30 pointer-events-none"></div>
-
+          <div className="flex bg-[#5ba4f8] items-center p-1 rounded-xl mb-8 w-full max-w-3xl mx-auto shadow-sm relative">
             {[
-              { id: "confirmed", label: "Sắp Đến" },
+              { id: "pending", label: "Chờ Xác Nhận" },
+              { id: "confirmed", label: "Đã Xác Nhận" },
               { id: "cancelled", label: "Bỏ Lỡ" },
               { id: "completed", label: "Hoàn Thành" }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  console.log("1. ĐÃ CLICK VÀO TAB:", tab.id);
-                  setActiveTab(tab.id);
-                  console.log("2. activeTab SAU KHI CLICK:", activeTab);
-                }
-                }
-                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 z-10 ${activeTab === tab.id
-                  ? "bg-white text-[#5ba4f8] shadow-sm"
-                  : "text-white hover:bg-white/10"
-                  }`}
-              >
-                {tab.label}
-              </button>
+            ].map((tab, index, array) => (
+              <React.Fragment key={tab.id}>
+
+                {/* Nút Tab */}
+                <button
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 z-10 ${activeTab === tab.id
+                    ? "bg-white text-[#5ba4f8] shadow-sm"
+                    : "text-white hover:bg-white/10"
+                    }`}
+                >
+                  {tab.label}
+                </button>
+
+                {/* Vạch kẻ (Line) - Tự động chèn vào giữa các nút, trừ nút cuối cùng */}
+                {index < array.length - 1 && (
+                  <div
+                    className={`h-5 w-px self-center transition-colors duration-300 mx-1 ${
+                      // Ẩn vạch kẻ nếu 1 trong 2 nút bên cạnh nó đang active (để viền trắng đè lên tự nhiên)
+                      activeTab === array[index].id || activeTab === array[index + 1].id
+                        ? "bg-transparent"
+                        : "bg-white/30"
+                      }`}
+                  ></div>
+                )}
+
+              </React.Fragment>
             ))}
           </div>
 

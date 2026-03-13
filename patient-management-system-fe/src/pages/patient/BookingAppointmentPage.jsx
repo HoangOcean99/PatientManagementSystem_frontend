@@ -39,7 +39,7 @@ const BookingAppointmentPage = () => {
   const [dependents, setDependents] = useState([]);
   const [selectedSpecialty, setSelectedSpecialty] = useState("");  // selected specialty from URL
   const [myself, setMyself] = useState(null);
-  const [schedules, setSchedules] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,6 +50,7 @@ const BookingAppointmentPage = () => {
     service_id: "",
     appointment_date: new Date().toISOString().split("T")[0],
     start_time: "",
+    slot_id: "",
     notes: "",
   });
   const [errors, setErrors] = useState({});
@@ -99,30 +100,45 @@ const BookingAppointmentPage = () => {
 
     const fetchServices = async () => {
       const res = await getServicesbyDepartmentId(departmentId);
-      setServices(res.data?.data || []);
+      setServices(res.data);
     };
 
-    const fetchSchedules = async () => {
-      // 1. Lấy ngày hiện tại (Format YYYY-MM-DD)
-      const today = new Date();
-      const startDate = today.toISOString().split('T')[0];
+    const fetchAvailableSlots = async () => {
+      try {
+        if (!form.doctor_id) {
+          return setAvailableSlots({});
+        }
+        // Xác định khoảng thời gian lấy lịch (VD: từ hôm nay đến 30 ngày sau)
+        const startDate = new Date().toISOString().split("T")[0];
+        const endDate = new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        )
+          .toISOString()
+          .split("T")[0];
 
-      // 2. Tính ngày của 90 ngày sau
-      const futureDate = new Date();
-      futureDate.setDate(today.getDate() + 90);
-      const endDate = futureDate.toISOString().split('T')[0];
+        const res = await getListSchedulesByDoctorIdAndDate(
+          form.doctor_id,
+          startDate,
+          endDate
+        );
 
-      // 3. Truyền vào hàm API
-      const res = await getListSchedulesByDoctorIdAndDate(form.doctor_id, startDate, endDate);
-
-      setSchedules(res.data?.data || []);
+        // API trả về: { success: true, data: { "2026-03-13": [ ... ], ... } }
+        // Lưu thẳng object "data" để dễ truy cập theo ngày
+        setAvailableSlots(res.data?.data || {});
+      } catch (error) {
+        console.log(
+          "Failed to fetch available slots:",
+          error.response?.data?.message || "Không thể tải lịch khám"
+        );
+        setAvailableSlots({});
+      }
     };
 
     fetchDoctors();
     fetchServices();
-    fetchSchedules();
+    fetchAvailableSlots();
     loadUserData();
-  }, []);
+  }, [form.doctor_id]);
 
   // Handle specialty from URL
   useEffect(() => {
@@ -174,21 +190,18 @@ const BookingAppointmentPage = () => {
 
     try {
       setSubmitting(true);
-      const selectedSvc = services.find((s) => String(s.service_id) === String(form.service_id));
-      const duration = selectedSvc?.duration_minutes || 30;
-      const [h, m] = form.start_time.split(":").map(Number);
-      const endMin = h * 60 + m + duration;
-      const end_time = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}`;
 
+      // Lấy thông tin service để truyền sang trang Thanh toán (nếu cần)
+      const selectedSvc = services.find((s) => String(s.service_id) === String(form.service_id));
+
+      // Payload sạch sẽ, bám sát 100% Backend
       const payload = {
         patient_id: form.patient_id,
         doctor_id: form.doctor_id,
         service_id: form.service_id,
-        appointment_date: form.appointment_date,
-        start_time: form.start_time,
-        end_time,
-        notes: form.notes,
-        status: "pending",
+        slot_id: form.slot_id,
+        role: "patient",
+        notes: form.notes
       };
 
       const res = await createAppointment(payload);
@@ -232,15 +245,20 @@ const BookingAppointmentPage = () => {
 
   const handleDateSelect = (day) => {
     if (!day) return;
-    const selected = new Date(currentYear, currentMonth, day);
-    const year = selected.getFullYear();
-    const month = String(selected.getMonth() + 1).padStart(2, '0');
-    const d = String(selected.getDate()).padStart(2, '0');
-    handleChange("appointment_date", `${year}-${month}-${d}`);
+    // Format đúng chuẩn YYYY-MM-DD
+    const monthStr = String(currentMonth + 1).padStart(2, '0');
+    const dayStr = String(day).padStart(2, '0');
+    const dateString = `${currentYear}-${monthStr}-${dayStr}`;
+
+    // Lưu ngày vào form
+    handleChange("appointment_date", dateString);
+
+    // Tự động xóa giờ cũ khi chọn sang ngày mới
+    handleChange("start_time", "");
   };
 
   // --- Time Slots Logic ---
-  const timeSlots = ["09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM"];
+  // const timeSlots = ["09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM"];
 
   const convertTo24h = (timeStr) => {
     const [time, modifier] = timeStr.split(' ');
@@ -368,10 +386,11 @@ const BookingAppointmentPage = () => {
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-600 block">Ngày khám</label>
+
                     <div className="relative">
                       <div className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl flex items-center gap-3 text-gray-700 cursor-default">
                         <i className="fa-regular fa-calendar text-sky-500"></i>
-                        <span>{form.appointment_date ? new Date(form.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "Pick a date"}</span>
+                        <span>{form.appointment_date ? new Date(form.appointment_date).toLocaleDateString('vi-VN', { month: 'long', day: 'numeric', year: 'numeric' }) : "Pick a date"}</span>
                       </div>
                     </div>
                   </div>
@@ -432,25 +451,92 @@ const BookingAppointmentPage = () => {
               </div>
               <div className="grid grid-cols-7 gap-1">
                 {calendarDays.map((day, idx) => {
-                  const isSelected = form.appointment_date && day && new Date(form.appointment_date).getDate() === day && new Date(form.appointment_date).getMonth() === currentMonth;
-                  const isToday = day && new Date().getDate() === day && new Date().getMonth() === currentMonth && new Date().getFullYear() === currentYear;
+                  const isSelected =
+                    form.appointment_date &&
+                    day &&
+                    new Date(form.appointment_date).getDate() === day &&
+                    new Date(form.appointment_date).getMonth() === currentMonth;
+
+                  const isToday =
+                    day &&
+                    new Date().getDate() === day &&
+                    new Date().getMonth() === currentMonth &&
+                    new Date().getFullYear() === currentYear;
+
+                  // Tạo chuỗi ngày dạng YYYY-MM-DD để check trong availableSlots
+                  let hasSlots = false;
+                  if (day) {
+                    const monthStr = String(currentMonth + 1).padStart(2, "0");
+                    const dayStr = String(day).padStart(2, "0");
+                    const dateKey = `${currentYear}-${monthStr}-${dayStr}`;
+                    hasSlots = !!(availableSlots[dateKey] && availableSlots[dateKey].length > 0);
+                  }
+
                   return (
-                    <button key={idx} type="button" disabled={!day} onClick={() => handleDateSelect(day)} className={`h-9 w-full rounded-full flex items-center justify-center text-xs font-semibold transition-all ${!day ? 'invisible' : 'cursor-pointer'} ${isSelected ? 'bg-sky-500 text-white shadow-md shadow-sky-500/30' : 'text-gray-600 hover:bg-sky-50 hover:text-sky-600'} ${isToday && !isSelected ? 'text-sky-500 ring-1 ring-sky-500' : ''}`}>{day}</button>
+                    <button
+                      key={idx}
+                      type="button"
+                      disabled={!day}
+                      onClick={() => handleDateSelect(day)}
+                      className={`h-9 w-full rounded-full flex items-center justify-center text-xs font-semibold transition-all
+                        ${!day ? "invisible" : "cursor-pointer"}
+                        ${isSelected
+                          ? "bg-sky-500 text-white shadow-md shadow-sky-500/30"
+                          : "text-gray-600 hover:bg-sky-50 hover:text-sky-600"
+                        }
+                        ${isToday && !isSelected
+                          ? "text-sky-500 ring-1 ring-sky-500"
+                          : ""
+                        }
+                        ${hasSlots && !isSelected
+                          ? "border border-emerald-400 bg-emerald-50 text-emerald-700"
+                          : ""
+                        }`}
+                    >
+                      {day}
+                    </button>
                   );
                 })}
               </div>
             </div>
 
             <div className="bg-white rounded-3xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
-              <h3 className="text-sm font-bold text-gray-800 mb-6 font-semibold">Giờ khả dụng cho {new Date(form.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h3>
+              <h3 className="text-sm font-bold text-gray-800 mb-6">
+                Giờ khả dụng cho {form.appointment_date ? new Date(form.appointment_date).toLocaleDateString('vi-VN') : "ngày này"}
+              </h3>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {timeSlots.map((slot) => {
-                  const time24h = convertTo24h(slot);
-                  const isSelected = form.start_time === time24h;
-                  return (
-                    <button key={slot} type="button" onClick={() => handleChange("start_time", time24h)} className={`py-3 px-1 rounded-xl text-[10px] font-bold border transition-all text-center ${isSelected ? 'bg-white border-sky-500 text-gray-900 border-2 shadow-sm' : 'bg-white border-gray-100 text-gray-400 hover:border-sky-300 hover:text-sky-600 hover:bg-sky-50/30'}`}>{slot}</button>
-                  );
-                })}
+                {/* Trích xuất mảng giờ của ngày đang chọn */}
+                {(availableSlots[form.appointment_date] || []).length > 0 ? (
+                  (availableSlots[form.appointment_date] || []).map((slot) => {
+                    // Cắt giây nếu API trả về "08:00:00" -> "08:00"
+                    const timeDisplay = slot.start_time.slice(0, 5);
+                    const isSelected = form.start_time === slot.start_time;
+
+                    return (
+                      <button
+                        key={slot.slot_id}
+                        type="button"
+                        onClick={() => {
+                          handleChange("start_time", slot.start_time); // Giữ nguyên để UI hiện màu xanh
+                          handleChange("slot_id", slot.slot_id);       // THÊM DÒNG NÀY: Lưu lại ID của slot
+                        }}
+                        className={`py-3 px-1 rounded-xl text-[13px] font-bold border transition-all text-center
+                  ${isSelected
+                            ? 'bg-white border-sky-500 text-sky-600 border-2 shadow-sm'
+                            : 'bg-white border-gray-100 text-gray-500 hover:border-sky-300 hover:text-sky-600 hover:bg-sky-50/30'
+                          }
+                `}
+                      >
+                        {timeDisplay}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="col-span-full text-center text-sm text-gray-400 py-4">
+                    {form.appointment_date ? "Không có lịch trống trong ngày này." : "Vui lòng chọn ngày trên lịch."}
+                  </div>
+                )}
               </div>
             </div>
           </MotionDiv>
@@ -459,5 +545,4 @@ const BookingAppointmentPage = () => {
     </div>
   );
 };
-
 export default BookingAppointmentPage;

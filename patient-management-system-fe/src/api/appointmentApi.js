@@ -9,3 +9,4 @@ export const createAppointment = async (data) => {
   const url = '/appointment/create';
   return axiosClient.post(url, data);
 };
+

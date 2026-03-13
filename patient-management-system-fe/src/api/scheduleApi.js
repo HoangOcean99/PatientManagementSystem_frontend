@@ -25,6 +25,6 @@ export const createAppointment = async (data) => {
     return axiosClient.post('/appointment/create', data);
 };
 
-export const getListSchedulesByDoctorIdAndDate = async (doctor_id, start_date, end_date) => {
-    return axiosClient.get('/doctor-slots/getAvailableDoctorSlotsByDoctorIdAndDate', { params: { doctor_id, start_date, end_date } });
-};
+export const getListSchedulesByDoctorIdAndDate = async (doctor_id, start_date, end_date) => { 
+    return axiosClient.post('/doctor-slots/getAvailableDoctorSlotsByDoctorIdAndDate', { doctor_id, start_date, end_date });
+};  
