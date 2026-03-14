@@ -7,10 +7,11 @@ import { ItemsPatientSideBar } from "../../components/sidebar/ItemsPatientSideBa
 import { ItemsLabSideBar } from "../../components/sidebar/ItemsLabSideBar";
 import { ItemsReceptionistSideBar } from "../../components/sidebar/ItemsReceptionistSideBar";
 import { ItemsAccountantSideBar } from "../../components/sidebar/ItemsAccountantSideBar";
-
+import { useAuth } from "../../components/security/AuthContext";
 
 export default function MainPage() {
     const location = useLocation();
+    const { user } = useAuth();
     let items = [];
 
     if (location.pathname.startsWith("/admin")) {
@@ -18,7 +19,10 @@ export default function MainPage() {
     } else if (location.pathname.startsWith("/doctor")) {
         items = ItemsDoctorSideBar;
     } else if (location.pathname.startsWith("/patient")) {
-        items = ItemsPatientSideBar;
+        const isChildAccount = user?.email?.endsWith('@app.com');
+        items = isChildAccount 
+            ? ItemsPatientSideBar.filter(item => item.linkPage !== "/patient/under-my-care")
+            : ItemsPatientSideBar;
     } else if (location.pathname.startsWith("/lab")) {
         items = ItemsLabSideBar;
     } else if (location.pathname.startsWith("/receptionist")) {

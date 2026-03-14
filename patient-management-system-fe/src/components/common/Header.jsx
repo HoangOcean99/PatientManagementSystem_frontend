@@ -9,8 +9,10 @@ const Header = () => {
     const fetchData = async () => {
         const { data: { session } } = await supabase.auth.getSession();
 
-        const tempAvatar = session.user.user_metadata.picture;
-        setAvatar(tempAvatar);
+        if (session?.user) {
+            const tempAvatar = session.user.user_metadata?.picture || 'https://ui-avatars.com/api/?name=User&background=eff6ff&color=1d4ed8';
+            setAvatar(tempAvatar);
+        }
     }
     useEffect(() => {
         fetchData();

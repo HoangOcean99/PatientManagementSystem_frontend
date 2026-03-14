@@ -2,15 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { getDependents, addDependent } from '../../api/patientApi';
+import { getDependents, addDependent, removeDependent, deleteUser } from '../../api/patientApi';
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const RELATION_MAP = {
-    father: 'Cha',
-    mother: 'Mẹ',
-    guardian: 'Người giám hộ',
-    other: 'Khác',
+    father: 'Con',
+    mother: 'Con',
+    guardian: 'Người được giám hộ',
+    other: 'Người thân',
 };
 
 const GENDER_OPTIONS = [
@@ -20,10 +20,10 @@ const GENDER_OPTIONS = [
 ];
 
 const RELATIONSHIP_OPTIONS = [
-    { value: 'father', label: 'Cha' },
-    { value: 'mother', label: 'Mẹ' },
-    { value: 'guardian', label: 'Người giám hộ' },
-    { value: 'other', label: 'Khác' },
+    { value: 'father', label: 'Tôi là Cha' },
+    { value: 'mother', label: 'Tôi là Mẹ' },
+    { value: 'guardian', label: 'Tôi là Người giám hộ' },
+    { value: 'other', label: 'Tôi là Người thân khác' },
 ];
 
 const INITIAL_FORM = {
@@ -62,6 +62,8 @@ const UnderMyCarePage = () => {
     const [submitting, setSubmitting] = useState(false);
     const [form, setForm] = useState(INITIAL_FORM);
     const [errors, setErrors] = useState({});
+    const [deletingId, setDeletingId] = useState(null);
+    const [confirmDelete, setConfirmDelete] = useState(null);
 
     const loadDependents = async () => {
         try {
@@ -110,6 +112,31 @@ const UnderMyCarePage = () => {
             toast.error(err.response?.data?.message || 'Thêm thất bại');
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleDeleteDependent = async (dep) => {
+        const child = dep.Users || dep.ChildUser || {};
+        const childUserId = child.user_id || dep.child_user_id;
+        try {
+            setDeletingId(dep.relationship_id);
+            await removeDependent(dep.relationship_id);
+            if (childUserId) {
+                try {
+                    await deleteUser(childUserId);
+                } catch (e) {
+                    console.warn('Could not delete user account:', e);
+                }
+            }
+            toast.success('Đã xóa người phụ thuộc thành công!');
+            setConfirmDelete(null);
+            setLoading(true);
+            await loadDependents();
+        } catch (err) {
+            console.error('Failed to delete dependent:', err);
+            toast.error(err.response?.data?.message || 'Xóa thất bại');
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -223,6 +250,18 @@ const UnderMyCarePage = () => {
                                                         )}
                                                     </div>
                                                 </div>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setConfirmDelete(dep); }}
+                                                    disabled={deletingId === dep.relationship_id}
+                                                    className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-400 hover:text-red-600 transition-all cursor-pointer opacity-0 group-hover:opacity-100 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    title="Xóa người phụ thuộc"
+                                                >
+                                                    {deletingId === dep.relationship_id ? (
+                                                        <div className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin"></div>
+                                                    ) : (
+                                                        <i className="fa-solid fa-trash-can text-sm"></i>
+                                                    )}
+                                                </button>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -345,6 +384,55 @@ const UnderMyCarePage = () => {
                                         <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Đang lưu...</>
                                     ) : (
                                         <><i className="fa-solid fa-check"></i> Thêm</>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {confirmDelete && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+                        onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center"
+                        >
+                            <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
+                                <i className="fa-solid fa-triangle-exclamation text-2xl text-red-500"></i>
+                            </div>
+                            <h3 className="text-lg font-extrabold text-gray-900">Xác nhận xóa</h3>
+                            <p className="text-sm text-gray-500 mt-2">
+                                Bạn có chắc muốn xóa <span className="font-bold text-gray-700">{(confirmDelete.Users || confirmDelete.ChildUser || {}).full_name || 'người phụ thuộc này'}</span>?
+                                <br />Hành động này không thể hoàn tác.
+                            </p>
+                            <div className="flex items-center gap-3 mt-6">
+                                <button
+                                    onClick={() => setConfirmDelete(null)}
+                                    className="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all active:scale-95 cursor-pointer"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteDependent(confirmDelete)}
+                                    disabled={deletingId === confirmDelete.relationship_id}
+                                    className="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-red-500/25 hover:shadow-red-500/35 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                                >
+                                    {deletingId === confirmDelete.relationship_id ? (
+                                        <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Đang xóa...</>
+                                    ) : (
+                                        <><i className="fa-solid fa-trash-can"></i> Xóa</>
                                     )}
                                 </button>
                             </div>

@@ -21,6 +21,7 @@ const NAV_CARDS = [
         shadow: 'shadow-blue-500/25',
         iconBg: 'bg-blue-50',
         iconColor: 'text-blue-600',
+        hideForChild: true,
     },
     {
         title: 'Hồ sơ cá nhân',
@@ -57,6 +58,7 @@ const NAV_CARDS = [
 const PatientDashboard = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
+    const [userFullName, setUserFullName] = useState('Bệnh nhân');
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({ appointments: null, records: null, dependents: null });
 
@@ -68,10 +70,11 @@ const PatientDashboard = () => {
                     setUser(data.user);
                     const userId = data.user.id;
 
-                    const [appointRes, recordRes, familyRes] = await Promise.allSettled([
+                    const [appointRes, recordRes, familyRes, profileRes] = await Promise.allSettled([
                         getListAppointments({ patient_id: userId }),
                         getMedicalRecords(userId),
                         getPatients({ parent_user_id: userId }),
+                        supabase.from('Users').select('full_name').eq('user_id', userId).single()
                     ]);
 
                     const appointments = appointRes.status === 'fulfilled'
@@ -84,8 +87,13 @@ const PatientDashboard = () => {
                     const dependents = familyRes.status === 'fulfilled'
                         ? (familyRes.value.data?.data || []).length
                         : null;
+                        
+                    const profileName = profileRes.status === 'fulfilled' && profileRes.value.data?.full_name
+                        ? profileRes.value.data.full_name
+                        : data.user.user_metadata?.full_name || 'Bệnh nhân';
 
                     setStats({ appointments, records, dependents });
+                    setUserFullName(profileName);
                 }
             } catch (err) {
                 console.error('Failed to get user:', err);
@@ -107,9 +115,10 @@ const PatientDashboard = () => {
     const greeting = () => {
         const h = new Date().getHours();
         if (h < 12) return 'Chào buổi sáng';
-        if (h < 18) return 'Chào buổi chiều';
         return 'Chào buổi tối';
     };
+
+    const isChildAccount = user?.email?.endsWith('@app.com');
 
     return (
         <div className="flex-1 h-full overflow-y-auto w-full font-sans relative" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
@@ -125,7 +134,7 @@ const PatientDashboard = () => {
                                 <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Patient Portal</span>
                             </div>
                             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">
-                                {greeting()}, <span className="text-blue-600">{user?.user_metadata?.full_name || 'Bệnh nhân'}</span>
+                                {greeting()}, <span className="text-blue-600">{userFullName}</span>
                             </h1>
                             <p className="text-sm text-gray-500 mt-1">Chào mừng bạn đến hệ thống quản lý sức khoẻ</p>
                         </div>
@@ -149,7 +158,7 @@ const PatientDashboard = () => {
 
                 {/* Navigation Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    {NAV_CARDS.map((card, idx) => (
+                    {NAV_CARDS.filter(card => !(isChildAccount && card.hideForChild)).map((card, idx) => (
                         <motion.div
                             key={card.path}
                             initial={{ opacity: 0, y: 24 }}
@@ -213,6 +222,7 @@ const PatientDashboard = () => {
                                 <p className="text-lg font-bold text-gray-800">{stats.records ?? '—'}</p>
                             </div>
                         </div>
+                        {!isChildAccount && (
                         <div className="flex items-center gap-3 p-4 rounded-xl bg-violet-50/50 border border-violet-100/50">
                             <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
                                 <i className="fa-solid fa-people-group text-violet-600 text-sm"></i>
@@ -222,6 +232,7 @@ const PatientDashboard = () => {
                                 <p className="text-lg font-bold text-gray-800">{stats.dependents ?? '—'}</p>
                             </div>
                         </div>
+                        )}
                     </div>
                 </motion.div>
             </div>
