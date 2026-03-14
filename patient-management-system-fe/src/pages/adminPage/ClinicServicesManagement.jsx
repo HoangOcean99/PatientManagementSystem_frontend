@@ -84,12 +84,10 @@ const ClinicServicesManagement = () => {
             setIsLoadingCreate(true);
             const mainData = { ...data, department_id: department }
             await createClinicService(mainData);
-            console.log('dmainDataa', mainData)
             fetchClinicService();
             setIsShowServiceCreatePopUp(false);
             toast.success('Thêm dịch vụ thành công');
         } catch (error) {
-            console.log(error.message)
             toast.error('Thêm dịch vụ thất bại');
         } finally {
             setIsLoadingCreate(false);
@@ -99,7 +97,6 @@ const ClinicServicesManagement = () => {
         try {
             setIsShowServiceUpdatePopUp(true);
             setInitDataEdit(data);
-            console.log('data', data);
         } catch (error) {
             toast.error('Không thể mở của sổ chỉnh sửa')
             setIsShowServiceUpdatePopUp(false)

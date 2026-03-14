@@ -101,7 +101,6 @@ const ClinicServiceDetail = () => {
         try {
             setIsShowServiceUpdatePopUp(true);
             setInitDataEdit(data);
-            console.log('data', data);
         } catch (error) {
             toast.error('Không thể mở của sổ chỉnh sửa')
             setIsShowServiceUpdatePopUp(false)

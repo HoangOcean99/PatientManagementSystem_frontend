@@ -26,10 +26,24 @@ export const setupDoctor = async (id, data) => {
     return axiosClient.post(url, data);
 };
 
-export const updateDoctor = async (id, data) => {
-    const url = `/doctor/update/${id}`;
-    return axiosClient.patch(url, data);
+export const updateDoctor = async (userData, avatarFile = null) => {
+    const url = "/doctor/update";
+
+    const formData = new FormData();
+    console.log('temp', userData)
+
+    Object.keys(userData).forEach((key) => {
+        if (userData[key] !== null && userData[key] !== undefined) {
+            formData.append(key, userData[key]);
+        }
+    });
+
+    if (avatarFile) {
+        formData.append("avatar", avatarFile);
+    }
+    return axiosClient.put(url, formData);
 };
+
 
 export const getAppointmentsByDoctorId = async (id) => {
     const url = `/doctor/appointments/${id}`;

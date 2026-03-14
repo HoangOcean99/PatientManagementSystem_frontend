@@ -1,35 +1,50 @@
-import axios from 'axios';
-import { supabase } from '../../supabaseClient';
+import axios from "axios";
+import { supabase } from "../../supabaseClient";
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:3000",
   headers: {
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache',
-  }
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache"
+  },
+  timeout: 10000
 });
+
 
 axiosClient.interceptors.request.use(
   async (config) => {
-    const { data } = await supabase.auth.getSession();
+    try {
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
 
-    if (data.session?.access_token) {
-      config.headers.Authorization = `Bearer ${data.session.access_token}`;
+      if (session?.access_token) {
+        config.headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
+      return config;
+    } catch (error) {
+      return Promise.reject(error);
     }
-
-    return config;
   },
   (error) => Promise.reject(error)
 );
+
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      await supabase.auth.signOut();
-      window.location.href = '/login';
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.error("Logout error:", err);
+      }
+
+      window.location.href = "/login";
     }
+
     return Promise.reject(error);
   }
 );
+
 export default axiosClient;

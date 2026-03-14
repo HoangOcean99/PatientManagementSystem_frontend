@@ -2,15 +2,22 @@ import { Search, Bell, Activity } from 'lucide-react';
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { supabase } from '../../../supabaseClient.js';
+import { getUserById } from '../../api/userApi.js';
+import toast from 'react-hot-toast';
 
 
 const Header = () => {
     const [avatar, setAvatar] = useState(null);
     const fetchData = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const userId = session.user.id;
+            const res = await getUserById(userId);
+            setAvatar(res.data.data.avatar_url);
+        } catch (error) {
+            toast.error('Tải dữ liệu thất bại')
+        }
 
-        const tempAvatar = session.user.user_metadata.picture;
-        setAvatar(tempAvatar);
     }
     useEffect(() => {
         fetchData();

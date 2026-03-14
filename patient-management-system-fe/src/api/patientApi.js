@@ -5,7 +5,22 @@ export const searchPatients = async (keyword) => await axiosClient.get('/patient
 export const getPatients = async (params) => await axiosClient.get('/patients', { params });
 export const getPatientById = async (id) => await axiosClient.get(`/patients/${id}`);
 export const createPatient = async (data) => await axiosClient.post('/patients', data);
-export const updatePatient = async (id, data) => await axiosClient.put(`/patients/${id}`, data);
+export const updatePatient = async (userData, avatarFile = null) => {
+    const url = "/patients/update";
+
+    const formData = new FormData();
+
+    Object.keys(userData).forEach((key) => {
+        if (userData[key] !== null && userData[key] !== undefined) {
+            formData.append(key, userData[key]);
+        }
+    });
+
+    if (avatarFile) {
+        formData.append("avatar", avatarFile);
+    }
+    return axiosClient.put(url, formData);
+};
 export const deletePatient = async (id) => await axiosClient.delete(`/patients/${id}`);
 export const getMedicalRecords = async (patientId) => await axiosClient.get(`/patients/${patientId}/medical-records`);
 export const getMedicalRecordDetail = async (recordId) => await axiosClient.get(`/patients/medical-records/${recordId}`);
