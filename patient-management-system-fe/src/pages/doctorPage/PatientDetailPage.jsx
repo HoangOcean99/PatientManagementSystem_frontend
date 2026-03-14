@@ -271,9 +271,9 @@ const PatientDetailPage = () => {
             email: first.Patients?.Users?.email || '',
             phone_number: first.Patients?.Users?.phone_number || '',
             avatar_url: first.Patients?.Users?.avatar_url || null,
-            dob: first.Patients?.dob || '',
-            gender: first.Patients?.gender || '',
-            address: first.Patients?.address || '',
+            dob: first.Patients?.Users?.dob || '',
+            gender: first.Patients?.Users?.gender || '',
+            address: first.Patients?.Users?.address || '',
             allergies: first.Patients?.allergies || '',
             medical_history_summary: first.Patients?.medical_history_summary || '',
           });

@@ -79,9 +79,9 @@ const UserProfilePage = () => {
             username: user.username || '',
             full_name: user.full_name || '',
             phone_number: user.phone_number || '',
-            dob: profile?.dob || '',
-            gender: profile?.gender || 'other',
-            address: profile?.address || '',
+            dob: user.dob || '',
+            gender: user.gender || 'other',
+            address: user.address || '',
             allergies: profile?.allergies || '',
             medical_history_summary: profile?.medical_history_summary || '',
         });
@@ -123,7 +123,7 @@ const UserProfilePage = () => {
     }
 
     const user = profile?.Users || {};
-    const g = GENDER_MAP[profile?.gender] || GENDER_MAP.other;
+    const g = GENDER_MAP[profile?.Users?.gender] || GENDER_MAP.other;
     const initials = (user.full_name || '?').split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
 
     const formatDate = (d) => {
@@ -327,9 +327,9 @@ const UserProfilePage = () => {
                                     <InfoRow icon="fa-user" label="Họ và tên" value={user.full_name} />
                                     <InfoRow icon="fa-envelope" label="Email" value={user.email} iconColor="text-indigo-400" />
                                     <InfoRow icon="fa-phone" label="Số điện thoại" value={user.phone_number} iconColor="text-sky-400" />
-                                    <InfoRow icon="fa-cake-candles" label="Ngày sinh" value={formatDate(profile?.dob)} iconColor="text-rose-400" />
+                                    <InfoRow icon="fa-cake-candles" label="Ngày sinh" value={formatDate(profile?.Users?.dob)} iconColor="text-rose-400" />
                                     <InfoRow icon="fa-venus-mars" label="Giới tính" value={g.label} iconColor="text-violet-400" />
-                                    <InfoRow icon="fa-location-dot" label="Địa chỉ" value={profile?.address} iconColor="text-amber-400" />
+                                    <InfoRow icon="fa-location-dot" label="Địa chỉ" value={profile?.Users?.address} iconColor="text-amber-400" />
                                     <InfoRow icon="fa-triangle-exclamation" label="Dị ứng" value={profile?.allergies} iconColor="text-red-400" />
                                     <InfoRow icon="fa-notes-medical" label="Tiền sử bệnh" value={profile?.medical_history_summary} iconColor="text-emerald-400" />
                                 </div>

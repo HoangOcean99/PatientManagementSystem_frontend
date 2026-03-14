@@ -124,8 +124,8 @@ const calcAge = (dateStr) => {
 
 /* ─── Patient Row Card ─── */
 const PatientRow = ({ patient, index, order, onEdit }) => {
-    const g = GENDER_MAP[patient.gender] || GENDER_MAP.other;
-    const age = calcAge(patient.dob);
+    const g = GENDER_MAP[patient.Users?.gender] || GENDER_MAP.other;
+    const age = calcAge(patient.Users?.dob);
     const name = patient.Users?.full_name || 'Chưa cập nhật';
     const avatar = patient.Users?.avatar_url;
     const initials = name.split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
@@ -185,7 +185,7 @@ const PatientRow = ({ patient, index, order, onEdit }) => {
                             <span className="w-px h-3 bg-gray-200"></span>
                             <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
                                 <i className="fa-regular fa-calendar text-[10px] text-blue-400"></i>
-                                {formatDate(patient.dob)}
+                                {formatDate(patient.Users?.dob)}
                             </span>
                             {age !== null && (
                                 <>
@@ -276,7 +276,7 @@ const PatientListPage = () => {
         return patients.filter((p) => {
             const combined = `${p.patient_id} ${p.Users?.full_name || ''} ${p.Users?.phone_number || ''}`.toLowerCase();
             const matchSearch = searchTerm ? combined.includes(searchTerm.toLowerCase()) : true;
-            const matchGender = genderFilter ? p.gender === genderFilter : true;
+            const matchGender = genderFilter ? p.Users?.gender === genderFilter : true;
             return matchSearch && matchGender;
         });
     }, [patients, searchTerm, genderFilter]);
@@ -288,8 +288,8 @@ const PatientListPage = () => {
 
     const stats = useMemo(() => ({
         total: patients.length,
-        male: patients.filter(p => p.gender === 'male').length,
-        female: patients.filter(p => p.gender === 'female').length,
+        male: patients.filter(p => p.Users?.gender === 'male').length,
+        female: patients.filter(p => p.Users?.gender === 'female').length,
     }), [patients]);
 
     return (
