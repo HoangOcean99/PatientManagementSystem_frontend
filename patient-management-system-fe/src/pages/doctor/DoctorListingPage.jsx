@@ -131,8 +131,7 @@ const DoctorListingPage = () => {
 
     return (
         <div
-            className={`font-sans text-gray-700 min-h-screen ${isAdminView ? 'bg-gray-50/50' : 'bg-gradient-to-b from-blue-50/40 to-white'}`}
-            style={{ width: '100vw' }}
+            className={`font-sans text-gray-700 flex-1 overflow-y-auto ${isAdminView ? 'bg-gray-50/50' : 'bg-gradient-to-b from-blue-50/40 to-white'}`}
         >
             {scrollbarStyles}
 
@@ -297,6 +296,17 @@ const DoctorListingPage = () => {
                         </button>
                     </div>
                 )}
+
+                {/* Pagination Footer */}
+                <div className="mt-12 flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                    <span className="text-sm text-gray-400">Hiển thị {filteredDoctors.length} kết quả</span>
+                    <div className="flex gap-2">
+                        <button className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50"><i className="fa-solid fa-chevron-left text-xs"></i></button>
+                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-md shadow-blue-100">1</button>
+                        <button className="px-4 py-2 hover:bg-gray-50 rounded-lg text-sm font-bold">2</button>
+                        <button className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50"><i className="fa-solid fa-chevron-right text-xs"></i></button>
+                    </div>
+                </div>
             </div>
         </div>
     );

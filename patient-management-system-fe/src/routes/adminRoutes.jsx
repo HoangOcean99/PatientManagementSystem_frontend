@@ -9,6 +9,7 @@ import ScheduleManagement from '../pages/adminPage/ScheduleManagement';
 import UserManagement from '../pages/adminPage/UserManagement';
 import UserProfileEdit from '../pages/adminPage/UserProfileEdit';
 import UserProfileManagement from '../pages/adminPage/UserProfileManagement';
+import DoctorListingPage from '../pages/doctor/DoctorListingPage';
 
 const adminRoutes = [
     {

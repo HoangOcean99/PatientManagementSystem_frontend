@@ -1,3 +1,4 @@
+import DoctorProfileForm from "../components/admin/DoctorProfileForm";
 import PublicRoute from "../components/security/PublicRoute";
 import AuthCallback from "../pages/commonPage/AuthCallback";
 import ForgotPasswordPage from "../pages/commonPage/ForgotPasswordPage";
@@ -42,11 +43,11 @@ const commonRoutes = [
             </PublicRoute>
     },
     {
-        path: '/doctors',
+        path: '/admin/doctors',
         element: <DoctorListingPage />
     },
     {
-        path: '/doctors/:id',
+        path: '/admin/doctors/:id',
         element: <DoctorProfilePage />
     },
 ];
