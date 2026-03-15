@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import * as Icons from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import DynamicModal from '../../components/common/DynamicModal';
-import { createDepartment, deleteDepartment, getAllDepartment, updateDepartment } from '../../api/departmentApi';
+import { createDepartment, deleteDepartment, getAllDepartments, updateDepartment } from '../../api/departmentApi';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import SearchFilterBar from '../../components/common/SearchFilterBar';
@@ -126,7 +126,7 @@ const DepartmentManagement = () => {
     const fetchDepartment = async () => {
         try {
             setIsLoading(true);
-            const res = await getAllDepartment();
+            const res = await getAllDepartments();
             setDepartments(res.data.data);
         } catch (e) {
             toast.error('Tải dữ liệu thất bại!')

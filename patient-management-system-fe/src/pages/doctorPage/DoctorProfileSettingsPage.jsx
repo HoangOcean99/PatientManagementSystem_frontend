@@ -18,7 +18,7 @@ import {
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import { getDoctorById, setupDoctor, updateDoctor } from '../../api/doctorApi';
-import { getAllDepartment } from '../../api/departmentApi';
+import { getAllDepartments } from '../../api/departmentApi';
 import { supabase } from '../../../supabaseClient';
 import { validateFullName, validatePhoneNumber } from '../../helpers/validationUtils';
 import './DoctorProfileSettingsPage.css';
@@ -87,7 +87,7 @@ const DoctorProfileSettingsPage = () => {
 
   // ===== Fetch departments =====
   useEffect(() => {
-    getAllDepartment()
+    getAllDepartments()
       .then((res) => {
         const list = res.data?.data || res.data || [];
         const arr = Array.isArray(list) ? list : [];
