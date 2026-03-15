@@ -43,11 +43,11 @@ const commonRoutes = [
             </PublicRoute>
     },
     {
-        path: '/admin/doctors',
+        path: '/doctors',
         element: <DoctorListingPage />
     },
     {
-        path: '/admin/doctors/:id',
+        path: '/doctors/:id',
         element: <DoctorProfilePage />
     },
 ];

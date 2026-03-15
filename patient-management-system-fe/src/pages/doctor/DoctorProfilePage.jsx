@@ -401,13 +401,13 @@ const DoctorProfilePage = () => {
     }, [id]);
 
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50" style={{ width: '100vw' }}>
+        <div className="flex-1 flex items-center justify-center bg-gray-50">
             <LoadingSpinner />
         </div>
     );
 
     if (!doctor) return (
-        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center" style={{ width: '100vw' }}>
+        <div className="flex-1 bg-gray-50 flex flex-col items-center justify-center">
             <i className="fa-solid fa-user-doctor text-4xl text-gray-300 mb-4"></i>
             <h3 className="text-xl font-bold text-gray-700">Không tìm thấy bác sĩ</h3>
             <button onClick={() => navigate(-1)} className="mt-4 text-blue-600 font-bold hover:underline">
@@ -428,7 +428,7 @@ const DoctorProfilePage = () => {
     const email = doctor.Users?.email || '';
 
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-16 font-sans" style={{ width: '100vw' }}>
+        <div className="flex-1 overflow-y-auto bg-gray-50/50 pb-16 font-sans">
             {scrollbarStyles}
 
             {/* Top Nav */}
