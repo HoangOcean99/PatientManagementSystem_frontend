@@ -30,8 +30,8 @@ const formatDateLabel = (dateStr) => {
     const dayLabel = isSameDay(d, today)
         ? 'Hôm nay'
         : isSameDay(d, tom)
-        ? 'Ngày mai'
-        : d.toLocaleDateString('vi-VN', { weekday: 'short' });
+            ? 'Ngày mai'
+            : d.toLocaleDateString('vi-VN', { weekday: 'short' });
 
     const dateLabel = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
     return { dayLabel, dateLabel };
@@ -134,11 +134,10 @@ const SlotManagementPanel = ({ doctorId }) => {
                             <button
                                 key={day}
                                 onClick={() => setSelectedDate(day)}
-                                className={`flex-shrink-0 px-3 py-2.5 rounded-xl text-center min-w-[72px] transition-all border text-xs font-bold ${
-                                    isSelected
-                                        ? 'bg-gray-900 text-white border-gray-900 shadow-md'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                                }`}
+                                className={`flex-shrink-0 px-3 py-2.5 rounded-xl text-center min-w-[72px] transition-all border text-xs font-bold ${isSelected
+                                    ? 'bg-gray-900 text-white border-gray-900 shadow-md'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                                    }`}
                             >
                                 <div className="opacity-70">{dayLabel}</div>
                                 <div className="font-extrabold">{dateLabel}</div>
@@ -164,20 +163,18 @@ const SlotManagementPanel = ({ doctorId }) => {
                         {slots.map((slot) => (
                             <div
                                 key={slot.slot_id}
-                                className={`flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
-                                    slot.is_booked
-                                        ? 'bg-orange-50 border-orange-200 text-orange-700'
-                                        : 'bg-green-50 border-green-200 text-green-700'
-                                }`}
+                                className={`flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-bold transition-all ${slot.is_booked
+                                    ? 'bg-orange-50 border-orange-200 text-orange-700'
+                                    : 'bg-green-50 border-green-200 text-green-700'
+                                    }`}
                             >
                                 <div className="flex items-center gap-3">
                                     <i className={`fa-regular fa-clock text-sm ${slot.is_booked ? 'text-orange-400' : 'text-green-500'}`}></i>
                                     <span>
                                         {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
                                     </span>
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                                        slot.is_booked ? 'bg-orange-200 text-orange-800' : 'bg-green-200 text-green-800'
-                                    }`}>
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${slot.is_booked ? 'bg-orange-200 text-orange-800' : 'bg-green-200 text-green-800'
+                                        }`}>
                                         {slot.is_booked ? 'Đã đặt' : 'Trống'}
                                     </span>
                                 </div>
@@ -305,11 +302,10 @@ const BookingPanel = ({ doctorId }) => {
                             <button
                                 key={day}
                                 onClick={() => setSelectedDate(day)}
-                                className={`flex-shrink-0 px-3 py-2.5 rounded-xl border transition-all text-center min-w-[68px] ${
-                                    isSelected
-                                        ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200/50'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                }`}
+                                className={`flex-shrink-0 px-3 py-2.5 rounded-xl border transition-all text-center min-w-[68px] ${isSelected
+                                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200/50'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                    }`}
                             >
                                 <div className="text-[10px] opacity-75 mb-0.5">{dayLabel}</div>
                                 <div className="font-extrabold text-xs">{dateLabel}</div>
@@ -342,11 +338,10 @@ const BookingPanel = ({ doctorId }) => {
                                 <button
                                     key={slot.slot_id}
                                     onClick={() => setSelectedSlot(isSelected ? null : slot)}
-                                    className={`py-2.5 px-2 rounded-xl text-xs font-bold border transition-all ${
-                                        isSelected
-                                            ? 'bg-blue-50 text-blue-700 border-blue-300 ring-2 ring-blue-500 ring-offset-1'
-                                            : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50'
-                                    }`}
+                                    className={`py-2.5 px-2 rounded-xl text-xs font-bold border transition-all ${isSelected
+                                        ? 'bg-blue-50 text-blue-700 border-blue-300 ring-2 ring-blue-500 ring-offset-1'
+                                        : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50'
+                                        }`}
                                 >
                                     {label}
                                 </button>
@@ -358,11 +353,10 @@ const BookingPanel = ({ doctorId }) => {
                 {/* CTA */}
                 <button
                     disabled={!selectedSlot}
-                    className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 ${
-                        selectedSlot
-                            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-500/30'
-                            : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                    }`}
+                    className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all duration-300 active:scale-[0.98] flex items-center justify-center gap-2 ${selectedSlot
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-500/30'
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
+                        }`}
                 >
                     <i className={`fa-solid ${selectedSlot ? 'fa-calendar-check' : 'fa-calendar'}`}></i>
                     {selectedSlot
@@ -407,13 +401,13 @@ const DoctorProfilePage = () => {
     }, [id]);
 
     if (loading) return (
-        <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <div className="min-h-screen flex items-center justify-center bg-gray-50" style={{ width: '100vw' }}>
             <LoadingSpinner />
         </div>
     );
 
     if (!doctor) return (
-        <div className="flex-1 bg-gray-50 flex flex-col items-center justify-center">
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center" style={{ width: '100vw' }}>
             <i className="fa-solid fa-user-doctor text-4xl text-gray-300 mb-4"></i>
             <h3 className="text-xl font-bold text-gray-700">Không tìm thấy bác sĩ</h3>
             <button onClick={() => navigate(-1)} className="mt-4 text-blue-600 font-bold hover:underline">
@@ -434,7 +428,7 @@ const DoctorProfilePage = () => {
     const email = doctor.Users?.email || '';
 
     return (
-        <div className="flex-1 overflow-y-auto bg-gray-50/50 pb-16 font-sans">
+        <div className="min-h-screen bg-gray-50/50 pb-16 font-sans" style={{ width: '100vw' }}>
             {scrollbarStyles}
 
             {/* Top Nav */}
@@ -481,9 +475,8 @@ const DoctorProfilePage = () => {
                                     alt={name}
                                     className="w-36 h-36 md:w-48 md:h-48 rounded-[2rem] object-cover shadow-lg border-4 border-white bg-gray-50"
                                 />
-                                <div className={`absolute -bottom-3 -right-2 text-xs font-bold px-3 py-1 rounded-full border-[3px] border-white shadow-sm flex items-center gap-1.5 ${
-                                    isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                                }`}>
+                                <div className={`absolute -bottom-3 -right-2 text-xs font-bold px-3 py-1 rounded-full border-[3px] border-white shadow-sm flex items-center gap-1.5 ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                                    }`}>
                                     <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`}></span>
                                     {isActive ? 'Hoạt động' : 'Tạm ngưng'}
                                 </div>
