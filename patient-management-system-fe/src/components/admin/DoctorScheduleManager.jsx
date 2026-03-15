@@ -6,7 +6,7 @@ import {
     updateDoctorSlot,
     deleteDoctorSlot,
 } from '../../api/doctorSlotApi';
-import LoadingSpinner from '../LoadingSpinner';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import './DoctorScheduleManager.css';
 
 // ===== HELPERS =====
