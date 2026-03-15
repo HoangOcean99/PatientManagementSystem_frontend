@@ -33,3 +33,8 @@ export const getDoctorbyDepartmentId = async (departmentId) => {
     const url = `/doctor/get-doctors-by-department/${departmentId}`;
     return axiosClient.get(url);
 };
+
+export const getAvailableDoctorSlotsByDate = async (departmentId, date) => {
+    const url = `/doctor-slots/getAvailableDoctorSlotsByDate`;
+    return axiosClient.post(url, { department_id: departmentId, date });
+};

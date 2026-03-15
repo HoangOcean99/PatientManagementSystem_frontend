@@ -90,3 +90,58 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+/* Đảm bảo bảng lịch luôn nổi lên trên cùng */
+.react-datepicker-popper {
+    z-index: 9999 !important;
+}
+
+/* Fix lỗi các con số và chữ bị dính lẹo vào nhau */
+.react-datepicker {
+    font-family: inherit;
+    border-radius: 12px !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    background-color: #fff !important;
+    display: inline-block !important;
+    width: auto !important; /* Không cho nó tràn ra ngoài */
+}
+
+/* Sắp xếp các ngày trong tuần theo hàng ngang */
+.react-datepicker__day-names {
+    display: flex !important;
+    justify-content: space-around !important;
+}
+
+/* Sắp xếp các ngày trong tháng */
+.react-datepicker__month {
+    margin: 0.4rem !important;
+}
+
+.react-datepicker__week {
+    display: flex !important;
+    justify-content: space-around !important;
+}
+
+/* Làm cho các ô ngày có khoảng cách đều nhau */
+.react-datepicker__day {
+    width: 2.5rem !important;
+    line-height: 2.5rem !important;
+    margin: 0.1rem !important;
+    border-radius: 50% !important;
+}
+
+/* Màu khi chọn ngày */
+.react-datepicker__day--selected {
+    background-color: #2563eb !important; /* Màu xanh Primary */
+    color: white !important;
+}
+
+/* Header của lịch (Tháng/Năm) */
+.react-datepicker__header {
+    background-color: white !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    border-top-left-radius: 12px !important;
+    border-top-right-radius: 12px !important;
+    padding-top: 10px !important;
+}
