@@ -30,9 +30,9 @@ export const updateDoctor = async (id, data) => {
     return axiosClient.patch(url, data);
 };
 
-export const getAppointmentsByDoctorId = async (id) => {
+export const getAppointmentsByDoctorId = async (id, date) => {
     const url = `/doctor/appointments/${id}`;
-    return axiosClient.get(url);
+    return axiosClient.get(url, { params: { date } });
 };
 
 export const getPatientByIdForDoctor = async (patientId) => {

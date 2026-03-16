@@ -26,6 +26,7 @@ import {
 import { getAppointmentsByDoctorId } from '../../api/doctorApi';
 import medicalRecordApi from '../../api/medicalRecordApi';
 import labOrderApi from '../../api/labOrderApi';
+import { updateRoomStatusByDoctor } from '../../api/roomApi';
 import './ExaminationPage.css';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { supabase } from '../../../supabaseClient';
@@ -391,6 +392,13 @@ const ExaminationPage = () => {
       setRecordStatus('in_progress');
       setAppointment((prev) => ({ ...prev, status: 'in_progress' }));
 
+      // Cập nhật room status → examining (silent fail)
+      try {
+        await updateRoomStatusByDoctor(appointment.doctor_id, 'examining');
+      } catch (roomErr) {
+        console.warn('[Room Status] Không thể cập nhật trạng thái phòng:', roomErr);
+      }
+
       alert('Đã bắt đầu ca khám!');
     } catch (err) {
       console.error('Lỗi khi bắt đầu khám:', err);
@@ -553,6 +561,14 @@ const ExaminationPage = () => {
 
       setRecordStatus('completed');
       setAppointment((prev) => ({ ...prev, status: 'completed' }));
+
+      // Cập nhật room status → ready (silent fail)
+      try {
+        await updateRoomStatusByDoctor(appointment.doctor_id, 'readyToExame');
+      } catch (roomErr) {
+        console.warn('[Room Status] Không thể cập nhật trạng thái phòng:', roomErr);
+      }
+
       alert('Hoàn tất ca khám thành công!');
     } catch (err) {
       console.error('Lỗi khi hoàn tất:', err);
