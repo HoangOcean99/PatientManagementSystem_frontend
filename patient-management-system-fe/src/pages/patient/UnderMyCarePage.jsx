@@ -27,6 +27,7 @@ const RELATIONSHIP_OPTIONS = [
 ];
 
 const INITIAL_FORM = {
+    username: '',
     full_name: '',
     dob: '',
     gender: 'male',
@@ -34,6 +35,7 @@ const INITIAL_FORM = {
     allergies: '',
     medical_history_summary: '',
     relationship: 'father',
+    is_minor: true,
 };
 
 const InputField = ({ label, field, value, error, onChange, type = 'text', placeholder, required }) => (
@@ -214,6 +216,11 @@ const UnderMyCarePage = () => {
                                                                 Quản lý
                                                             </span>
                                                         )}
+                                                        {child.is_minor && (
+                                                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
+                                                                Trẻ em
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -258,6 +265,8 @@ const UnderMyCarePage = () => {
 
                             {/* Modal Body */}
                             <div className="px-6 py-5 space-y-4">
+                                <InputField label="Tài khoản (Tùy chọn)" field="username" value={form.username} error={errors.username} onChange={handleChange} placeholder="user123" />
+
                                 <InputField label="Họ và tên" field="full_name" value={form.full_name} error={errors.full_name} onChange={handleChange} placeholder="Nguyễn Văn B" required />
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -287,6 +296,19 @@ const UnderMyCarePage = () => {
                                             <option key={r.value} value={r.value}>{r.label}</option>
                                         ))}
                                     </select>
+                                </div>
+
+                                <div className="flex items-center gap-2 mt-2">
+                                    <input
+                                        type="checkbox"
+                                        id="is_minor"
+                                        checked={form.is_minor}
+                                        onChange={(e) => handleChange('is_minor', e.target.checked)}
+                                        className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+                                    />
+                                    <label htmlFor="is_minor" className="text-sm font-medium text-gray-700 cursor-pointer">
+                                        Người này là trẻ vị thành niên (dưới 18 tuổi)
+                                    </label>
                                 </div>
 
                                 <InputField label="Địa chỉ" field="address" value={form.address} error={errors.address} onChange={handleChange} placeholder="123 Nguyễn Văn Cừ, Q5, TP.HCM" />
