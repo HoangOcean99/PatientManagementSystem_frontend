@@ -1,7 +1,7 @@
 import axiosClient from "./axiosClient";
 
 export const getAllPatients = async () => await axiosClient.get('/patients');
-export const searchPatients = async (keyword) => await axiosClient.get('/patient/search', { params: { keyword } });
+export const searchPatients = async (keyword) => await axiosClient.get('/patients', { params: { keyword } });
 export const getPatients = async (params) => await axiosClient.get('/patients', { params });
 export const getPatientById = async (id) => await axiosClient.get(`/patients/${id}`);
 export const createPatient = async (data) => await axiosClient.post('/patients', data);
@@ -22,11 +22,12 @@ export const updatePatient = async (userData, avatarFile = null) => {
     return axiosClient.put(url, formData);
 };
 export const deletePatient = async (id) => await axiosClient.delete(`/patients/${id}`);
-export const getMedicalRecords = async (patientId) => await axiosClient.get(`/patients/${patientId}/medical-records`);
-export const getMedicalRecordDetail = async (recordId) => await axiosClient.get(`/patients/medical-records/${recordId}`);
+export const getMedicalRecords = async (patientId) => await axiosClient.get(`/medical-record/patient/${patientId}`);
+export const getMedicalRecordDetail = async (recordId) => await axiosClient.get(`/medical-record/detail/${recordId}`);
 export const generateKeyCode = async (data) => await axiosClient.post('/patients/family-relationships/key-code', data);
 export const linkFamilyMember = async (data) => await axiosClient.post('/patients/family-relationships/link', data);
 export const createPayment = async (data) => await axiosClient.post('/invoices', data);
+export const deleteUser = async (id) => await axiosClient.delete(`/users/${id}`);
 
 // Under My Care - Dependent management
 export const getDependents = async () => await axiosClient.get('/under-my-care');

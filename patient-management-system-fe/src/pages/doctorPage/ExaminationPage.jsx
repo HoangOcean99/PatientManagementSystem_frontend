@@ -532,6 +532,7 @@ const ExaminationPage = () => {
     symptoms: symptoms.trim(),
     diagnosis: diagnosis.trim(),
     doctor_notes: doctorNotes.trim(),
+    follow_up_date: followUpDate || null,
     prescriptions: prescriptions
       .filter((p) => p.medication_name.trim())
       .map((p) => ({

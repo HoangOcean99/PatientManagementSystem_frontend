@@ -249,10 +249,11 @@ const RegisterKidPage = () => {
                                                 }
                                                 onChange={(e) => e.target.setCustomValidity("")}
                                             >
-                                                <option value="" disabled hidden>Mối quan hệ</option>
-                                                <option value="father">Cha</option>
-                                                <option value="mother">Mẹ</option>
-                                                <option value="other">Người thân khác</option>
+                                                <option value="" disabled hidden>Người giám hộ là gì của bé?</option>
+                                                <option value="father">Là Cha của bé</option>
+                                                <option value="mother">Là Mẹ của bé</option>
+                                                <option value="guardian">Là Người giám hộ của bé</option>
+                                                <option value="other">Là Người thân khác của bé</option>
                                             </select>
                                         </div>
 

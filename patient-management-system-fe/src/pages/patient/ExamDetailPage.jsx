@@ -37,7 +37,10 @@ const ExamDetailPage = () => {
         const load = async () => {
             try {
                 const res = await getMedicalRecordDetail(id);
-                setRecord(res.data?.data || res.data || null);
+                console.log('Medical Record Detail Response:', res.data);
+                // Robust extraction: some APIs wrap in .data, others in .data.data
+                const recordData = res.data?.data?.data || res.data?.data || res.data;
+                setRecord(recordData || null);
             } catch (err) {
                 console.error('Failed to load exam detail:', err);
                 toast.error('Không thể tải chi tiết khám');
@@ -93,6 +96,15 @@ const ExamDetailPage = () => {
                                 <span className="text-[10px] font-bold text-violet-700 uppercase tracking-wider">Chi tiết</span>
                             </div>
                             <h1 className="text-2xl font-extrabold text-gray-900">Kết quả khám bệnh</h1>
+                            <div className="mt-1 flex items-center gap-3">
+                                <p className="text-sm font-bold text-blue-600">
+                                    BS. {record.Doctors?.Users?.full_name || record.Appointments?.Doctors?.Users?.full_name || 'Chuyên khoa'}
+                                </p>
+                                <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                                <p className="text-xs text-gray-500">
+                                    {record.Doctors?.specialization || record.Appointments?.Doctors?.specialization || 'Khoa Nội'}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -105,24 +117,55 @@ const ExamDetailPage = () => {
                     {/* Diagnosis */}
                     <Section icon="fa-stethoscope" title="Chẩn đoán" iconGradient="from-violet-500 to-purple-600">
                         <div className="space-y-4">
-                            <div>
-                                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Chẩn đoán</p>
-                                <p className="text-gray-800 font-semibold">{record.diagnosis || '—'}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Chẩn đoán</p>
+                                    <p className="text-gray-800 font-bold text-lg">{record.diagnosis || '—'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Lý do khám</p>
+                                    <p className="text-gray-700 text-sm italic">{record.Appointments?.notes || '—'}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Triệu chứng</p>
-                                <p className="text-gray-700">{record.symptoms || '—'}</p>
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Triệu chứng</p>
+                                    <p className="text-gray-700 text-sm">{record.symptoms || '—'}</p>
+                                </div>
+                                {record.follow_up_date && (
+                                    <div>
+                                        <p className="text-xs text-orange-500 font-bold uppercase tracking-wide mb-1 flex items-center gap-1.5">
+                                            <i className="fa-regular fa-calendar-check text-[10px]"></i>
+                                            Hẹn tái khám
+                                        </p>
+                                        <p className="text-orange-700 font-bold text-sm bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 inline-block">
+                                            {new Date(record.follow_up_date).toLocaleDateString('vi-VN')}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
-                            <div>
-                                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Ghi chú bác sĩ</p>
-                                <p className="text-gray-700">{record.doctor_notes || '—'}</p>
-                            </div>
-                            <div className="flex items-center gap-3 pt-2 text-xs text-gray-400">
+                        </div>
+
+                        <div className="mt-6 pt-6 border-t border-gray-100">
+                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Ghi chú bác sĩ</p>
+                            <p className="text-gray-700 text-sm leading-relaxed bg-gray-50/50 p-4 rounded-xl border border-gray-100 italic">
+                                "{record.doctor_notes || 'Không có ghi chú thêm từ bác sĩ.'}"
+                            </p>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between text-[11px] text-gray-400 font-medium">
+                            <div className="flex items-center gap-4">
+                                <span className="inline-flex items-center gap-1.5">
+                                    <i className="fa-solid fa-stethoscope text-blue-400"></i>
+                                    {record.Appointments?.ClinicServices?.name || 'Khám tổng quát'}
+                                </span>
                                 <span className="inline-flex items-center gap-1.5">
                                     <i className="fa-regular fa-calendar text-blue-400"></i>
                                     {formatDate(record.created_at)}
                                 </span>
                             </div>
+                        </div>
                         </div>
                     </Section>
 

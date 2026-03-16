@@ -67,8 +67,12 @@ const BookingAppointmentPage = () => {
         };
         setMyself(me);
 
-        // Pre-select "Myself"
-        if (userId) {
+        const preselectPatient = location.state?.preselectPatient;
+
+        // Pre-select "Myself" or the passed dependent
+        if (preselectPatient) {
+          setForm(prev => ({ ...prev, patient_id: preselectPatient, is_dependent: true }));
+        } else if (userId) {
           setForm(prev => ({ ...prev, patient_id: userId, is_dependent: false }));
         }
 
@@ -192,6 +196,7 @@ const BookingAppointmentPage = () => {
         doctor_id: form.doctor_id,
         service_id: form.service_id,
         slot_id: form.slot_id,
+        notes: form.notes,
         total_price: totalPrice,
         deposit_required: depositRequired,
         status: "pending",

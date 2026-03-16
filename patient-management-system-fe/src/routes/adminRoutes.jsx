@@ -9,6 +9,9 @@ import ScheduleManagement from '../pages/adminPage/ScheduleManagement';
 import UserManagement from '../pages/adminPage/UserManagement';
 import UserProfileEdit from '../pages/adminPage/UserProfileEdit';
 import UserProfileManagement from '../pages/adminPage/UserProfileManagement';
+import PatientListPage from '../components/patient/PatientListPage';
+import PatientFormPage from '../components/patient/PatientFormPage';
+
 
 const adminRoutes = [
     {
@@ -88,6 +91,30 @@ const adminRoutes = [
         element: (
             <ProtectedRoute allowedRoles={["admin"]}>
                 <AdminProfile />
+            </ProtectedRoute>
+        )
+    },
+    {
+        path: '/admin/patients',
+        element: (
+            <ProtectedRoute allowedRoles={["admin"]}>
+                <PatientListPage />
+            </ProtectedRoute>
+        )
+    },
+    {
+        path: '/admin/patients/create',
+        element: (
+            <ProtectedRoute allowedRoles={["admin"]}>
+                <PatientFormPage />
+            </ProtectedRoute>
+        )
+    },
+    {
+        path: '/admin/patients/:id/edit',
+        element: (
+            <ProtectedRoute allowedRoles={["admin"]}>
+                <PatientFormPage />
             </ProtectedRoute>
         )
     },

@@ -130,9 +130,9 @@ const PatientFormPage = () => {
         const statePatient = location.state?.patient;
         if (statePatient) {
             reset({
-                dob: statePatient.dob || '',
-                gender: statePatient.gender || '',
-                address: statePatient.address || ''
+                dob: statePatient.Users?.dob || statePatient.dob || '',
+                gender: statePatient.Users?.gender || statePatient.gender || '',
+                address: statePatient.Users?.address || statePatient.address || ''
             });
             setPageLoading(false);
             return;
@@ -144,9 +144,9 @@ const PatientFormPage = () => {
                 const res = await getPatientById(id);
                 const p = res.data?.data || res.data;
                 reset({
-                    dob: p.dob || '',
-                    gender: p.gender || '',
-                    address: p.address || ''
+                    dob: p.Users?.dob || p.dob || '',
+                    gender: p.Users?.gender || p.gender || '',
+                    address: p.Users?.address || p.address || ''
                 });
             } catch (err) {
                 console.error('Fetch patient failed:', err);

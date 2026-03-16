@@ -18,6 +18,10 @@ const Header = () => {
             toast.error('Tải dữ liệu thất bại')
         }
 
+        if (session?.user) {
+            const tempAvatar = session.user.user_metadata?.picture || '';
+            setAvatar(tempAvatar);
+        }
     }
     useEffect(() => {
         fetchData();
