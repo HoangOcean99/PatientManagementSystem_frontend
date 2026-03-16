@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { getDependents, addDependent, removeDependent, deleteUser } from '../../api/patientApi';
+import { getDependents, addDependent, removeDependent } from '../../api/patientApi';
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
@@ -121,13 +121,7 @@ const UnderMyCarePage = () => {
         try {
             setDeletingId(dep.relationship_id);
             await removeDependent(dep.relationship_id);
-            if (childUserId) {
-                try {
-                    await deleteUser(childUserId);
-                } catch (e) {
-                    console.warn('Could not delete user account:', e);
-                }
-            }
+            // Removed user deletion logic; only the link is removed.
             toast.success('Đã xóa người phụ thuộc thành công!');
             setConfirmDelete(null);
             setLoading(true);
@@ -261,6 +255,28 @@ const UnderMyCarePage = () => {
                                                     ) : (
                                                         <i className="fa-solid fa-trash-can text-sm"></i>
                                                     )}
+                                                </button>
+                                            </div>
+                                            
+                                            {/* Action Buttons */}
+                                            <div className="mt-4 pt-4 border-t border-gray-100/60 grid grid-cols-3 gap-2">
+                                                <button
+                                                    onClick={() => navigate(`/patient/medical-records?patient_id=${childUserId}`)}
+                                                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+                                                >
+                                                    <i className="fa-solid fa-file-medical"></i> Xem bệnh án
+                                                </button>
+                                                <button
+                                                    onClick={() => navigate('/patient/booking', { state: { preselectPatient: childUserId } })}
+                                                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                                >
+                                                    <i className="fa-regular fa-calendar-check"></i> Đặt lịch hộ
+                                                </button>
+                                                <button
+                                                    onClick={() => navigate(`/patient/billing?patient_id=${childUserId}`)}
+                                                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer"
+                                                >
+                                                    <i className="fa-solid fa-file-invoice-dollar"></i> Thanh toán hộ
                                                 </button>
                                             </div>
                                         </div>

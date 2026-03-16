@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
 import { getMedicalRecords } from '../../api/patientApi';
+import { useAuth } from '../../components/security/AuthContext';
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const ExamHistoryPage = () => {
     const navigate = useNavigate();
+    const { userId } = useAuth();
     const [records, setRecords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -16,10 +18,11 @@ const ExamHistoryPage = () => {
     useEffect(() => {
         let isMounted = true;
         const load = async () => {
+            if (!userId) {
+                setLoading(false);
+                return;
+            }
             try {
-                const { data: authData } = await supabase.auth.getUser();
-                const userId = authData?.user?.id;
-                // if (!userId) { navigate('/login'); return; }
                 const res = await getMedicalRecords(userId);
                 if (isMounted) {
                     setRecords(res.data?.data || res.data || []);
@@ -40,7 +43,7 @@ const ExamHistoryPage = () => {
         return () => {
             isMounted = false;
         };
-    }, [navigate]);
+    }, [userId]);
 
     const filtered = records.filter(r => {
         const s = searchTerm.toLowerCase();

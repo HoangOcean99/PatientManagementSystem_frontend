@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
 import axiosClient from '../../api/axiosClient';
+import { useSearchParams } from 'react-router-dom';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
@@ -26,6 +27,8 @@ const BillingPage = () => {
     const [selectedId, setSelectedId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
+    const [searchParams] = useSearchParams();
+    const dependentId = searchParams.get('patient_id');
 
     useEffect(() => {
         const load = async () => {
@@ -34,7 +37,9 @@ const BillingPage = () => {
                 const userId = authData?.user?.id;
                 if (!userId) return;
 
-                const res = await axiosClient.get('/invoices', { params: { patient_id: userId } });
+                const targetUserId = dependentId || userId;
+
+                const res = await axiosClient.get('/invoices', { params: { patient_id: targetUserId } });
                 const fetchedInvoices = res.data?.data || res.data || [];
                 setInvoices(fetchedInvoices);
                 if (fetchedInvoices.length > 0) {
@@ -48,7 +53,7 @@ const BillingPage = () => {
             }
         };
         load();
-    }, []);
+    }, [dependentId]);
 
     const filtered = filter === 'all' ? invoices : invoices.filter(i => i.payment_status === filter);
     const selected = invoices.find(i => i.invoice_id === selectedId) || null;
@@ -78,7 +83,9 @@ const BillingPage = () => {
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                         <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Thanh toán</span>
                     </div>
-                    <h1 className="text-2xl font-extrabold text-gray-900">Thanh toán viện phí</h1>
+                    <h1 className="text-2xl font-extrabold text-gray-900">
+                        Thanh toán viện phí {dependentId && <span className="text-emerald-600 text-lg font-bold ml-2">(Người phụ thuộc)</span>}
+                    </h1>
                 </div>
             </div>
 
