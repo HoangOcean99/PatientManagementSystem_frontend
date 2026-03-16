@@ -1,7 +1,7 @@
 import axiosClient from "./axiosClient";
 
 export const getAllPatients = async () => await axiosClient.get('/patients');
-export const searchPatients = async (keyword) => await axiosClient.get('/patient/search', { params: { keyword } });
+export const searchPatients = async (keyword) => await axiosClient.get('/patients', { params: { keyword } });
 export const getPatients = async (params) => await axiosClient.get('/patients', { params });
 export const getPatientById = async (id) => await axiosClient.get(`/patients/${id}`);
 export const createPatient = async (data) => await axiosClient.post('/patients', data);

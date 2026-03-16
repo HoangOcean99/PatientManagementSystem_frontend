@@ -102,7 +102,7 @@ const UnderMyCarePage = () => {
             if (!payload.medical_history_summary) delete payload.medical_history_summary;
 
             await addDependent(payload);
-            toast.success('ứngười phụ thuộc thành công!');
+            toast.success('Thêm người phụ thuộc thành công!');
             setForm(INITIAL_FORM);
             setShowForm(false);
             setLoading(true);
