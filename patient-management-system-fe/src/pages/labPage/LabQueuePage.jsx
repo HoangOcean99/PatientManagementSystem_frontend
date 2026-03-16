@@ -87,39 +87,35 @@ const LabQueuePage = () => {
         const response = await labOrderApi.getAllLabOrders();
         const data = response.data?.data || response.data || [];
 
-        // Map data từ API — backend join MedicalRecords → Patients → Users
-        const mapped = (Array.isArray(data) ? data : []).map((lo) => ({
-          lab_order_id: lo.lab_order_id,
-          record_id: lo.record_id,
-          test_name: lo.test_name,
-          status: lo.status,
-          result_summary: lo.result_summary || '',
-          result_file_url: lo.result_file_url || '',
-          created_at: lo.created_at,
-          // Joined patient info (nested from backend)
-          patient_name: lo.MedicalRecord?.Patient?.User?.full_name
-            || lo.MedicalRecords?.Patients?.Users?.full_name
-            || lo.patient_name
-            || 'N/A',
-          patient_id: lo.MedicalRecord?.Patient?.patient_id
-            || lo.MedicalRecords?.Patients?.patient_id
-            || lo.patient_id
-            || '',
-          gender: lo.MedicalRecord?.Patient?.gender
-            || lo.MedicalRecords?.Patients?.gender
-            || lo.gender
-            || '',
-          age: calculateAge(
-            lo.MedicalRecord?.Patient?.dob
-            || lo.MedicalRecords?.Patients?.dob
-            || lo.dob
-          ),
-          // Joined doctor info
-          doctor_name: lo.MedicalRecord?.Doctor?.User?.full_name
-            || lo.MedicalRecords?.Doctors?.Users?.full_name
-            || lo.doctor_name
-            || '',
-        }));
+        // Map data từ API — backend join: LabOrders → MedicalRecords → Appointments → Patients/Doctors/DoctorSlots
+        const rawLabOrders = Array.isArray(data) ? data
+          : data?.lab_orders ? data.lab_orders
+          : [];
+
+        const mapped = rawLabOrders.map((lo) => {
+          const appt = lo.MedicalRecords?.Appointments;
+          const patientUser = appt?.Patients?.Users;
+          const doctorUser = appt?.Doctors?.Users;
+
+          return {
+            lab_order_id: lo.lab_order_id,
+            record_id: lo.record_id,
+            test_name: lo.test_name,
+            status: lo.status,
+            result_summary: lo.result_summary || '',
+            result_file_url: lo.result_file_url || '',
+            created_at: lo.created_at,
+            appointment_date: appt?.DoctorSlots?.slot_date || '',
+            // Patient info
+            patient_name: patientUser?.full_name || 'N/A',
+            patient_id: appt?.patient_id || '',
+            gender: patientUser?.gender || '',
+            phone: patientUser?.phone_number || '',
+            age: calculateAge(patientUser?.dob),
+            // Doctor info
+            doctor_name: doctorUser?.full_name || '',
+          };
+        });
 
         setLabOrders(mapped);
       } catch (err) {

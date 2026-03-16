@@ -21,7 +21,6 @@ export const getDoctorById = async (id, params = {}) => {
 
 
 export const setupDoctor = async (id, data) => {
-    // Tạo hồ sơ bác sĩ lần đầu — doctor_id = user_id từ Supabase auth
     const url = `/doctor/setup/${id}`;
     return axiosClient.post(url, data);
 };
@@ -44,8 +43,12 @@ export const updateDoctor = async (userData, avatarFile = null) => {
     return axiosClient.put(url, formData);
 };
 
-
-export const getAppointmentsByDoctorId = async (id) => {
+export const getAppointmentsByDoctorId = async (id, date) => {
     const url = `/doctor/appointments/${id}`;
+    return axiosClient.get(url, { params: { date } });
+};
+
+export const getPatientByIdForDoctor = async (patientId) => {
+    const url = `/doctor/patient/${patientId}`;
     return axiosClient.get(url);
 };

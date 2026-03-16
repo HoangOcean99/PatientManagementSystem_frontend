@@ -11,20 +11,25 @@ import {
   FiInbox,
   FiLoader,
   FiAlertCircle,
+  FiZap,
+  FiPower,
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
-import { getAppointmentsByDoctorId } from '../../api/doctorApi';
+import { getAppointmentsByDoctorId, getDoctorById } from '../../api/doctorApi';
+import { updateRoomStatusByDoctor } from '../../api/roomApi';
+import { supabase } from '../../../supabaseClient';
 import './DoctorDashboardPage.css';
 
 // ===== HELPERS =====
 const STATUS_LABELS = {
-  pending:    'Chờ xác nhận',
-  confirmed:  'Đã xác nhận',
+  pending: 'Chờ xác nhận',
+  confirmed: 'Đã xác nhận',
   checked_in: 'Đã check-in',
+  assigned: 'Đã điều phối',
   in_progress: 'Đang khám',
-  completed:  'Hoàn tất',
-  cancelled:  'Đã hủy',
-  missed:     'Vắng mặt',
+  completed: 'Hoàn tất',
+  cancelled: 'Đã hủy',
+  missed: 'Vắng mặt',
 };
 
 const getGenderLabel = (g) => (g === 'male' ? 'Nam' : g === 'female' ? 'Nữ' : 'Khác');
@@ -64,26 +69,72 @@ const itemVariants = {
 const DoctorDashboardPage = () => {
   const navigate = useNavigate();
 
+  const [doctorId, setDoctorId] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Room status: 'on' | 'readyToExame' | 'examining'
+  const [roomStatus, setRoomStatus] = useState('on');
+  const [roomLoading, setRoomLoading] = useState(false);
+
+  // ===== Lấy doctor_id từ Supabase session =====
   useEffect(() => {
+    const getSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const uid = data?.session?.user?.id;
+        if (uid) {
+          setDoctorId(uid);
+        } else {
+          console.error('[DoctorDashboard] Không tìm thấy session');
+          setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('[DoctorDashboard] Session error:', err);
+        setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+        setLoading(false);
+      }
+    };
+    getSession();
+  }, []);
+
+  // ===== Fetch appointments khi có doctorId =====
+  useEffect(() => {
+    if (!doctorId) return;
+
     const fetchAppointments = async () => {
       try {
         setLoading(true);
         setError(null);
-        const doctorId = localStorage.getItem('doctor_id') || '85be2ff0-0b7d-489f-a63a-9a0538338773';
-        const response = await getAppointmentsByDoctorId(doctorId);
-        const data = response.data?.data || response.data || [];
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const today = `${year}-${month}-${day}`;
 
-        const mapped = (Array.isArray(data) ? data : []).map((appt, idx) => ({
+        // Fetch appointments and doctor info simultaneously
+        const [apptsRes, doctorRes] = await Promise.all([
+          getAppointmentsByDoctorId(doctorId, today),
+          getDoctorById(doctorId)
+        ]);
+
+        const data = apptsRes.data?.data || apptsRes.data || [];
+        const doctorData = doctorRes.data?.data || doctorRes.data || {};
+
+        // Cập nhật trạng thái phòng từ DB (nếu có)
+        const currentRoomStatus = doctorData.Rooms?.room_status;
+        if (currentRoomStatus) {
+          setRoomStatus(currentRoomStatus);
+        }
+
+        const mapped = (Array.isArray(data) ? data : []).map((appt) => ({
           appointment_id: appt.appointment_id,
-          queue_number: idx + 1,
           patient_name: appt.Patients?.Users?.full_name || 'N/A',
           patient_id: appt.Patients?.patient_id || appt.patient_id,
-          gender: appt.Patients?.gender || '',
-          age: calculateAge(appt.Patients?.dob),
+          gender: appt.Patients?.Users?.gender || '',
+          age: calculateAge(appt.Patients?.Users?.dob) || 'Không rõ',
           phone: appt.Patients?.Users?.phone_number || '',
           // Lấy time từ DoctorSlots (qua slot_id FK)
           start_time: formatTime(
@@ -104,6 +155,10 @@ const DoctorDashboardPage = () => {
           service: appt.ClinicServices?.name || '',
         }));
 
+        // Sort theo giờ hẹn tăng dần và gán lại queue_number
+        mapped.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+        mapped.forEach((appt, idx) => { appt.queue_number = idx + 1; });
+
         setAppointments(mapped);
       } catch (err) {
         console.error('Failed to fetch appointments:', err);
@@ -114,13 +169,44 @@ const DoctorDashboardPage = () => {
     };
 
     fetchAppointments();
-  }, []);
+  }, [doctorId]);
 
   const totalToday = appointments.length;
   const completedCount = appointments.filter((a) => a.status === 'completed').length;
   const waitingCount = appointments.filter(
-    (a) => a.status === 'checked_in' || a.status === 'in_progress'
+    (a) => a.status === 'assigned' || a.status === 'checked_in' || a.status === 'in_progress'
   ).length;
+
+  // ===== Room Status Handlers =====
+  const handleReadyRoom = async () => {
+    if (!doctorId) return;
+    try {
+      setRoomLoading(true);
+      await updateRoomStatusByDoctor(doctorId, 'readyToExame');
+      setRoomStatus('readyToExame');
+    } catch (err) {
+      console.error('Lỗi cập nhật trạng thái phòng:', err);
+      alert(err.response?.data?.message || 'Không thể cập nhật trạng thái phòng.');
+    } finally {
+      setRoomLoading(false);
+    }
+  };
+
+  const handleEndShift = async () => {
+    if (!doctorId) return;
+    const confirm = window.confirm('Bạn chắc chắn muốn kết thúc ca làm việc?');
+    if (!confirm) return;
+    try {
+      setRoomLoading(true);
+      await updateRoomStatusByDoctor(doctorId, 'on');
+      setRoomStatus('on');
+    } catch (err) {
+      console.error('Lỗi kết thúc ca:', err);
+      alert(err.response?.data?.message || 'Không thể kết thúc ca làm việc.');
+    } finally {
+      setRoomLoading(false);
+    }
+  };
 
   return (
     <div className="dash-layout" style={{ width: '100vw' }}>
@@ -134,10 +220,38 @@ const DoctorDashboardPage = () => {
         >
           {/* Welcome Banner */}
           <motion.div className="dash-welcome" variants={itemVariants}>
-            <h1 className="dash-welcome__greeting">
-              Xin chào, Bác sĩ! 👋
-            </h1>
-            <p className="dash-welcome__date">{getTodayFormatted()}</p>
+            <div>
+              <h1 className="dash-welcome__greeting">
+                Xin chào, Bác sĩ! 👋
+              </h1>
+              <p className="dash-welcome__date">{getTodayFormatted()}</p>
+            </div>
+            <div className="dash-welcome__actions">
+              {roomStatus === 'on' ? (
+                <button
+                  className="dash-room-btn dash-room-btn--ready"
+                  onClick={handleReadyRoom}
+                  disabled={roomLoading}
+                >
+                  {roomLoading ? <FiLoader size={16} className="lr-spin" /> : <FiZap size={16} />}
+                  Sẵn sàng khám
+                </button>
+              ) : (
+                <button
+                  className="dash-room-btn dash-room-btn--end"
+                  onClick={handleEndShift}
+                  disabled={roomLoading}
+                >
+                  {roomLoading ? <FiLoader size={16} className="lr-spin" /> : <FiPower size={16} />}
+                  Kết thúc ca
+                </button>
+              )}
+              {roomStatus !== 'on' && (
+                <span className={`dash-room-badge dash-room-badge--${roomStatus}`}>
+                  {roomStatus === 'readyToExame' ? '🟢 Sẵn sàng' : '🔴 Đang khám'}
+                </span>
+              )}
+            </div>
           </motion.div>
 
           {/* Stat Cards */}
@@ -223,7 +337,7 @@ const DoctorDashboardPage = () => {
                     <span className={`dash-appt-item__status dash-appt-item__status--${appt.status}`}>
                       {STATUS_LABELS[appt.status]}
                     </span>
-                    {appt.status === 'checked_in' && (
+                    {(appt.status === 'assigned' || appt.status === 'checked_in') && (
                       <button
                         className="dash-appt-item__btn dash-appt-item__btn--primary"
                         onClick={() => navigate(`/doctor/examine/${appt.appointment_id}`)}

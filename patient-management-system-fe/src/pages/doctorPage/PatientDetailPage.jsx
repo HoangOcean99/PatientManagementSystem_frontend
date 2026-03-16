@@ -23,6 +23,7 @@ import {
 } from 'react-icons/fi';
 import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import medicalRecordApi from '../../api/medicalRecordApi';
+import { getPatientByIdForDoctor } from '../../api/doctorApi';
 import './PatientDetailPage.css';
 
 
@@ -225,8 +226,13 @@ const PatientDetailPage = () => {
         setLoading(true);
         setError(null);
 
-        // Lấy tất cả medical records của patient — bạn end join Patients → Users
-        const recordsRes = await medicalRecordApi.getMedicalRecordsByPatientId(patientId);
+        // Lấy đồng thời thông tin Profile và Medical Records
+        const [patientRes, recordsRes] = await Promise.all([
+          getPatientByIdForDoctor(patientId),
+          medicalRecordApi.getMedicalRecordsByPatientId(patientId)
+        ]);
+
+        const patientData = patientRes.data?.data || patientRes.data;
         const rawRecords = recordsRes.data?.data || recordsRes.data || [];
 
         // Map records và extract patient info từ record đầu tiên
@@ -262,30 +268,22 @@ const PatientDetailPage = () => {
 
         setRecords(mappedRecords);
 
-        // Lấy patient info từ record đầu tiên nếu có
-        if (rawRecords.length > 0) {
-          const first = rawRecords[0];
-          setPatient({
-            patient_id: first.patient_id || patientId,
-            full_name: first.Patients?.Users?.full_name || 'N/A',
-            email: first.Patients?.Users?.email || '',
-            phone_number: first.Patients?.Users?.phone_number || '',
-            avatar_url: first.Patients?.Users?.avatar_url || null,
-            dob: first.Patients?.Users?.dob || '',
-            gender: first.Patients?.Users?.gender || '',
-            address: first.Patients?.Users?.address || '',
-            allergies: first.Patients?.allergies || '',
-            medical_history_summary: first.Patients?.medical_history_summary || '',
-          });
-        } else {
-          // Không có record — hiển thị patient rỗng
+        // Set Patient Info từ API Profile (Luôn có dữ liệu nếu bệnh nhân tồn tại)
+        if (patientData) {
           setPatient({
             patient_id: patientId,
-            full_name: 'Bệnh nhân',
-            email: '', phone_number: '', avatar_url: null,
-            dob: '', gender: '', address: '', allergies: '',
-            medical_history_summary: '',
+            full_name: patientData.Users?.full_name || 'N/A',
+            email: patientData.Users?.email || '',
+            phone_number: patientData.Users?.phone_number || '',
+            avatar_url: patientData.Users?.avatar_url || null,
+            dob: patientData.Users?.dob || '',
+            gender: patientData.Users?.gender || '',
+            address: patientData.Users?.address || '',
+            allergies: patientData.allergies || '',
+            medical_history_summary: patientData.medical_history_summary || '',
           });
+        } else {
+          setError('Không tìm thấy thông tin bệnh nhân.');
         }
       } catch (err) {
         console.error('Failed to load patient data:', err);
@@ -338,7 +336,7 @@ const PatientDetailPage = () => {
   }
 
   return (
-    <div className="pd-layout" style={{}}>
+    <div className="pd-layout" style={{ width: '100vw' }}>
       {/* ===== SIDEBAR ===== */}
       <DoctorSidebar activePage="schedule" />
 
@@ -487,18 +485,18 @@ const PatientDetailPage = () => {
                   Chưa có lịch sử khám bệnh.
                 </p>
               ) : (
-              <div className="pd-tabs">
-                {records.map((rec, idx) => (
-                  <button
-                    key={rec.record_id || rec.appointment_id || idx}
-                    className={`pd-tab ${idx === activeRecordIndex ? 'pd-tab--active' : ''}`}
-                    onClick={() => setActiveRecordIndex(idx)}
-                  >
-                    <FiCalendar size={14} />
-                    <span>{rec.appointment_date ? formatDate(rec.appointment_date) : `Lần ${idx + 1}`}</span>
-                  </button>
-                ))}
-              </div>
+                <div className="pd-tabs">
+                  {records.map((rec, idx) => (
+                    <button
+                      key={rec.record_id || rec.appointment_id || idx}
+                      className={`pd-tab ${idx === activeRecordIndex ? 'pd-tab--active' : ''}`}
+                      onClick={() => setActiveRecordIndex(idx)}
+                    >
+                      <FiCalendar size={14} />
+                      <span>{rec.appointment_date ? formatDate(rec.appointment_date) : `Lần ${idx + 1}`}</span>
+                    </button>
+                  ))}
+                </div>
               )}
               {/* Tab Content */}
               <AnimatePresence mode="wait">

@@ -9,20 +9,24 @@ import {
   FiInbox,
   FiLoader,
   FiAlertCircle,
+  FiChevronLeft,
+  FiChevronRight,
 } from 'react-icons/fi';
 import { getAppointmentsByDoctorId } from '../../api/doctorApi';
+import { supabase } from '../../../supabaseClient';
 import './DoctorSchedulePage.css';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // ===== HELPERS =====
 const STATUS_LABELS = {
-  pending:    'Chờ xác nhận',
-  confirmed:  'Đã xác nhận',
+  pending: 'Chờ xác nhận',
+  confirmed: 'Đã xác nhận',
   checked_in: 'Đã check-in',
+  assigned: 'Đã điều phối',
   in_progress: 'Đang khám',
-  completed:  'Hoàn tất',
-  cancelled:  'Đã hủy',
-  missed:     'Vắng mặt',
+  completed: 'Hoàn tất',
+  cancelled: 'Đã hủy',
+  missed: 'Vắng mặt',
 };
 
 const getGenderLabel = (g) => (g === 'male' ? 'Nam' : g === 'female' ? 'Nữ' : 'Khác');
@@ -30,9 +34,26 @@ const getGenderLabel = (g) => (g === 'male' ? 'Nam' : g === 'female' ? 'Nữ' : 
 const getInitials = (name) =>
   name ? name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(-2) : '?';
 
-const getTodayFormatted = () => {
+const getToday = () => {
   const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`; // 'YYYY-MM-DD' local time
+};
+
+const formatDateDisplay = (dateStr) => {
+  const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+};
+
+const shiftDate = (dateStr, days) => {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`; // 'YYYY-MM-DD' local time
 };
 
 const calculateAge = (dob) => {
@@ -51,10 +72,10 @@ const formatTime = (t) => {
 };
 
 const FILTER_OPTIONS = [
-  { key: 'all',        label: 'Tất cả' },
-  { key: 'checked_in', label: 'Đã check-in' },
+  { key: 'all', label: 'Tất cả' },
+  { key: 'assigned', label: 'Đã điều phối' },
   { key: 'in_progress', label: 'Đang khám' },
-  { key: 'completed',  label: 'Hoàn tất' },
+  { key: 'completed', label: 'Hoàn tất' },
 ];
 
 // ===== ANIMATION =====
@@ -72,30 +93,55 @@ const DoctorSchedulePage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedDate, setSelectedDate] = useState(getToday());
 
+  const [doctorId, setDoctorId] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const isToday = selectedDate === getToday();
+
+  // ===== Lấy doctor_id từ Supabase session =====
   useEffect(() => {
+    const getSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const uid = data?.session?.user?.id;
+        if (uid) {
+          setDoctorId(uid);
+        } else {
+          console.error('[DoctorSchedule] Không tìm thấy session');
+          setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('[DoctorSchedule] Session error:', err);
+        setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+        setLoading(false);
+      }
+    };
+    getSession();
+  }, []);
+
+  // ===== Fetch appointments khi có doctorId hoặc đổi ngày =====
+  useEffect(() => {
+    if (!doctorId) return;
+
     const fetchAppointments = async () => {
       try {
         setLoading(true);
         setError(null);
-        // TODO: Lấy doctor_id từ auth context thay vì hardcode
-        const doctorId = localStorage.getItem('doctor_id') || '85be2ff0-0b7d-489f-a63a-9a0538338773';
-        const response = await getAppointmentsByDoctorId(doctorId);
+        const response = await getAppointmentsByDoctorId(doctorId, selectedDate);
         const data = response.data?.data || response.data || [];
 
-        const mapped = (Array.isArray(data) ? data : []).map((appt, idx) => ({
+        const mapped = (Array.isArray(data) ? data : []).map((appt) => ({
           appointment_id: appt.appointment_id,
-          queue_number: idx + 1,
           patient_name: appt.Patients?.Users?.full_name || 'N/A',
           patient_id: appt.Patients?.patient_id || appt.patient_id,
-          gender: appt.Patients?.gender || '',
-          age: calculateAge(appt.Patients?.dob),
+          gender: appt.Patients?.Users?.gender || '',
+          age: calculateAge(appt.Patients?.Users?.dob) || 'Không rõ',
           phone: appt.Patients?.Users?.phone_number || '',
-          // Lấy time từ DoctorSlots (qua slot_id FK)
           start_time: formatTime(
             appt.DoctorSlots?.start_time ||
             appt.DoctorSlot?.start_time ||
@@ -114,6 +160,10 @@ const DoctorSchedulePage = () => {
           service: appt.ClinicServices?.name || '',
         }));
 
+        // Sort theo giờ hẹn tăng dần và gán lại queue_number
+        mapped.sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+        mapped.forEach((appt, idx) => { appt.queue_number = idx + 1; });
+
         setAppointments(mapped);
       } catch (err) {
         console.error('Failed to fetch appointments:', err);
@@ -124,7 +174,7 @@ const DoctorSchedulePage = () => {
     };
 
     fetchAppointments();
-  }, []);
+  }, [doctorId, selectedDate]);
 
   const filtered = useMemo(() => {
     return appointments.filter((appt) => {
@@ -155,9 +205,39 @@ const DoctorSchedulePage = () => {
             <div className="sched-header__left">
               <h1 className="sched-header__title">
                 <FiCalendar size={22} />
-                Lịch khám hôm nay
+                {isToday ? 'Lịch khám hôm nay' : 'Lịch khám'}
               </h1>
-              <p className="sched-header__date">{getTodayFormatted()}</p>
+              <p className="sched-header__date">{formatDateDisplay(selectedDate)}</p>
+            </div>
+            <div className="sched-header__date-nav">
+              <button
+                className="sched-date-btn"
+                onClick={() => setSelectedDate(prev => shiftDate(prev, -1))}
+                title="Ngày trước"
+              >
+                <FiChevronLeft size={18} />
+              </button>
+              <input
+                type="date"
+                className="sched-date-picker"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+              <button
+                className="sched-date-btn"
+                onClick={() => setSelectedDate(prev => shiftDate(prev, 1))}
+                title="Ngày sau"
+              >
+                <FiChevronRight size={18} />
+              </button>
+              {!isToday && (
+                <button
+                  className="sched-date-btn sched-date-btn--today"
+                  onClick={() => setSelectedDate(getToday())}
+                >
+                  Hôm nay
+                </button>
+              )}
             </div>
           </motion.div>
 
@@ -252,7 +332,7 @@ const DoctorSchedulePage = () => {
                         </td>
                         <td data-label="Hành động">
                           <div className="sched-actions">
-                            {(appt.status === 'checked_in' || appt.status === 'confirmed') && (
+                            {(appt.status === 'assigned') && (
                               <button
                                 className="sched-action-btn sched-action-btn--start"
                                 onClick={() => navigate(`/doctor/examine/${appt.appointment_id}`)}

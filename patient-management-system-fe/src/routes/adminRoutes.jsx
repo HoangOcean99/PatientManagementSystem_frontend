@@ -11,7 +11,8 @@ import UserProfileEdit from '../pages/adminPage/UserProfileEdit';
 import UserProfileManagement from '../pages/adminPage/UserProfileManagement';
 import PatientListPage from '../components/patient/PatientListPage';
 import PatientFormPage from '../components/patient/PatientFormPage';
-
+import DoctorListingPage from '../pages/doctor/DoctorListingPage';
+import DoctorDetailsAdminPage from '../pages/doctor/DoctorDetailsAdminPage';
 
 const adminRoutes = [
     {
@@ -118,6 +119,14 @@ const adminRoutes = [
             </ProtectedRoute>
         )
     },
+    {
+        path: '/admin/doctors',
+        element: <DoctorListingPage />
+    },
+    {
+        path: '/admin/doctors/:id',
+        element: <DoctorDetailsAdminPage />
+    }
 ];
 
 export default adminRoutes;
