@@ -28,6 +28,7 @@ import medicalRecordApi from '../../api/medicalRecordApi';
 import labOrderApi from '../../api/labOrderApi';
 import './ExaminationPage.css';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { supabase } from '../../../supabaseClient';
 
 // ===== HELPERS =====
 const getGenderLabel = (g) => ({ male: 'Nam', female: 'Nữ', other: 'Khác' }[g] || g);
@@ -44,11 +45,12 @@ const getInitials = (name) =>
   name ? name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(-2) : '?';
 
 const STATUS_MAP = {
-  pending:    { label: 'Chờ xác nhận', color: 'status--ready',  icon: FiLoader },
-  confirmed:  { label: 'Đã xác nhận',  color: 'status--ready',  icon: FiLoader },
-  checked_in: { label: 'Đã check-in',  color: 'status--ready',  icon: FiLoader },
-  in_progress: { label: 'Đang khám',    color: 'status--active', icon: FiPlay },
-  completed:  { label: 'Hoàn tất',      color: 'status--done',   icon: FiCheckCircle },
+  pending: { label: 'Chờ xác nhận', color: 'status--ready', icon: FiLoader },
+  confirmed: { label: 'Đã xác nhận', color: 'status--ready', icon: FiLoader },
+  checked_in: { label: 'Đã check-in', color: 'status--ready', icon: FiLoader },
+  assigned: { label: 'Đã điều phối', color: 'status--ready', icon: FiLoader },
+  in_progress: { label: 'Đang khám', color: 'status--active', icon: FiPlay },
+  completed: { label: 'Hoàn tất', color: 'status--done', icon: FiCheckCircle },
 };
 
 const LAB_STATUS_MAP = {
@@ -174,6 +176,7 @@ const ExaminationPage = () => {
   // ===== PAGE-LEVEL STATES =====
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
+  const [doctorId, setDoctorId] = useState(null);
 
   // ===== APPOINTMENT & PATIENT DATA (from DoctorSchedulePage navigation) =====
   const [appointment, setAppointment] = useState(null);
@@ -205,6 +208,28 @@ const ExaminationPage = () => {
   const [completing, setCompleting] = useState(false);
   const [labSending, setLabSending] = useState(false);
 
+  // ===== Lấy doctor_id từ Supabase session =====
+  useEffect(() => {
+    const getSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const uid = data?.session?.user?.id;
+        if (uid) {
+          setDoctorId(uid);
+        } else {
+          console.error('[ExaminationPage] Không tìm thấy session');
+          setPageError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+          setPageLoading(false);
+        }
+      } catch (err) {
+        console.error('[ExaminationPage] Session error:', err);
+        setPageError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+        setPageLoading(false);
+      }
+    };
+    getSession();
+  }, []);
+
   // ===== FETCH DATA ON MOUNT =====
   useEffect(() => {
     const fetchData = async () => {
@@ -212,11 +237,16 @@ const ExaminationPage = () => {
         setPageLoading(true);
         setPageError(null);
 
+        if (!doctorId) return;
+
         // 1. Lấy thông tin appointment + patient từ danh sách appointments của doctor
-        // TODO: Lấy doctor_id từ auth context thay vì hardcode
-        const doctorId = localStorage.getItem('doctor_id') || '85be2ff0-0b7d-489f-a63a-9a0538338773';
+        // Lấy doctor_id từ session (đã được set vào state doctorId)
         const apptRes = await getAppointmentsByDoctorId(doctorId);
         const allAppointments = apptRes.data?.data || apptRes.data || [];
+
+        console.log('[DEBUG] appointmentId from URL:', appointmentId);
+        console.log('[DEBUG] allAppointments từ API:', allAppointments);
+        console.log('[DEBUG] appointment_id list:', allAppointments.map(a => a.appointment_id));
 
         const currentAppt = allAppointments.find(
           (a) => a.appointment_id === appointmentId
@@ -261,9 +291,9 @@ const ExaminationPage = () => {
           email: currentAppt.Patients?.Users?.email || '',
           phone_number: currentAppt.Patients?.Users?.phone_number || '',
           avatar_url: currentAppt.Patients?.Users?.avatar_url || null,
-          dob: currentAppt.Patients?.dob || '',
-          gender: currentAppt.Patients?.gender || '',
-          address: currentAppt.Patients?.address || '',
+          dob: currentAppt.Patients?.Users?.dob || '',
+          gender: currentAppt.Patients?.Users?.gender || '',
+          address: currentAppt.Patients?.Users?.address || '',
           allergies: currentAppt.Patients?.allergies || '',
           medical_history_summary: currentAppt.Patients?.medical_history_summary || '',
         });
@@ -332,10 +362,10 @@ const ExaminationPage = () => {
       }
     };
 
-    if (appointmentId) {
+    if (appointmentId && doctorId) {
       fetchData();
     }
-  }, [appointmentId]);
+  }, [appointmentId, doctorId]);
 
   // ===== HANDLERS =====
 
@@ -349,6 +379,10 @@ const ExaminationPage = () => {
         doctor_id: appointment.doctor_id,
         patient_id: appointment.patient_id,
       };
+
+      console.log('[DEBUG] appointmentId from URL params:', appointmentId);
+      console.log('[DEBUG] appointment state:', appointment);
+      console.log('[DEBUG] payload gửi lên startExamination:', payload);
 
       const res = await medicalRecordApi.startExamination(payload);
       const record = res.data?.data || res.data;
@@ -512,6 +546,8 @@ const ExaminationPage = () => {
       const completePayload = {
         record_id: recordId,
         appointment_id: appointment.appointment_id,
+        doctor_id: appointment.doctor_id,
+
       };
       await medicalRecordApi.completeExamination(completePayload);
 
@@ -588,7 +624,7 @@ const ExaminationPage = () => {
   const isExamStarted = appointment?.status === 'in_progress';
   const isCompleted = appointment?.status === 'completed' || recordStatus === 'completed';
 
-  const statusInfo = STATUS_MAP[appointment?.status] || STATUS_MAP.checked_in || STATUS_MAP.pending;
+  const statusInfo = STATUS_MAP[appointment?.status] || STATUS_MAP.assigned || STATUS_MAP.checked_in || STATUS_MAP.pending;
   const StatusIcon = statusInfo.icon;
 
   const formatFollowUp = (dateStr) => {

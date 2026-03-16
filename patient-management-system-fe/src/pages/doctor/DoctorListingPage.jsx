@@ -5,12 +5,13 @@ import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import { getAllDoctors, searchDoctors } from '../../api/doctorApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
+import DoctorDetailsAdminPage from './DoctorDetailsAdminPage';
 
 // ===== HELPERS =====
 const SORT_OPTIONS = [
-    { key: 'name_asc',   label: 'Tên A → Z' },
-    { key: 'name_desc',  label: 'Tên Z → A' },
-    { key: 'spec_asc',   label: 'Chuyên khoa' },
+    { key: 'name_asc', label: 'Tên A → Z' },
+    { key: 'name_desc', label: 'Tên Z → A' },
+    { key: 'spec_asc', label: 'Chuyên khoa' },
 ];
 
 const DoctorListingPage = () => {
@@ -140,9 +141,8 @@ const DoctorListingPage = () => {
                 <div className="max-w-6xl mx-auto px-4 py-6">
                     {/* Title */}
                     <div className="text-center mb-6">
-                        <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full mb-3 ${
-                            isAdminView ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
+                        <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full mb-3 ${isAdminView ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
+                            }`}>
                             <i className={`fa-solid ${isAdminView ? 'fa-user-tie' : 'fa-stethoscope'} mr-2`}></i>
                             {isAdminView ? 'Hệ thống Quản trị' : 'Đội ngũ chuyên gia'}
                         </span>
@@ -157,11 +157,10 @@ const DoctorListingPage = () => {
                     </div>
 
                     {/* Search Row */}
-                    <div className={`rounded-2xl p-2 flex flex-col md:flex-row gap-2 ${
-                        isAdminView
+                    <div className={`rounded-2xl p-2 flex flex-col md:flex-row gap-2 ${isAdminView
                             ? 'bg-gray-50 border border-gray-200'
                             : 'bg-white border border-gray-100 shadow-lg shadow-blue-500/5'
-                    }`}>
+                        }`}>
                         {/* Search Input */}
                         <div className="flex-1 relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -197,11 +196,10 @@ const DoctorListingPage = () => {
                         {/* Search Button */}
                         <button
                             onClick={handleSearch}
-                            className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap text-sm ${
-                                isAdminView
+                            className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap text-sm ${isAdminView
                                     ? 'bg-gray-900 hover:bg-black text-white'
                                     : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
-                            }`}
+                                }`}
                         >
                             Tìm kiếm
                         </button>

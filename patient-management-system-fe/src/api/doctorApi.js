@@ -34,3 +34,8 @@ export const getAppointmentsByDoctorId = async (id) => {
     const url = `/doctor/appointments/${id}`;
     return axiosClient.get(url);
 };
+
+export const getPatientByIdForDoctor = async (patientId) => {
+    const url = `/doctor/patient/${patientId}`;
+    return axiosClient.get(url);
+};

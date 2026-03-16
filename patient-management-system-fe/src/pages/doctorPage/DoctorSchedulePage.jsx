@@ -20,6 +20,7 @@ const STATUS_LABELS = {
   pending: 'Chờ xác nhận',
   confirmed: 'Đã xác nhận',
   checked_in: 'Đã check-in',
+  assigned: 'Đã điều phối',
   in_progress: 'Đang khám',
   completed: 'Hoàn tất',
   cancelled: 'Đã hủy',
@@ -53,7 +54,7 @@ const formatTime = (t) => {
 
 const FILTER_OPTIONS = [
   { key: 'all', label: 'Tất cả' },
-  { key: 'checked_in', label: 'Đã check-in' },
+  { key: 'assigned', label: 'Đã điều phối' },
   { key: 'in_progress', label: 'Đang khám' },
   { key: 'completed', label: 'Hoàn tất' },
 ];
@@ -117,8 +118,8 @@ const DoctorSchedulePage = () => {
           queue_number: idx + 1,
           patient_name: appt.Patients?.Users?.full_name || 'N/A',
           patient_id: appt.Patients?.patient_id || appt.patient_id,
-          gender: appt.Patients?.gender || '',
-          age: calculateAge(appt.Patients?.dob) || 'Không rõ',
+          gender: appt.Patients?.Users?.gender || '',
+          age: calculateAge(appt.Patients?.Users?.dob) || 'Không rõ',
           phone: appt.Patients?.Users?.phone_number || '',
           // Lấy time từ DoctorSlots (qua slot_id FK)
           start_time: formatTime(
@@ -277,7 +278,7 @@ const DoctorSchedulePage = () => {
                         </td>
                         <td data-label="Hành động">
                           <div className="sched-actions">
-                            {(appt.status === 'checked_in' || appt.status === 'confirmed') && (
+                            {(appt.status === 'assigned') && (
                               <button
                                 className="sched-action-btn sched-action-btn--start"
                                 onClick={() => navigate(`/doctor/examine/${appt.appointment_id}`)}

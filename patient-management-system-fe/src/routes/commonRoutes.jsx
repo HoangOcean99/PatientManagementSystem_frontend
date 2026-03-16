@@ -46,10 +46,7 @@ const commonRoutes = [
         path: '/doctors',
         element: <DoctorListingPage />
     },
-    {
-        path: '/doctors/:id',
-        element: <DoctorProfilePage />
-    },
+
 ];
 
 export default commonRoutes;

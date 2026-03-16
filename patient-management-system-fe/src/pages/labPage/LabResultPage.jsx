@@ -16,6 +16,7 @@ import {
 } from 'react-icons/fi';
 import labOrderApi from '../../api/labOrderApi';
 import './LabResultPage.css';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 // ===== HELPERS =====
 const getInitials = (name) =>
@@ -83,7 +84,11 @@ const LabResultPage = () => {
           return;
         }
 
-        // Map data — backend join MedicalRecords → Patients → Users
+        // Map data — backend join: LabOrders → MedicalRecords → Appointments → Patients/Doctors/DoctorSlots
+        const appt = data.MedicalRecords?.Appointments;
+        const patientUser = appt?.Patients?.Users;
+        const doctorUser = appt?.Doctors?.Users;
+
         const mapped = {
           lab_order_id: data.lab_order_id,
           record_id: data.record_id,
@@ -92,33 +97,16 @@ const LabResultPage = () => {
           result_file_url: data.result_file_url || '',
           status: data.status,
           created_at: data.created_at,
-          // Patient info (nested join)
-          patient_name: data.MedicalRecord?.Patient?.User?.full_name
-            || data.MedicalRecords?.Patients?.Users?.full_name
-            || data.patient_name
-            || 'N/A',
-          patient_id: data.MedicalRecord?.Patient?.patient_id
-            || data.MedicalRecords?.Patients?.patient_id
-            || data.patient_id
-            || '',
-          gender: data.MedicalRecord?.Patient?.gender
-            || data.MedicalRecords?.Patients?.gender
-            || data.gender
-            || '',
-          age: calculateAge(
-            data.MedicalRecord?.Patient?.dob
-            || data.MedicalRecords?.Patients?.dob
-            || data.dob
-          ),
-          allergies: data.MedicalRecord?.Patient?.allergies
-            || data.MedicalRecords?.Patients?.allergies
-            || data.allergies
-            || '',
+          appointment_date: appt?.DoctorSlots?.slot_date || '',
+          // Patient info
+          patient_name: patientUser?.full_name || 'N/A',
+          patient_id: appt?.patient_id || '',
+          gender: patientUser?.gender || '',
+          phone: patientUser?.phone_number || '',
+          age: calculateAge(patientUser?.dob),
+          allergies: appt?.Patients?.allergies || '',
           // Doctor info
-          doctor_name: data.MedicalRecord?.Doctor?.User?.full_name
-            || data.MedicalRecords?.Doctors?.Users?.full_name
-            || data.doctor_name
-            || '',
+          doctor_name: doctorUser?.full_name || '',
         };
 
         setLabOrder(mapped);
@@ -249,6 +237,9 @@ const LabResultPage = () => {
   }
 
   const isCompleted = labOrder.status === 'completed';
+  const isProcessing = labOrder.status === 'processing';
+  const isEditable = isProcessing;
+
   const statusInfo = STATUS_MAP[labOrder.status] || STATUS_MAP.ordered;
   const StatusIcon = statusInfo.icon;
 
@@ -398,7 +389,7 @@ const LabResultPage = () => {
                     rows={6}
                     value={resultSummary}
                     onChange={(e) => setResultSummary(e.target.value)}
-                    disabled={isCompleted}
+                    disabled={!isEditable}
                   />
                 </div>
 
@@ -415,7 +406,7 @@ const LabResultPage = () => {
                     placeholder="https://example.com/result.pdf"
                     value={resultFileUrl}
                     onChange={(e) => setResultFileUrl(e.target.value)}
-                    disabled={isCompleted}
+                    disabled={!isEditable}
                   />
                   <p className="lr-field__hint">Đường dẫn tới file kết quả (PDF, hình ảnh...)</p>
                 </div>
@@ -425,7 +416,7 @@ const LabResultPage = () => {
         </div>
 
         {/* Action Bar */}
-        {!isCompleted && (
+        {isProcessing && (
           <motion.div className="lr-action-bar" variants={itemVariants}>
             <button
               className="lr-btn lr-btn--outline"

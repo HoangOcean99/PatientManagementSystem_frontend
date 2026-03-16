@@ -2,8 +2,8 @@ import axiosClient from "./axiosClient";
 
 export const labOrderApi = {
 
-    getAllLabOrders: async () => {
-        return await axiosClient.get('/lab-orders');
+    getAllLabOrders: async (params = {}) => {
+        return await axiosClient.get('/lab-orders', { params });
     },
 
     createLabOrders: async (data) => {

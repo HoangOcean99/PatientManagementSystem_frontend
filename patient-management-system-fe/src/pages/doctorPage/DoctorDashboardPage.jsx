@@ -22,6 +22,7 @@ const STATUS_LABELS = {
   pending: 'Chờ xác nhận',
   confirmed: 'Đã xác nhận',
   checked_in: 'Đã check-in',
+  assigned: 'Đã điều phối',
   in_progress: 'Đang khám',
   completed: 'Hoàn tất',
   cancelled: 'Đã hủy',
@@ -145,7 +146,7 @@ const DoctorDashboardPage = () => {
   const totalToday = appointments.length;
   const completedCount = appointments.filter((a) => a.status === 'completed').length;
   const waitingCount = appointments.filter(
-    (a) => a.status === 'checked_in' || a.status === 'in_progress'
+    (a) => a.status === 'assigned' || a.status === 'checked_in' || a.status === 'in_progress'
   ).length;
 
   return (
@@ -249,7 +250,7 @@ const DoctorDashboardPage = () => {
                     <span className={`dash-appt-item__status dash-appt-item__status--${appt.status}`}>
                       {STATUS_LABELS[appt.status]}
                     </span>
-                    {appt.status === 'checked_in' && (
+                    {(appt.status === 'assigned' || appt.status === 'checked_in') && (
                       <button
                         className="dash-appt-item__btn dash-appt-item__btn--primary"
                         onClick={() => navigate(`/doctor/examine/${appt.appointment_id}`)}

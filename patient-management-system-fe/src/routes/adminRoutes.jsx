@@ -10,7 +10,7 @@ import UserManagement from '../pages/adminPage/UserManagement';
 import UserProfileEdit from '../pages/adminPage/UserProfileEdit';
 import UserProfileManagement from '../pages/adminPage/UserProfileManagement';
 import DoctorListingPage from '../pages/doctor/DoctorListingPage';
-import DoctorProfilePage from '../pages/doctor/DoctorProfilePage';
+import DoctorDetailsAdminPage from '../pages/doctor/DoctorDetailsAdminPage';
 
 const adminRoutes = [
     {
@@ -99,7 +99,7 @@ const adminRoutes = [
     },
     {
         path: '/admin/doctors/:id',
-        element: <DoctorProfilePage />
+        element: <DoctorDetailsAdminPage />
     }
 ];
 
