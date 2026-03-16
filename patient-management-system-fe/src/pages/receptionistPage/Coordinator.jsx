@@ -399,8 +399,7 @@ const Coordinator = () => {
                         </div>
                     )}
                 </div>
-                {/* ================= KẾT THÚC CỘT TRÁI ================= */}
-
+                
                 {/* ================= CỘT PHẢI ================= */}
                 <div className="flex-[4] bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col">
                     <div className="p-6 pb-4 flex justify-between items-start border-b border-gray-100 mb-4">
