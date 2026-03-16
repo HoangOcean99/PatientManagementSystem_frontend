@@ -23,3 +23,8 @@ export const getListAppointments = async (params) => {
 export const createAppointment = async (data) => {
     return axiosClient.post('/appointment/create', data);
 };
+
+export const getListSchedulesByDoctorIdAndDate = async (doctor_id, start_date, end_date) => { 
+    return axiosClient.post('/doctor-slots/getAvailableDoctorSlotsByDoctorIdAndDate', { doctor_id, start_date, end_date });
+};  
+

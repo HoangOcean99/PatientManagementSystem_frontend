@@ -1,12 +1,17 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { supabase } from "../../../supabaseClient";
-import { getAllDoctors } from "../../api/doctorApi";
-import { createAppointment, getDoctorSchedule } from "../../api/scheduleApi";
-import { getDependents } from "../../api/patientApi";
+// import { getAllDoctors } from "../../api/doctorApi"; 
+import { createAppointment } from "../../api/appointmentApi";
+// import { getPatients } from "../../api/patientApi";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+// import { getAllServices } from "../../api/serviceApi";
+import { getDoctorbyDepartmentId } from "../../api/doctorApi";
+import { getServicesbyDepartmentId } from "../../api/serviceApi";
+import { getListSchedulesByDoctorIdAndDate } from "../../api/scheduleApi";
+
 
 const RELATION_MAP = {
   father: "Cha",
@@ -28,34 +33,35 @@ const MONTHS = [
 const BookingAppointmentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [doctors, setDoctors] = useState([]);
   const [services, setServices] = useState([]);
   const [dependents, setDependents] = useState([]);
-  const [selectedSpecialty, setSelectedSpecialty] = useState("");
+  const [selectedSpecialty, setSelectedSpecialty] = useState("");  // selected specialty from URL
   const [myself, setMyself] = useState(null);
-
+  const [availableSlots, setAvailableSlots] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
 
   const [form, setForm] = useState({
     patient_id: "",
     is_dependent: false,
     doctor_id: "",
     service_id: "",
-    slot_id: "",
     appointment_date: new Date().toISOString().split("T")[0],
+    start_time: "",
+    slot_id: "",
     notes: "",
   });
   const [errors, setErrors] = useState({});
 
+
+  const departmentId = searchParams.get("departmentId");
   // Calendar State
   const [viewDate, setViewDate] = useState(new Date());
 
   useEffect(() => {
-    const load = async () => {
+    const loadUserData = async () => {
       try {
         const { data: authData } = await supabase.auth.getUser();
         const userId = authData?.user?.id;
@@ -67,35 +73,18 @@ const BookingAppointmentPage = () => {
         };
         setMyself(me);
 
-        const preselectPatient = location.state?.preselectPatient;
-
-        // Pre-select "Myself" or the passed dependent
-        if (preselectPatient) {
-          setForm(prev => ({ ...prev, patient_id: preselectPatient, is_dependent: true }));
-        } else if (userId) {
+        // Pre-select "Myself"
+        if (userId) {
           setForm(prev => ({ ...prev, patient_id: userId, is_dependent: false }));
         }
 
-        const [docRes, svcRes, depRes] = await Promise.all([
-          getAllDoctors(),
-          Promise.resolve({ data: [] }), // mock services
-          userId
-            ? getDependents().catch(() => ({ data: [] }))
-            : Promise.resolve({ data: [] }),
-        ]);
-
-        const docs = docRes.data?.data || [];
-        setDoctors(docs);
-
-        const loadedServices = svcRes.data?.data || [
-          { service_id: "svc_1", name: "Khám tổng quát", price: 200000, duration_minutes: 30 },
-          { service_id: "svc_2", name: "Khám chuyên khoa", price: 300000, duration_minutes: 45 },
-          { service_id: "svc_3", name: "Tái khám", price: 150000, duration_minutes: 20 },
-        ];
-        setServices(loadedServices);
-
-        const loadedDependents = depRes.data?.data || depRes.data || [];
-        setDependents(loadedDependents);
+        // const [docRes, svcRes, depRes] = await Promise.all([
+        //   getDoctorbyDepartmentId().catch(() => ({ data: [] })),
+        //   getAllServices().catch(() => ({ data: [] })),
+        //   userId 
+        //     ? getPatients({ parent_user_id: userId }).catch(() => ({ data: [] }))
+        //     : Promise.resolve({ data: [] }),
+        // ]);
       } catch (err) {
         console.error("Failed to load data:", err);
         toast.error("Không thể tải dữ liệu");
@@ -103,21 +92,72 @@ const BookingAppointmentPage = () => {
         setLoading(false);
       }
     };
-    load();
-  }, []);
+
+    const fetchDoctors = async () => {
+      const res = await getDoctorbyDepartmentId(departmentId);
+      setDoctors(res.data?.data || []);
+    };
+
+    const fetchServices = async () => {
+      const res = await getServicesbyDepartmentId(departmentId);
+      setServices(res.data);
+    };
+
+    const fetchAvailableSlots = async () => {
+      try {
+        if (!form.doctor_id) {
+          return setAvailableSlots({});
+        }
+        // Xác định khoảng thời gian lấy lịch (VD: từ hôm nay đến 30 ngày sau)
+        const startDate = new Date().toISOString().split("T")[0];
+        const endDate = new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        )
+          .toISOString()
+          .split("T")[0];
+
+        const res = await getListSchedulesByDoctorIdAndDate(
+          form.doctor_id,
+          startDate,
+          endDate
+        );
+
+        // API trả về: { success: true, data: { "2026-03-13": [ ... ], ... } }
+        // Lưu thẳng object "data" để dễ truy cập theo ngày
+        setAvailableSlots(res.data?.data || {});
+      } catch (error) {
+        console.log(
+          "Failed to fetch available slots:",
+          error.response?.data?.message || "Không thể tải lịch khám"
+        );
+        setAvailableSlots({});
+      }
+    };
+
+    fetchDoctors();
+    fetchServices();
+    fetchAvailableSlots();
+    loadUserData();
+  }, [form.doctor_id]);
 
   // Handle specialty from URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const specialty = params.get("specialty");
-    if (specialty) {
-      setSelectedSpecialty(specialty);
+    const specialtyFilter = params.get("specialty");
+
+    if (specialtyFilter) {
+      setSelectedSpecialty(specialtyFilter);
       // Pre-select service if it matches the name or type
       if (services.length > 0) {
-        const matchingSvc = services.find(s =>
-          s.name.toLowerCase().includes(specialty.toLowerCase()) ||
-          specialty.toLowerCase().includes(s.name.toLowerCase())
-        );
+        const matchingSvc = services.find(s => {
+          // Bọc an toàn: Nếu s không tồn tại hoặc không có trường name thì bỏ qua luôn
+          if (!s || !s.name) return false;
+          // Dùng đúng tên biến specialtyFilter
+          const sNameLower = s.name.toLowerCase();
+          const filterLower = specialtyFilter.toLowerCase();
+          return sNameLower.includes(filterLower) || filterLower.includes(sNameLower);
+        });
+
         if (matchingSvc) {
           setForm(prev => ({ ...prev, service_id: matchingSvc.service_id }));
         }
@@ -125,47 +165,10 @@ const BookingAppointmentPage = () => {
     }
   }, [location.search, services, doctors]);
 
-  const filteredDoctors = useMemo(() => {
-    if (!selectedSpecialty) return doctors;
-    return doctors.filter(d => {
-      const spec = d.specialization || "";
-      const deptName = d.Departments?.name || "";
-      const keyword = selectedSpecialty.toLowerCase();
-
-      return spec.toLowerCase().includes(keyword) ||
-        keyword.includes(spec.toLowerCase()) ||
-        deptName.toLowerCase().includes(keyword) ||
-        keyword.includes(deptName.toLowerCase());
-    });
-  }, [doctors, selectedSpecialty]);
-
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
-
-  // Fetch available slots when doctor + date changes
-  useEffect(() => {
-    if (!form.doctor_id || !form.appointment_date) {
-      setAvailableSlots([]);
-      return;
-    }
-    const fetchSlots = async () => {
-      setLoadingSlots(true);
-      try {
-        const res = await getDoctorSchedule(form.doctor_id, form.appointment_date);
-        const slots = res.data?.data || res.data || [];
-        // Only show unbooked slots
-        setAvailableSlots(slots.filter(s => !s.is_booked));
-      } catch (err) {
-        console.error('Failed to load slots:', err);
-        setAvailableSlots([]);
-      } finally {
-        setLoadingSlots(false);
-      }
-    };
-    fetchSlots();
-  }, [form.doctor_id, form.appointment_date]);
 
   const validate = () => {
     const errs = {};
@@ -173,7 +176,7 @@ const BookingAppointmentPage = () => {
     if (!form.doctor_id) errs.doctor_id = "Vui lòng chọn bác sĩ";
     if (!form.service_id) errs.service_id = "Vui lòng chọn dịch vụ";
     if (!form.appointment_date) errs.appointment_date = "Vui lòng chọn ngày";
-    if (!form.slot_id) errs.slot_id = "Vui lòng chọn khung giờ";
+    if (!form.start_time) errs.start_time = "Vui lòng chọn giờ";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -187,19 +190,18 @@ const BookingAppointmentPage = () => {
 
     try {
       setSubmitting(true);
-      const selectedSvc = services.find((s) => String(s.service_id) === String(form.service_id));
-      const totalPrice = selectedSvc?.price || 0;
-      const depositRequired = Math.round(totalPrice * 0.3); // 30% deposit
 
+      // Lấy thông tin service để truyền sang trang Thanh toán (nếu cần)
+      const selectedSvc = services.find((s) => String(s.service_id) === String(form.service_id));
+
+      // Payload sạch sẽ, bám sát 100% Backend
       const payload = {
         patient_id: form.patient_id,
         doctor_id: form.doctor_id,
         service_id: form.service_id,
         slot_id: form.slot_id,
-        notes: form.notes,
-        total_price: totalPrice,
-        deposit_required: depositRequired,
-        status: "pending",
+        role: "patient",
+        notes: form.notes
       };
 
       const res = await createAppointment(payload);
@@ -243,19 +245,32 @@ const BookingAppointmentPage = () => {
 
   const handleDateSelect = (day) => {
     if (!day) return;
-    const selected = new Date(currentYear, currentMonth, day);
-    const year = selected.getFullYear();
-    const month = String(selected.getMonth() + 1).padStart(2, '0');
-    const d = String(selected.getDate()).padStart(2, '0');
-    handleChange("appointment_date", `${year}-${month}-${d}`);
+    // Format đúng chuẩn YYYY-MM-DD
+    const monthStr = String(currentMonth + 1).padStart(2, '0');
+    const dayStr = String(day).padStart(2, '0');
+    const dateString = `${currentYear}-${monthStr}-${dayStr}`;
+
+    // Lưu ngày vào form
+    handleChange("appointment_date", dateString);
+
+    // Tự động xóa giờ cũ khi chọn sang ngày mới
+    handleChange("start_time", "");
   };
 
   // --- Time Slots Logic ---
-  const selectedSlot = availableSlots.find(s => s.slot_id === form.slot_id);
+  // const timeSlots = ["09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM"];
+
+  const convertTo24h = (timeStr) => {
+    const [time, modifier] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':');
+    if (hours === '12') hours = '00';
+    if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
+    return `${String(hours).padStart(2, '0')}:${minutes}`;
+  };
 
   const MotionDiv = motion.div;
 
-  if (loading) return <div className="flex-1 h-full flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
 
   return (
     <div className="w-full h-full overflow-y-auto bg-[#F8F9FB] p-8 font-sans">
@@ -265,7 +280,7 @@ const BookingAppointmentPage = () => {
           className="mb-6 flex items-center gap-2 text-gray-500 hover:text-sky-500 transition-colors font-medium group"
         >
           <i className="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
-          Back to Specialty Selection
+          Quay lại chọn khoa
         </button>
         <MotionDiv
           initial={{ opacity: 0, y: -20 }}
@@ -287,7 +302,7 @@ const BookingAppointmentPage = () => {
           >
             <div className="bg-white rounded-3xl p-8 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl font-bold text-gray-800">Book New Appointment</h2>
+                <h2 className="text-xl font-bold text-gray-800">Đặt lịch khám</h2>
                 {selectedSpecialty && (
                   <div className="flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 rounded-full text-xs font-bold ring-1 ring-sky-500/10 shadow-sm shadow-sky-500/5">
                     <i className="fa-solid fa-stethoscope"></i>
@@ -299,7 +314,7 @@ const BookingAppointmentPage = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-600 block">Patient</label>
+                    <label className="text-sm font-semibold text-gray-600 block">Bệnh nhân</label>
                     <div className="relative">
                       <select
                         value={form.patient_id}
@@ -310,7 +325,7 @@ const BookingAppointmentPage = () => {
                         }}
                         className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all appearance-none text-gray-700"
                       >
-                        <option value="">Select a patient</option>
+                        <option value="">Chọn bệnh nhân</option>
                         <option value={myself?.user_id}>{myself?.full_name} (Bản thân)</option>
                         {dependents.map((dep) => (
                           <option key={dep.relationship_id} value={dep.ChildUser?.user_id}>
@@ -325,88 +340,37 @@ const BookingAppointmentPage = () => {
                     {errors.patient_id && <p className="text-xs text-red-500 mt-1">{errors.patient_id}</p>}
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-semibold text-gray-600 block">Select Doctor</label>
-                      {selectedSpecialty && (
-                        <span className="text-xs text-sky-500 font-medium bg-sky-50 px-2 py-1 rounded-md">
-                          Showing specialists in {selectedSpecialty}
-                        </span>
-                      )}
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-600 block">Bác sĩ</label>
+                    <div className="relative">
+                      <select
+                        value={form.doctor_id}
+                        onChange={(e) => handleChange("doctor_id", e.target.value)}
+                        className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all appearance-none text-gray-700"
+                      >
+                        <option value="">Chọn bác sĩ</option>
+                        {doctors.map((d) => (
+                          <option key={d.doctor_id} value={d.doctor_id}>
+                            Dr. {d.Users?.full_name} ({d.specialization})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <i className="fa-solid fa-chevron-down text-xs"></i>
+                      </div>
                     </div>
-
-                    {filteredDoctors.length === 0 ? (
-                      <div className="p-8 text-center bg-gray-50 border border-gray-100 rounded-2xl">
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
-                          <i className="fa-solid fa-user-doctor text-xl"></i>
-                        </div>
-                        <p className="text-sm text-gray-500 font-medium">No doctors found for this specialty.</p>
-                      </div>
-                    ) : (
-                      <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory pt-2 -mx-2 px-2" style={{ scrollbarWidth: 'thin' }}>
-                        {filteredDoctors.map((doc) => {
-                          const isSelected = form.doctor_id === doc.doctor_id;
-                          return (
-                            <div
-                              key={doc.doctor_id}
-                              onClick={() => handleChange("doctor_id", doc.doctor_id)}
-                              className={`snap-start min-w-[220px] shrink-0 p-5 rounded-[1.5rem] cursor-pointer border-2 transition-all duration-300 relative group overflow-hidden ${isSelected
-                                ? 'border-sky-500 bg-sky-50/50 shadow-[0_8px_30px_rgba(14,165,233,0.15)] scale-[1.02]'
-                                : 'border-transparent bg-white shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.08)] hover:-translate-y-1'
-                                }`}
-                            >
-                              {/* Background Decoration */}
-                              {isSelected && (
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-sky-500/10 rounded-bl-[100px] -mr-4 -mt-4 transition-transform z-0" />
-                              )}
-
-                              <div className="relative z-10 flex flex-col items-center text-center">
-                                <div className={`w-16 h-16 rounded-2xl mb-4 overflow-hidden shadow-sm transition-all duration-300 ${isSelected ? 'ring-4 ring-sky-200' : 'group-hover:ring-4 group-hover:ring-gray-100'}`}>
-                                  {doc.Users?.avatar_url ? (
-                                    <img src={doc.Users?.avatar_url} alt={doc.Users?.full_name} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <div className="w-full h-full bg-gradient-to-br from-slate-100 to-gray-200 flex items-center justify-center text-gray-400 font-bold text-xl">
-                                      {doc.Users?.full_name?.charAt(0) || 'D'}
-                                    </div>
-                                  )}
-                                </div>
-
-                                <h4 className={`font-bold text-[15px] leading-tight mb-1 transition-colors ${isSelected ? 'text-sky-700' : 'text-gray-800'}`}>
-                                  Dr. {doc.Users?.full_name}
-                                </h4>
-                                <span className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider mb-2 ${isSelected ? 'bg-sky-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                                  {doc.Departments?.name || doc.specialization}
-                                </span>
-
-                                {doc.bio && (
-                                  <p className="text-[11px] text-gray-400 line-clamp-2 mt-auto leading-relaxed">
-                                    {doc.bio}
-                                  </p>
-                                )}
-
-                                {isSelected && (
-                                  <div className="absolute top-4 left-4 w-6 h-6 bg-sky-500 rounded-full flex items-center justify-center text-white text-[10px] shadow-md shadow-sky-500/30">
-                                    <i className="fa-solid fa-check"></i>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
                     {errors.doctor_id && <p className="text-xs text-red-500 mt-1">{errors.doctor_id}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-600 block">Medical Service</label>
+                    <label className="text-sm font-semibold text-gray-600 block">Loại dịch vụ</label>
                     <div className="relative">
                       <select
                         value={form.service_id}
                         onChange={(e) => handleChange("service_id", e.target.value)}
                         className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all appearance-none text-gray-700"
                       >
-                        <option value="">Select type</option>
+                        <option value="">Chọn dịch vụ</option>
                         {services.map((s) => (
                           <option key={s.service_id} value={s.service_id}>
                             {s.name} - {Number(s.price).toLocaleString("vi-VN")}₫
@@ -421,36 +385,36 @@ const BookingAppointmentPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-600 block">Appointment Date</label>
+                    <label className="text-sm font-semibold text-gray-600 block">Ngày khám</label>
+
                     <div className="relative">
                       <div className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl flex items-center gap-3 text-gray-700 cursor-default">
                         <i className="fa-regular fa-calendar text-sky-500"></i>
-                        <span>{form.appointment_date ? new Date(form.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "Pick a date"}</span>
+                        <span>{form.appointment_date ? new Date(form.appointment_date).toLocaleDateString('vi-VN', { month: 'long', day: 'numeric', year: 'numeric' }) : "Pick a date"}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-600 block">Time Slot</label>
+                  <label className="text-sm font-semibold text-gray-600 block">Giờ khám</label>
                   <div className="relative">
                     <div className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl flex items-center gap-3 text-gray-700 cursor-default">
                       <i className="fa-regular fa-clock text-sky-500"></i>
-                      <span className={selectedSlot ? "text-gray-900 font-medium" : "text-gray-400"}>
-                        {selectedSlot ? `${selectedSlot.start_time} — ${selectedSlot.end_time}` : "Select time on the right"}
+                      <span className={form.start_time ? "text-gray-900 font-medium" : "text-gray-400"}>
+                        {form.start_time || "Chọn giờ khám"}
                       </span>
                     </div>
                   </div>
-                  {errors.slot_id && <p className="text-xs text-red-500 mt-1">{errors.slot_id}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-600 block">Reasons appointment</label>
+                  <label className="text-sm font-semibold text-gray-600 block">Lý do khám</label>
                   <textarea
                     rows="4"
                     value={form.notes}
                     onChange={(e) => handleChange("notes", e.target.value)}
-                    placeholder="Add any additional notes about the appointment..."
+                    placeholder="Thêm bất kỳ ghi chú nào về lịch khám..."
                     className="w-full p-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all text-gray-700 resize-none placeholder:text-gray-400"
                   ></textarea>
                 </div>
@@ -461,7 +425,7 @@ const BookingAppointmentPage = () => {
                     disabled={submitting}
                     className="w-full py-4 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold transition-all transform active:scale-[0.98] shadow-lg shadow-sky-500/20 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {submitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><i className="fa-solid fa-check"></i> Confirm Appointment</>}
+                    {submitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><i className="fa-solid fa-check"></i> Xác nhận lịch khám</>}
                   </button>
                 </div>
               </form>
@@ -476,7 +440,7 @@ const BookingAppointmentPage = () => {
             className="space-y-8"
           >
             <div className="bg-white rounded-3xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
-              <h3 className="text-lg font-bold text-gray-800 mb-6 font-semibold">Select Date</h3>
+              <h3 className="text-lg font-bold text-gray-800 mb-6 font-semibold">Chọn ngày</h3>
               <div className="flex items-center justify-between mb-6">
                 <button type="button" onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"><i className="fa-solid fa-chevron-left text-xs"></i></button>
                 <div className="text-center"><span className="font-bold text-gray-700 block text-sm">{MONTHS[currentMonth]} {currentYear}</span></div>
@@ -487,33 +451,93 @@ const BookingAppointmentPage = () => {
               </div>
               <div className="grid grid-cols-7 gap-1">
                 {calendarDays.map((day, idx) => {
-                  const isSelected = form.appointment_date && day && new Date(form.appointment_date).getDate() === day && new Date(form.appointment_date).getMonth() === currentMonth;
-                  const isToday = day && new Date().getDate() === day && new Date().getMonth() === currentMonth && new Date().getFullYear() === currentYear;
+                  const isSelected =
+                    form.appointment_date &&
+                    day &&
+                    new Date(form.appointment_date).getDate() === day &&
+                    new Date(form.appointment_date).getMonth() === currentMonth;
+
+                  const isToday =
+                    day &&
+                    new Date().getDate() === day &&
+                    new Date().getMonth() === currentMonth &&
+                    new Date().getFullYear() === currentYear;
+
+                  // Tạo chuỗi ngày dạng YYYY-MM-DD để check trong availableSlots
+                  let hasSlots = false;
+                  if (day) {
+                    const monthStr = String(currentMonth + 1).padStart(2, "0");
+                    const dayStr = String(day).padStart(2, "0");
+                    const dateKey = `${currentYear}-${monthStr}-${dayStr}`;
+                    hasSlots = !!(availableSlots[dateKey] && availableSlots[dateKey].length > 0);
+                  }
+
                   return (
-                    <button key={idx} type="button" disabled={!day} onClick={() => handleDateSelect(day)} className={`h-9 w-full rounded-full flex items-center justify-center text-xs font-semibold transition-all ${!day ? 'invisible' : 'cursor-pointer'} ${isSelected ? 'bg-sky-500 text-white shadow-md shadow-sky-500/30' : 'text-gray-600 hover:bg-sky-50 hover:text-sky-600'} ${isToday && !isSelected ? 'text-sky-500 ring-1 ring-sky-500' : ''}`}>{day}</button>
+                    <button
+                      key={idx}
+                      type="button"
+                      disabled={!day}
+                      onClick={() => handleDateSelect(day)}
+                      className={`h-9 w-full rounded-full flex items-center justify-center text-xs font-semibold transition-all
+                        ${!day ? "invisible" : "cursor-pointer"}
+                        ${isSelected
+                          ? "bg-sky-500 text-white shadow-md shadow-sky-500/30"
+                          : "text-gray-600 hover:bg-sky-50 hover:text-sky-600"
+                        }
+                        ${isToday && !isSelected
+                          ? "text-sky-500 ring-1 ring-sky-500"
+                          : ""
+                        }
+                        ${hasSlots && !isSelected
+                          ? "border border-emerald-400 bg-emerald-50 text-emerald-700"
+                          : ""
+                        }`}
+                    >
+                      {day}
+                    </button>
                   );
                 })}
               </div>
             </div>
 
             <div className="bg-white rounded-3xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
-              <h3 className="text-sm font-bold text-gray-800 mb-6 font-semibold">Available Slots for {new Date(form.appointment_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h3>
-              {!form.doctor_id ? (
-                <p className="text-sm text-gray-400 text-center py-8">Select a doctor first</p>
-              ) : loadingSlots ? (
-                <div className="flex justify-center py-8"><div className="w-6 h-6 border-2 border-sky-500/30 border-t-sky-500 rounded-full animate-spin"></div></div>
-              ) : availableSlots.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-8">No available slots for this date</p>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {availableSlots.map((slot) => {
-                    const isSelected = form.slot_id === slot.slot_id;
+              <h3 className="text-sm font-bold text-gray-800 mb-6">
+                Giờ khả dụng cho {form.appointment_date ? new Date(form.appointment_date).toLocaleDateString('vi-VN') : "ngày này"}
+              </h3>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {/* Trích xuất mảng giờ của ngày đang chọn */}
+                {(availableSlots[form.appointment_date] || []).length > 0 ? (
+                  (availableSlots[form.appointment_date] || []).map((slot) => {
+                    // Cắt giây nếu API trả về "08:00:00" -> "08:00"
+                    const timeDisplay = slot.start_time.slice(0, 5);
+                    const isSelected = form.start_time === slot.start_time;
+
                     return (
-                      <button key={slot.slot_id} type="button" onClick={() => handleChange("slot_id", slot.slot_id)} className={`py-3 px-1 rounded-xl text-[10px] font-bold border transition-all text-center ${isSelected ? 'bg-white border-sky-500 text-gray-900 border-2 shadow-sm' : 'bg-white border-gray-100 text-gray-400 hover:border-sky-300 hover:text-sky-600 hover:bg-sky-50/30'}`}>{slot.start_time} — {slot.end_time}</button>
+                      <button
+                        key={slot.slot_id}
+                        type="button"
+                        onClick={() => {
+                          handleChange("start_time", slot.start_time); // Giữ nguyên để UI hiện màu xanh
+                          handleChange("slot_id", slot.slot_id);       // THÊM DÒNG NÀY: Lưu lại ID của slot
+                        }}
+                        className={`py-3 px-1 rounded-xl text-[13px] font-bold border transition-all text-center
+                  ${isSelected
+                            ? 'bg-white border-sky-500 text-sky-600 border-2 shadow-sm'
+                            : 'bg-white border-gray-100 text-gray-500 hover:border-sky-300 hover:text-sky-600 hover:bg-sky-50/30'
+                          }
+                `}
+                      >
+                        {timeDisplay}
+                      </button>
                     );
-                  })}
-                </div>
-              )}
+                  })
+                ) : (
+                  <div className="col-span-full text-center text-sm text-gray-400 py-4">
+                    {form.appointment_date ? "Không có lịch trống trong ngày này." : "Vui lòng chọn ngày trên lịch."}
+                  </div>
+                )}
+              </div>
             </div>
           </MotionDiv>
         </div>
@@ -521,5 +545,4 @@ const BookingAppointmentPage = () => {
     </div>
   );
 };
-
 export default BookingAppointmentPage;

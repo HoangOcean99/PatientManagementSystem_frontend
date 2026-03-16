@@ -32,7 +32,10 @@ const commonRoutes = [
     },
     {
         path: '/oauth-callback',
-        element: <AuthCallback />
+        element:
+            <PublicRoute>
+                <AuthCallback />
+            </PublicRoute>
 
     },
     {
