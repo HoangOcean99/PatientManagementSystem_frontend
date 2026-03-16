@@ -4,8 +4,8 @@ import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { getPatientById, createPatient, updatePatient } from '../../api/patientApi';
-import LoadingSpinner from '../LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const GENDER_OPTIONS = [
     { value: 'male', label: 'Nam', icon: 'fa-mars', color: '#2563eb', bg: 'bg-blue-50', text: 'text-blue-600' },

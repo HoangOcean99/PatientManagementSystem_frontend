@@ -138,17 +138,6 @@ const PatientDashboard = () => {
                             </h1>
                             <p className="text-sm text-gray-500 mt-1">Chào mừng bạn đến hệ thống quản lý sức khoẻ</p>
                         </div>
-                        <button
-                            onClick={async () => {
-                                await supabase.auth.signOut();
-                                navigate('/login');
-                                toast.success('Đã đăng xuất');
-                            }}
-                            className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 hover:text-red-600 hover:border-red-200 hover:bg-red-50 font-semibold text-sm transition-all cursor-pointer shadow-sm"
-                        >
-                            <i className="fa-solid fa-right-from-bracket"></i>
-                            Đăng xuất
-                        </button>
                     </div>
                 </div>
             </div>

@@ -36,7 +36,7 @@ const LabProfilePage = () => {
         dob: d.Users.dob || '',
         gender: d.Users.gender || '',
         address: d.Users.address || '',
-        roomName: d.Rooms.room_number || ''
+        roomName: d.Rooms?.room_number || ''
       }));
     } catch (err) {
       toast.error("Không thể tải dữ liệu")
