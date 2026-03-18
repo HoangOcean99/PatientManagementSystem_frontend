@@ -348,7 +348,7 @@ const DoctorDashboardPage = () => {
                     {appt.status === 'completed' && (
                       <button
                         className="dash-appt-item__btn dash-appt-item__btn--outline"
-                        onClick={() => navigate(`/doctor/patient/${appt.patient_id}`)}
+                        onClick={() => navigate(`/doctor/patient/${appt.patient_id}`, { state: { appointment_id: appt.appointment_id } })}
                       >
                         <FiUser size={14} />
                         Xem hồ sơ
