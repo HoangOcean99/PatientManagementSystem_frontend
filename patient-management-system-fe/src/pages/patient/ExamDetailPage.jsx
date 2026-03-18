@@ -163,7 +163,7 @@ const ExamDetailPage = () => {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <p className="font-bold text-gray-800 text-sm">{lab.test_name}</p>
+                                                    <p className="font-bold text-gray-800 text-sm">{lab.LabServices?.name || '—'}</p>
                                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${st.bg} ${st.color}`}>{st.label}</span>
                                                 </div>
                                                 {lab.result_summary && <p className="text-xs text-gray-500 mt-0.5">{lab.result_summary}</p>}

@@ -44,6 +44,13 @@ const calculateAge = (dob) => {
 };
 const getInitials = (name) =>
   name ? name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(-2) : '?';
+const normalizeId = (value) => (value === null || value === undefined ? '' : String(value));
+const normalizeStatus = (value) => {
+  const normalized = String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (normalized === 'inprogress') return 'in_progress';
+  if (normalized === 'checkedin') return 'checked_in';
+  return normalized;
+};
 
 const STATUS_MAP = {
   pending: { label: 'Chờ xác nhận', color: 'status--ready', icon: FiLoader },
@@ -200,6 +207,10 @@ const ExaminationPage = () => {
   // LabOrders (dynamic list)
   const [labOrders, setLabOrders] = useState([]);
 
+  // Lab Services (fetched from API for dropdown)
+  const [labServices, setLabServices] = useState([]);
+  const [labServicesLoading, setLabServicesLoading] = useState(false);
+
   // Follow-up date
   const [followUpDate, setFollowUpDate] = useState('');
 
@@ -208,6 +219,54 @@ const ExaminationPage = () => {
   const [saving, setSaving] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [labSending, setLabSending] = useState(false);
+
+  const applyRecordData = useCallback((record, fallbackAppointmentStatus) => {
+    if (!record?.record_id) return false;
+
+    const normalizedRecordStatus = normalizeStatus(record.status) || fallbackAppointmentStatus || 'in_progress';
+
+    setRecordId(record.record_id);
+    setRecordStatus(normalizedRecordStatus);
+    setSymptoms(record.symptoms || '');
+    setDoctorNotes(record.doctor_notes || '');
+    setDiagnosis(record.diagnosis || '');
+
+    if (record.Prescriptions && record.Prescriptions.length > 0) {
+      setPrescriptions(
+        record.Prescriptions.map((p) => ({
+          id: p.prescription_id || Date.now() + Math.random(),
+          prescription_id: p.prescription_id,
+          medication_name: p.medication_name || '',
+          dosage: p.dosage || '',
+          instructions: p.instructions || '',
+          reminder_schedule: p.reminder_schedule || '',
+        }))
+      );
+    }
+
+    if (record.LabOrders && record.LabOrders.length > 0) {
+      setLabOrders(
+        record.LabOrders.map((l) => ({
+          id: l.lab_order_id || Date.now() + Math.random(),
+          lab_order_id: l.lab_order_id,
+          lab_service_id: l.lab_service_id || '',
+          lab_service_name: l.LabServices?.name || l.lab_service_name || '',
+          status: l.status || 'ordered',
+          result_summary: l.result_summary || '',
+          result_file_url: l.result_file_url || '',
+        }))
+      );
+    }
+
+    if (normalizedRecordStatus === 'completed') {
+      setAppointment((prev) => ({ ...prev, status: 'completed' }));
+      setRecordStatus('completed');
+    } else if (normalizedRecordStatus === 'in_progress' || fallbackAppointmentStatus === 'in_progress') {
+      setAppointment((prev) => ({ ...prev, status: 'in_progress' }));
+    }
+
+    return true;
+  }, []);
 
   // ===== Lấy doctor_id từ Supabase session =====
   useEffect(() => {
@@ -245,12 +304,8 @@ const ExaminationPage = () => {
         const apptRes = await getAppointmentsByDoctorId(doctorId);
         const allAppointments = apptRes.data?.data || apptRes.data || [];
 
-        console.log('[DEBUG] appointmentId from URL:', appointmentId);
-        console.log('[DEBUG] allAppointments từ API:', allAppointments);
-        console.log('[DEBUG] appointment_id list:', allAppointments.map(a => a.appointment_id));
-
         const currentAppt = allAppointments.find(
-          (a) => a.appointment_id === appointmentId
+          (a) => normalizeId(a.appointment_id) === normalizeId(appointmentId)
         );
 
         if (!currentAppt) {
@@ -260,6 +315,8 @@ const ExaminationPage = () => {
         }
 
         // Map appointment data — time lấy từ DoctorSlots qua slot_id FK
+        const normalizedAppointmentStatus = normalizeStatus(currentAppt.status);
+
         setAppointment({
           appointment_id: currentAppt.appointment_id,
           patient_id: currentAppt.Patients?.patient_id || currentAppt.patient_id,
@@ -278,7 +335,7 @@ const ExaminationPage = () => {
             currentAppt.DoctorSlots?.end_time ||
             currentAppt.DoctorSlot?.end_time ||
             currentAppt.end_time,
-          status: currentAppt.status,
+          status: normalizedAppointmentStatus,
           service_name: currentAppt.ClinicServices?.name || '',
           total_price: currentAppt.total_price,
           deposit_required: currentAppt.deposit_required,
@@ -302,58 +359,33 @@ const ExaminationPage = () => {
         // 2. Kiểm tra đã có medical record cho appointment này chưa
         try {
           const recordRes = await medicalRecordApi.getMedicalRecordByAppointmentId(appointmentId);
-          const record = recordRes.data?.data || recordRes.data;
+          const directRecord = recordRes.data?.data || recordRes.data || null;
 
-          if (record && record.record_id) {
-            // Đã có record → load data vào form
-            setRecordId(record.record_id);
-            setRecordStatus(record.status || 'in_progress');
-            setSymptoms(record.symptoms || '');
-            setDoctorNotes(record.doctor_notes || '');
-            setDiagnosis(record.diagnosis || '');
+          let recordLoaded = applyRecordData(directRecord, normalizedAppointmentStatus);
 
-            // Load prescriptions nếu có
-            if (record.Prescriptions && record.Prescriptions.length > 0) {
-              setPrescriptions(
-                record.Prescriptions.map((p) => ({
-                  id: p.prescription_id || Date.now() + Math.random(),
-                  prescription_id: p.prescription_id,
-                  medication_name: p.medication_name || '',
-                  dosage: p.dosage || '',
-                  instructions: p.instructions || '',
-                  reminder_schedule: p.reminder_schedule || '',
-                }))
-              );
-            }
+          if (!recordLoaded && (currentAppt.Patients?.patient_id || currentAppt.patient_id)) {
+            const patientId = currentAppt.Patients?.patient_id || currentAppt.patient_id;
+            const patientRecordsRes = await medicalRecordApi.getMedicalRecordsByPatientId(patientId);
+            const patientRecords = patientRecordsRes.data?.data || patientRecordsRes.data || [];
+            const matchedRecord = (Array.isArray(patientRecords) ? patientRecords : []).find(
+              (item) => normalizeId(item.appointment_id) === normalizeId(appointmentId)
+            );
 
-            // Load lab orders nếu có
-            if (record.LabOrders && record.LabOrders.length > 0) {
-              setLabOrders(
-                record.LabOrders.map((l) => ({
-                  id: l.lab_order_id || Date.now() + Math.random(),
-                  lab_order_id: l.lab_order_id,
-                  test_name: l.test_name || '',
-                  status: l.status || 'ordered',
-                  result_summary: l.result_summary || '',
-                  result_file_url: l.result_file_url || '',
-                }))
-              );
-            }
+            recordLoaded = applyRecordData(matchedRecord, normalizedAppointmentStatus);
+          }
 
-            // Cập nhật status appointment nếu record đang in_progress
-            if (currentAppt.status === 'in_progress' || record.status === 'in_progress') {
-              setAppointment((prev) => ({ ...prev, status: 'in_progress' }));
-            }
-            if (record.status === 'completed' || currentAppt.status === 'completed') {
-              setAppointment((prev) => ({ ...prev, status: 'completed' }));
-              setRecordStatus('completed');
-            }
+          if (!recordLoaded && normalizedAppointmentStatus === 'completed') {
+            setRecordStatus('completed');
+          }
+
+          if (!recordLoaded && normalizedAppointmentStatus === 'in_progress') {
+            console.warn('[ExaminationPage] Appointment đang in_progress nhưng chưa load được medical record', {
+              appointmentId,
+              patientId: currentAppt.Patients?.patient_id || currentAppt.patient_id,
+            });
           }
         } catch (recordErr) {
-          // 404 = chưa có record → bình thường, không phải lỗi
-          if (recordErr.response?.status !== 404) {
-            console.warn('Lỗi khi kiểm tra medical record:', recordErr);
-          }
+          console.warn('Lỗi khi kiểm tra medical record:', recordErr);
         }
       } catch (err) {
         console.error('Failed to load examination data:', err);
@@ -366,7 +398,25 @@ const ExaminationPage = () => {
     if (appointmentId && doctorId) {
       fetchData();
     }
-  }, [appointmentId, doctorId]);
+  }, [appointmentId, doctorId, applyRecordData]);
+
+  // ===== FETCH LAB SERVICES FOR DROPDOWN =====
+  useEffect(() => {
+    const fetchLabServices = async () => {
+      try {
+        setLabServicesLoading(true);
+        const res = await labOrderApi.getLabServices();
+        const data = res.data?.data || res.data || [];
+        const services = Array.isArray(data) ? data : [];
+        setLabServices(services.filter((s) => s.is_active !== false));
+      } catch (err) {
+        console.warn('Failed to fetch lab services:', err);
+      } finally {
+        setLabServicesLoading(false);
+      }
+    };
+    fetchLabServices();
+  }, []);
 
   // ===== HANDLERS =====
 
@@ -431,7 +481,7 @@ const ExaminationPage = () => {
   const addLabOrder = () => {
     setLabOrders((prev) => [
       ...prev,
-      { id: Date.now(), test_name: '', status: 'draft' },
+      { id: Date.now(), lab_service_id: '', lab_service_name: '', status: 'draft' },
     ]);
   };
 
@@ -439,16 +489,17 @@ const ExaminationPage = () => {
     setLabOrders((prev) => prev.filter((l) => l.id !== id));
   };
 
-  const updateLabOrder = (id, value) => {
+  const updateLabOrder = (id, labServiceId) => {
+    const selectedService = labServices.find((s) => s.lab_service_id === labServiceId);
     setLabOrders((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, test_name: value } : l))
+      prev.map((l) => (l.id === id ? { ...l, lab_service_id: labServiceId, lab_service_name: selectedService?.name || '' } : l))
     );
   };
 
   // Gửi xét nghiệm → POST /lab-orders
   const handleSendLabOrders = async () => {
     const draftOrders = labOrders.filter(
-      (l) => l.test_name.trim() && l.status === 'draft'
+      (l) => l.lab_service_id && l.status === 'draft'
     );
     if (draftOrders.length === 0) {
       alert('Không có xét nghiệm mới nào để gửi.');
@@ -465,7 +516,7 @@ const ExaminationPage = () => {
         record_id: recordId,
         doctor_id: appointment.doctor_id,
         lab_orders: draftOrders.map((l) => ({
-          test_name: l.test_name.trim(),
+          lab_service_id: l.lab_service_id,
         })),
       };
 
@@ -475,14 +526,15 @@ const ExaminationPage = () => {
       // Cập nhật status từ draft → ordered, gán lab_order_id từ server
       setLabOrders((prev) =>
         prev.map((l) => {
-          if (l.status === 'draft' && l.test_name.trim()) {
+          if (l.status === 'draft' && l.lab_service_id) {
             const serverOrder = Array.isArray(createdOrders)
-              ? createdOrders.find((s) => s.test_name === l.test_name.trim())
+              ? createdOrders.find((s) => s.lab_service_id === l.lab_service_id)
               : null;
             return {
               ...l,
               status: 'ordered',
               lab_order_id: serverOrder?.lab_order_id || l.id,
+              lab_service_name: serverOrder?.LabServices?.name || l.lab_service_name,
             };
           }
           return l;
@@ -500,7 +552,7 @@ const ExaminationPage = () => {
   };
 
   const hasDraftLabs = labOrders.some(
-    (l) => l.status === 'draft' && l.test_name.trim()
+    (l) => l.status === 'draft' && l.lab_service_id
   );
 
   // Lưu nháp → PATCH /medical-record/update/:recordId
@@ -620,7 +672,8 @@ const ExaminationPage = () => {
             const updatedFromServer = serverLabs.map((sl) => ({
               id: sl.lab_order_id,
               lab_order_id: sl.lab_order_id,
-              test_name: sl.test_name,
+              lab_service_id: sl.lab_service_id,
+              lab_service_name: sl.LabServices?.name || sl.lab_service_name || '',
               status: sl.status,
               result_summary: sl.result_summary || '',
               result_file_url: sl.result_file_url || '',
@@ -637,10 +690,12 @@ const ExaminationPage = () => {
   }, [recordId, recordStatus, labOrders]);
 
   // ===== DERIVED STATE =====
-  const isExamStarted = appointment?.status === 'in_progress';
-  const isCompleted = appointment?.status === 'completed' || recordStatus === 'completed';
+  const appointmentStatus = normalizeStatus(appointment?.status);
+  const normalizedRecordStatus = normalizeStatus(recordStatus);
+  const isExamStarted = appointmentStatus === 'in_progress' || normalizedRecordStatus === 'in_progress' || Boolean(recordId);
+  const isCompleted = appointmentStatus === 'completed' || normalizedRecordStatus === 'completed';
 
-  const statusInfo = STATUS_MAP[appointment?.status] || STATUS_MAP.assigned || STATUS_MAP.checked_in || STATUS_MAP.pending;
+  const statusInfo = STATUS_MAP[appointmentStatus] || STATUS_MAP.assigned || STATUS_MAP.checked_in || STATUS_MAP.pending;
   const StatusIcon = statusInfo.icon;
 
   const formatFollowUp = (dateStr) => {
@@ -737,7 +792,7 @@ const ExaminationPage = () => {
               </div>
 
               {/* Nút bắt đầu khám — chỉ hiện khi chưa có record */}
-              {!recordId && !isCompleted && (
+              {!isExamStarted && !isCompleted && (
                 <button
                   className="ex-btn ex-btn--primary"
                   onClick={handleStartExamination}
@@ -972,14 +1027,29 @@ const ExaminationPage = () => {
                           </div>
 
                           <div className="ex-lab-card__fields">
-                            <input
-                              type="text"
-                              className="ex-input"
-                              placeholder="Tên xét nghiệm..."
-                              value={l.test_name}
-                              onChange={(e) => updateLabOrder(l.id, e.target.value)}
-                              disabled={isCompleted || !isDraft}
-                            />
+                            {isDraft ? (
+                              <select
+                                className="ex-input ex-select"
+                                value={l.lab_service_id}
+                                onChange={(e) => updateLabOrder(l.id, e.target.value)}
+                                disabled={isCompleted}
+                              >
+                                <option value="">-- Chọn loại xét nghiệm --</option>
+                                {labServicesLoading ? (
+                                  <option disabled>Đang tải...</option>
+                                ) : (
+                                  labServices.map((svc) => (
+                                    <option key={svc.lab_service_id} value={svc.lab_service_id}>
+                                      {svc.name}{svc.price ? ` — ${Number(svc.price).toLocaleString('vi-VN')}đ` : ''}
+                                    </option>
+                                  ))
+                                )}
+                              </select>
+                            ) : (
+                              <div className="ex-lab-service-name">
+                                {l.lab_service_name || 'N/A'}
+                              </div>
+                            )}
                           </div>
 
                           {/* Kết quả xét nghiệm — hiển thị khi completed */}
@@ -1127,10 +1197,17 @@ const ExaminationPage = () => {
           )}
 
           {/* Thông báo chưa bắt đầu khám */}
-          {!recordId && !isCompleted && (
+          {!isExamStarted && !isCompleted && (
             <motion.div className="ex-completed-banner" variants={itemVariants} style={{ background: '#FFF7ED', borderColor: '#FDBA74', color: '#C2410C' }}>
               <FiAlertCircle size={20} />
               <span>Vui lòng bấm "Bắt đầu khám" để tạo bệnh án và bắt đầu ghi chú.</span>
+            </motion.div>
+          )}
+
+          {isExamStarted && !isCompleted && !recordId && (
+            <motion.div className="ex-completed-banner" variants={itemVariants} style={{ background: '#EFF6FF', borderColor: '#93C5FD', color: '#1D4ED8' }}>
+              <FiAlertCircle size={20} />
+              <span>Ca khám đang ở trạng thái đang khám nhưng chưa tải được bệnh án. Vui lòng tải lại trang hoặc kiểm tra dữ liệu medical record.</span>
             </motion.div>
           )}
 
