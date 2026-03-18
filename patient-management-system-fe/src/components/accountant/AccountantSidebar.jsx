@@ -4,18 +4,17 @@ import {
   FiGrid,
   FiDollarSign,
   FiFileText,
-  FiCheckSquare,
   FiUser,
   FiLogOut,
 } from 'react-icons/fi';
+import { toast, Toaster } from 'react-hot-toast';
 import './AccountantSidebar.css';
 
 const ACCOUNTANT_NAV = [
-  { key: 'dashboard', label: 'Dashboard', icon: FiGrid, path: '/accountant/dashboard' },
-  { key: 'deposits', label: 'Tiền đặt cọc', icon: FiDollarSign, path: '/accountant/deposits' },
-  { key: 'invoices', label: 'Hoá đơn', icon: FiFileText, path: '/accountant/invoices' },
-  { key: 'payments', label: 'Xác nhận CK', icon: FiCheckSquare, path: '/accountant/payments' },
-  { key: 'profile', label: 'Hồ sơ cá nhân', icon: FiUser, path: '/accountant/profile' },
+  { id: 'dashboard', label: 'Tổng quan', icon: FiGrid, path: '/accountant' },
+  { id: 'deposits', label: 'Quản lý Đặt cọc', icon: FiDollarSign, path: '/accountant/deposits' },
+  { id: 'invoices', label: 'Quản lý Hoá đơn', icon: FiFileText, path: '/accountant/invoices' },
+  { id: 'profile', label: 'Hồ sơ cá nhân', icon: FiUser, path: '/accountant/profile' },
 ];
 
 const AccountantSidebar = ({ activePage }) => {
@@ -23,12 +22,15 @@ const AccountantSidebar = ({ activePage }) => {
   const location = useLocation();
 
   const isActive = (item) => {
-    if (activePage) return activePage === item.key;
-    if (item.path) return location.pathname === item.path;
-    return false;
+    if (activePage) return activePage === item.id;
+    return location.pathname === item.path;
   };
 
   const handleClick = (item) => {
+    if (item.id === 'profile') {
+      toast('Tính năng đang phát triển', { icon: '🚧' });
+      return;
+    }
     if (item.path) navigate(item.path);
   };
 
@@ -38,6 +40,7 @@ const AccountantSidebar = ({ activePage }) => {
 
   return (
     <aside className="acc-sidebar">
+      <Toaster position="top-right" />
       <div className="acc-sidebar__brand">
         <div className="acc-sidebar__logo">
           <i className="fa-solid fa-heart-pulse"></i>
@@ -56,7 +59,7 @@ const AccountantSidebar = ({ activePage }) => {
           const active = isActive(item);
           return (
             <button
-              key={item.key}
+              key={item.id}
               className={`acc-sidebar__link ${active ? 'acc-sidebar__link--active' : ''}`}
               onClick={() => handleClick(item)}
             >
@@ -67,9 +70,9 @@ const AccountantSidebar = ({ activePage }) => {
         })}
       </nav>
 
-      <div className="acc-sidebar__footer">
-        <button className="acc-sidebar__logout" onClick={handleLogout}>
-          <FiLogOut size={18} />
+      <div className="acc-sidebar__logout">
+        <button className="acc-sidebar__link" onClick={handleLogout}>
+          <FiLogOut size={20} />
           <span>Đăng xuất</span>
         </button>
       </div>

@@ -35,11 +35,11 @@ const LoginPage = () => {
                 passwordRef.current.value
             )
             switch (res.data.user.role) {
-                case 'admin': navigate('/dashboard-admin'); break;
-                case 'receptionist': navigate('/dashboard-receptionist'); break;
-                case 'doctor': navigate('/dashboard-doctor'); break;
-                case 'accountant': navigate('/dashboard-accountant'); break;
-                case 'patient': navigate('/dashboard-patient'); break;
+                case 'admin': navigate('/admin/doctors'); break;
+                case 'receptionist': navigate('/'); break;
+                case 'doctor': navigate('/doctor/dashboard'); break;
+                case 'accountant': navigate('/accountant/dashboard'); break;
+                case 'patient': navigate('/'); break;
             }
             toast.success("Đăng nhập thành công!")
         } catch (err) {

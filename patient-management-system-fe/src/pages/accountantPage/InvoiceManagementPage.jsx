@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   FiFileText,
@@ -12,6 +12,8 @@ import {
 } from 'react-icons/fi';
 import AccountantSidebar from '../../components/accountant/AccountantSidebar';
 import InvoicePrintTemplate from '../../components/accountant/InvoicePrintTemplate';
+import { getPendingInvoices, payInvoice } from '../../api/accountantApi';
+import { toast, Toaster } from 'react-hot-toast';
 import './InvoiceManagementPage.css';
 
 const formatCurrency = (amount) =>
@@ -27,132 +29,6 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
 };
 
-const MOCK_INVOICES = [
-  {
-    id: 'INV001',
-    patient_name: 'Nguyễn Văn An',
-    patient_code: 'BN001',
-    date: '2026-03-02',
-    status: 'paid',
-    total: 1250000,
-    deposit_applied: 500000,
-    items: [
-      { name: 'Khám tổng quát', qty: 1, price: 300000 },
-      { name: 'Xét nghiệm máu CBC', qty: 1, price: 250000 },
-      { name: 'Xét nghiệm nước tiểu', qty: 1, price: 200000 },
-      { name: 'Thuốc Paracetamol 500mg', qty: 20, price: 5000 },
-      { name: 'Thuốc Amoxicillin 250mg', qty: 14, price: 25000 },
-    ],
-  },
-  {
-    id: 'INV002',
-    patient_name: 'Trần Thị Bình',
-    patient_code: 'BN002',
-    date: '2026-03-02',
-    status: 'unpaid',
-    total: 2100000,
-    deposit_applied: 1000000,
-    items: [
-      { name: 'Khám chuyên khoa Tim', qty: 1, price: 500000 },
-      { name: 'Siêu âm tim', qty: 1, price: 800000 },
-      { name: 'Điện tâm đồ', qty: 1, price: 300000 },
-      { name: 'Thuốc Aspirin 81mg', qty: 30, price: 3000 },
-      { name: 'Thuốc Atorvastatin 20mg', qty: 30, price: 12000 },
-    ],
-  },
-  {
-    id: 'INV003',
-    patient_name: 'Lê Hoàng Cường',
-    patient_code: 'BN003',
-    date: '2026-03-01',
-    status: 'paid',
-    total: 800000,
-    deposit_applied: 300000,
-    items: [
-      { name: 'Khám tổng quát', qty: 1, price: 300000 },
-      { name: 'Xét nghiệm đường huyết', qty: 1, price: 150000 },
-      { name: 'Thuốc Metformin 500mg', qty: 30, price: 8000 },
-      { name: 'Thuốc Vitamin B12', qty: 30, price: 3667 },
-    ],
-  },
-  {
-    id: 'INV004',
-    patient_name: 'Phạm Minh Đức',
-    patient_code: 'BN004',
-    date: '2026-03-01',
-    status: 'unpaid',
-    total: 3500000,
-    deposit_applied: 750000,
-    items: [
-      { name: 'Tiểu phẫu (khâu vết thương)', qty: 1, price: 2000000 },
-      { name: 'Gây tê tại chỗ', qty: 1, price: 500000 },
-      { name: 'Vật tư y tế (chỉ khâu, gạc)', qty: 1, price: 300000 },
-      { name: 'Thuốc kháng sinh Cefixime', qty: 10, price: 35000 },
-      { name: 'Thuốc giảm đau Ibuprofen', qty: 14, price: 25000 },
-    ],
-  },
-  {
-    id: 'INV005',
-    patient_name: 'Hoàng Thị Em',
-    patient_code: 'BN005',
-    date: '2026-02-28',
-    status: 'cancelled',
-    total: 450000,
-    deposit_applied: 0,
-    items: [
-      { name: 'Khám nội khoa', qty: 1, price: 250000 },
-      { name: 'Xét nghiệm mỡ máu', qty: 1, price: 200000 },
-    ],
-  },
-  {
-    id: 'INV006',
-    patient_name: 'Vũ Quang Phú',
-    patient_code: 'BN006',
-    date: '2026-02-28',
-    status: 'paid',
-    total: 1800000,
-    deposit_applied: 600000,
-    items: [
-      { name: 'Khám chuyên khoa Nội tiết', qty: 1, price: 500000 },
-      { name: 'Xét nghiệm tuyến giáp TSH', qty: 1, price: 350000 },
-      { name: 'Siêu âm tuyến giáp', qty: 1, price: 400000 },
-      { name: 'Thuốc Levothyroxine 50mcg', qty: 30, price: 10000 },
-      { name: 'Thuốc Selenium 200mcg', qty: 30, price: 8333 },
-    ],
-  },
-  {
-    id: 'INV007',
-    patient_name: 'Đỗ Thị Giang',
-    patient_code: 'BN007',
-    date: '2026-02-27',
-    status: 'unpaid',
-    total: 950000,
-    deposit_applied: 450000,
-    items: [
-      { name: 'Khám nội khoa', qty: 1, price: 250000 },
-      { name: 'Xét nghiệm máu CBC', qty: 1, price: 250000 },
-      { name: 'Thuốc bổ sắt Ferrous Sulfate', qty: 30, price: 5000 },
-      { name: 'Vitamin C 500mg', qty: 30, price: 10000 },
-    ],
-  },
-  {
-    id: 'INV008',
-    patient_name: 'Bùi Văn Hùng',
-    patient_code: 'BN008',
-    date: '2026-02-27',
-    status: 'paid',
-    total: 4200000,
-    deposit_applied: 1500000,
-    items: [
-      { name: 'Nội soi dạ dày', qty: 1, price: 2500000 },
-      { name: 'Sinh thiết (nếu cần)', qty: 1, price: 800000 },
-      { name: 'Gây mê nhẹ', qty: 1, price: 500000 },
-      { name: 'Thuốc PPI Omeprazole 20mg', qty: 28, price: 10000 },
-      { name: 'Thuốc Domperidone 10mg', qty: 21, price: 6667 },
-    ],
-  },
-];
-
 const STATUS_MAP = {
   paid: { label: 'Đã thanh toán', color: 'paid' },
   unpaid: { label: 'Chưa thanh toán', color: 'unpaid' },
@@ -160,11 +36,44 @@ const STATUS_MAP = {
 };
 
 const InvoiceManagementPage = () => {
-  const [invoices, setInvoices] = useState(MOCK_INVOICES);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [printInvoice, setPrintInvoice] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+      const res = await getPendingInvoices();
+      const mapped = res.data.map(d => ({
+        id: d.invoice_id,
+        patient_name: d.Patients?.Users?.full_name || 'N/A',
+        patient_code: d.patient_id?.substring(0,8).toUpperCase(),
+        date: new Date(d.issued_at).toLocaleDateString('vi-VN'),
+        status: d.payment_status,
+        total: d.total_amount,
+        deposit_applied: d.Appointments?.deposit_paid || 0,
+        items: (d.InvoiceItems || []).map(i => ({
+            name: i.item_name,
+            qty: i.quantity,
+            price: i.unit_price
+        }))
+      }));
+      setInvoices(mapped);
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi tải danh sách hóa đơn!');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredInvoices = useMemo(() => {
     return invoices.filter((inv) => {
@@ -177,11 +86,20 @@ const InvoiceManagementPage = () => {
     });
   }, [invoices, searchTerm, statusFilter]);
 
-  const handleMarkPaid = (id) => {
-    setInvoices((prev) =>
-      prev.map((inv) => (inv.id === id ? { ...inv, status: 'paid' } : inv))
-    );
-    setSelectedInvoice(null);
+  const handleMarkPaid = async (id) => {
+    if(!window.confirm("Bạn có chắc chắn xác nhận thanh toán hóa đơn này?")) return;
+    try {
+      setIsProcessing(true);
+      await payInvoice(id, 'cash');
+      toast.success('Thanh toán thành công!');
+      setSelectedInvoice(null);
+      fetchInvoices();
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra khi thanh toán');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handlePrint = (invoice) => {
@@ -194,6 +112,7 @@ const InvoiceManagementPage = () => {
   return (
     <div className="acc-inv-layout">
       <AccountantSidebar activePage="invoices" />
+      <Toaster position="top-right" />
 
       <main className="acc-inv-main">
         <motion.div
@@ -266,7 +185,7 @@ const InvoiceManagementPage = () => {
                 ) : (
                   filteredInvoices.map((inv) => (
                     <tr key={inv.id}>
-                      <td className="acc-inv-table__code">{inv.id}</td>
+                      <td className="acc-inv-table__code">{inv.id.substring(0,8).toUpperCase()}</td>
                       <td className="acc-inv-table__name">{inv.patient_name}</td>
                       <td>{inv.patient_code}</td>
                       <td>{inv.date}</td>
@@ -325,7 +244,7 @@ const InvoiceManagementPage = () => {
             transition={{ duration: 0.2 }}
           >
             <div className="acc-inv-modal__header">
-              <h3>Chi tiết hoá đơn — {selectedInvoice.id}</h3>
+              <h3>Chi tiết hoá đơn — {selectedInvoice.id.substring(0,8).toUpperCase()}</h3>
               <button className="acc-inv-modal__close" onClick={() => setSelectedInvoice(null)}>
                 <FiX size={20} />
               </button>
@@ -399,8 +318,9 @@ const InvoiceManagementPage = () => {
             <div className="acc-inv-modal__footer">
               {selectedInvoice.status === 'unpaid' && (
                 <button
-                  className="acc-inv-modal__btn acc-inv-modal__btn--paid"
+                  className="acc-inv-modal__btn acc-inv-modal__btn--paid hover:opacity-90 transition-opacity"
                   onClick={() => handleMarkPaid(selectedInvoice.id)}
+                  disabled={isProcessing}
                 >
                   <FiCheckCircle size={16} /> Đánh dấu đã TT
                 </button>

@@ -14,11 +14,11 @@ export default function AuthCallback() {
                     const res = await axiosClient.post('/auth/sync-user-google');
                     const user = res.data.user;
                     switch (user.role) {
-                        case 'admin': navigate('/dashboard-admin'); break;
-                        case 'patient': navigate('/dashboard-patient'); break;
-                        case 'receptionist': navigate('/dashboard-receptionist'); break;
-                        case 'doctor': navigate('/dashboard-doctor'); break;
-                        case 'accountant': navigate('/dashboard-accountant'); break;
+                        case 'admin': navigate('/admin/doctors'); break;
+                        case 'receptionist': navigate('/'); break;
+                        case 'doctor': navigate('/doctor/dashboard'); break;
+                        case 'accountant': navigate('/accountant/dashboard'); break;
+                        case 'patient': navigate('/'); break;
                     }
                     toast.success("Đăng nhập thành công!");
                 }

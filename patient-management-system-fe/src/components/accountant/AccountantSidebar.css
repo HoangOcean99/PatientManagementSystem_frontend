@@ -28,7 +28,7 @@
 .acc-sidebar__logo {
   width: 38px;
   height: 38px;
-  background: linear-gradient(135deg, #0D9488, #0F766E);
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -52,12 +52,12 @@
   gap: 6px;
   margin: 12px 16px 4px;
   padding: 6px 12px;
-  background: #F0FDFA;
-  border: 1px solid #CCFBF1;
+  background: #EFF6FF;
+  border: 1px solid #DBEAFE;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
-  color: #0D9488;
+  color: #2563EB;
 }
 
 /* ===== NAV ===== */
@@ -95,13 +95,13 @@
 }
 
 .acc-sidebar__link--active {
-  background: #F0FDFA;
-  color: #0D9488;
+  background: #EFF6FF;
+  color: #2563EB;
   font-weight: 600;
 }
 
 .acc-sidebar__link--active:hover {
-  background: #CCFBF1;
+  background: #DBEAFE;
 }
 
 /* ===== FOOTER ===== */
@@ -138,3 +138,4 @@
     display: none;
   }
 }
+
