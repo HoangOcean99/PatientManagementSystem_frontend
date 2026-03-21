@@ -27,6 +27,7 @@ export const getMedicalRecordDetail = async (recordId) => await axiosClient.get(
 export const generateKeyCode = async (data) => await axiosClient.post('/patients/family-relationships/key-code', data);
 export const linkFamilyMember = async (data) => await axiosClient.post('/patients/family-relationships/link', data);
 export const createPayment = async (data) => await axiosClient.post('/invoices', data);
+export const payInvoiceApi = async (invoiceId) => await axiosClient.post(`/invoices/${invoiceId}/pay`);
 export const deleteUser = async (id) => await axiosClient.delete(`/users/${id}`);
 
 // Under My Care - Dependent management

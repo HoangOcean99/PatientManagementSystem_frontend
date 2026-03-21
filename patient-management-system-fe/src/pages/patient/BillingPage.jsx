@@ -7,6 +7,7 @@ import axiosClient from '../../api/axiosClient';
 import { useSearchParams } from 'react-router-dom';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
+import { payInvoiceApi } from '../../api/patientApi';
 
 const INVOICE_STATUS = {
     unpaid: { label: 'Chưa trả', color: 'text-sky-700', bg: 'bg-sky-50', border: 'border-sky-200' },
@@ -29,6 +30,7 @@ const BillingPage = () => {
     const [filter, setFilter] = useState('all');
     const [searchParams] = useSearchParams();
     const dependentId = searchParams.get('patient_id');
+    const [isPaying, setIsPaying] = useState(false);
 
     useEffect(() => {
         const load = async () => {
@@ -57,6 +59,28 @@ const BillingPage = () => {
 
     const filtered = filter === 'all' ? invoices : invoices.filter(i => i.payment_status === filter);
     const selected = invoices.find(i => i.invoice_id === selectedId) || null;
+
+    const handlePayment = async (invoiceId) => {
+        if (!invoiceId) return;
+        try {
+            setIsPaying(true);
+            await payInvoiceApi(invoiceId);
+            toast.success('Thanh toán thành công!');
+            
+            // Lấy lại danh sách hóa đơn
+            const { data: authData } = await supabase.auth.getUser();
+            const userId = authData?.user?.id;
+            const targetUserId = dependentId || userId;
+            const res = await axiosClient.get('/invoices', { params: { patient_id: targetUserId } });
+            setInvoices(res.data?.data || res.data || []);
+        } catch (error) {
+            console.error('Lỗi thanh toán:', error);
+            const errDetails = error.response?.data?.message || '';
+            toast.error(`Thanh toán thất bại. ${errDetails}`);
+        } finally {
+            setIsPaying(false);
+        }
+    };
 
     const formatCurrency = (n) => Number(n).toLocaleString('vi-VN') + ' đ';
     const formatDate = (d) => {
@@ -216,11 +240,16 @@ const BillingPage = () => {
                                             <i className="fa-solid fa-qrcode text-5xl text-gray-300"></i>
                                         </div>
                                         <button
-                                            className="w-full max-w-xs mx-auto py-3.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-sky-500/30 hover:shadow-sky-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+                                            onClick={() => handlePayment(selected.invoice_id)}
+                                            disabled={isPaying || selected.payment_status === 'paid'}
+                                            className="w-full max-w-xs mx-auto py-3.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-sky-500/30 hover:shadow-sky-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:-translate-y-0 disabled:active:scale-100"
                                             style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)' }}
                                         >
-                                            <i className="fa-solid fa-wallet"></i>
-                                            Thanh toán ngay
+                                            {isPaying ? (
+                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            ) : (
+                                                <><i className="fa-solid fa-wallet"></i> {selected.payment_status === 'paid' ? 'Đã thanh toán' : 'Thanh toán ngay'}</>
+                                            )}
                                         </button>
                                         <p className="text-xs text-gray-400 mt-3">Sử dụng ứng dụng ngân hàng hoặc ví điện tử của bạn để quét mã.</p>
                                     </div>

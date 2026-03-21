@@ -200,6 +200,7 @@ const UnderMyCarePage = () => {
                         <AnimatePresence>
                             {dependents.map((dep, idx) => {
                                 const child = dep.Users || dep.ChildUser || {};
+                                const childUserId = child.user_id || dep.child_user_id;
                                 const patient = child.Patients?.[0] || child.Patients || {};
                                 const initials = (child.full_name || 'U').split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
                                 return (
