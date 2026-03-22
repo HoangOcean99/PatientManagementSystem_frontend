@@ -3,15 +3,13 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { supabase } from "../../../supabaseClient";
-// import { getAllDoctors } from "../../api/doctorApi"; 
-import { createAppointment } from "../../api/appointmentApi";
-// import { getPatients } from "../../api/patientApi";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
-// import { getAllServices } from "../../api/serviceApi";
-import { getDoctorbyDepartmentId } from "../../api/doctorApi";
-import { getServicesbyDepartmentId } from "../../api/serviceApi";
-import { getListSchedulesByDoctorIdAndDate } from "../../api/scheduleApi";
 
+// Import API
+import { createAppointment } from "../../api/appointmentApi";
+import { getDoctorbyDepartmentId } from "../../api/doctorApi";
+import { getAvailableDoctorSlots } from "../../api/appointmentApi";
+import { getServicesbyDepartmentId } from "../../api/serviceApi";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 const RELATION_MAP = {
   father: "Cha",
@@ -37,28 +35,43 @@ const BookingAppointmentPage = () => {
   const [doctors, setDoctors] = useState([]);
   const [services, setServices] = useState([]);
   const [dependents, setDependents] = useState([]);
-  const [selectedSpecialty, setSelectedSpecialty] = useState("");  // selected specialty from URL
+  const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [myself, setMyself] = useState(null);
-  const [availableSlots, setAvailableSlots] = useState({});
+
+  const [allRawSlots, setAllRawSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   const [form, setForm] = useState({
     patient_id: "",
     is_dependent: false,
     doctor_id: "",
     service_id: "",
-    appointment_date: new Date().toISOString().split("T")[0],
+    appointment_date: "", // Tớ để rỗng ban đầu để hiển thị thông báo "chọn ngày" rõ hơn
     start_time: "",
     slot_id: "",
     notes: "",
   });
   const [errors, setErrors] = useState({});
 
-
   const departmentId = searchParams.get("departmentId");
-  // Calendar State
   const [viewDate, setViewDate] = useState(new Date());
+
+  useEffect(() => {
+    const fetchAvailableSlots = async () => {
+      setIsLoadingSlots(true);
+      try {
+        const res = await getAvailableDoctorSlots(departmentId);
+        setAllRawSlots(res.data?.data || res.data || []);
+      } catch (err) {
+        console.error("Error fetching slots", err);
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    };
+    if (departmentId) fetchAvailableSlots();
+  }, [departmentId]);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -73,18 +86,9 @@ const BookingAppointmentPage = () => {
         };
         setMyself(me);
 
-        // Pre-select "Myself"
         if (userId) {
           setForm(prev => ({ ...prev, patient_id: userId, is_dependent: false }));
         }
-
-        // const [docRes, svcRes, depRes] = await Promise.all([
-        //   getDoctorbyDepartmentId().catch(() => ({ data: [] })),
-        //   getAllServices().catch(() => ({ data: [] })),
-        //   userId 
-        //     ? getPatients({ parent_user_id: userId }).catch(() => ({ data: [] }))
-        //     : Promise.resolve({ data: [] }),
-        // ]);
       } catch (err) {
         console.error("Failed to load data:", err);
         toast.error("Không thể tải dữ liệu");
@@ -103,56 +107,22 @@ const BookingAppointmentPage = () => {
       setServices(res.data);
     };
 
-    const fetchAvailableSlots = async () => {
-      try {
-        if (!form.doctor_id) {
-          return setAvailableSlots({});
-        }
-        // Xác định khoảng thời gian lấy lịch (VD: từ hôm nay đến 30 ngày sau)
-        const startDate = new Date().toISOString().split("T")[0];
-        const endDate = new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
-        )
-          .toISOString()
-          .split("T")[0];
-
-        const res = await getListSchedulesByDoctorIdAndDate(
-          form.doctor_id,
-          startDate,
-          endDate
-        );
-
-        // API trả về: { success: true, data: { "2026-03-13": [ ... ], ... } }
-        // Lưu thẳng object "data" để dễ truy cập theo ngày
-        setAvailableSlots(res.data?.data || {});
-      } catch (error) {
-        console.log(
-          "Failed to fetch available slots:",
-          error.response?.data?.message || "Không thể tải lịch khám"
-        );
-        setAvailableSlots({});
-      }
-    };
-
-    fetchDoctors();
-    fetchServices();
-    fetchAvailableSlots();
+    if (departmentId) {
+      fetchDoctors();
+      fetchServices();
+    }
     loadUserData();
-  }, [form.doctor_id]);
+  }, [departmentId]);
 
-  // Handle specialty from URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const specialtyFilter = params.get("specialty");
 
     if (specialtyFilter) {
       setSelectedSpecialty(specialtyFilter);
-      // Pre-select service if it matches the name or type
       if (services.length > 0) {
         const matchingSvc = services.find(s => {
-          // Bọc an toàn: Nếu s không tồn tại hoặc không có trường name thì bỏ qua luôn
           if (!s || !s.name) return false;
-          // Dùng đúng tên biến specialtyFilter
           const sNameLower = s.name.toLowerCase();
           const filterLower = specialtyFilter.toLowerCase();
           return sNameLower.includes(filterLower) || filterLower.includes(sNameLower);
@@ -190,11 +160,8 @@ const BookingAppointmentPage = () => {
 
     try {
       setSubmitting(true);
-
-      // Lấy thông tin service để truyền sang trang Thanh toán (nếu cần)
       const selectedSvc = services.find((s) => String(s.service_id) === String(form.service_id));
 
-      // Payload sạch sẽ, bám sát 100% Backend
       const payload = {
         patient_id: form.patient_id,
         doctor_id: form.doctor_id,
@@ -219,7 +186,24 @@ const BookingAppointmentPage = () => {
     }
   };
 
-  // --- Calendar Logic ---
+  const availableDates = useMemo(() => {
+    if (!allRawSlots.length) return [];
+    let filtered = allRawSlots;
+    if (form.doctor_id) {
+      filtered = filtered.filter(slot => String(slot.doctor_id) === String(form.doctor_id));
+    }
+    return [...new Set(filtered.map(slot => slot.slot_date))];
+  }, [allRawSlots, form.doctor_id]);
+
+  const filteredTimeSlots = useMemo(() => {
+    if (!form.appointment_date) return [];
+    let filtered = allRawSlots.filter(slot => slot.slot_date === form.appointment_date);
+    if (form.doctor_id) {
+      filtered = filtered.filter(slot => String(slot.doctor_id) === String(form.doctor_id));
+    }
+    return filtered.sort((a, b) => (a.start_time || "").localeCompare(b.start_time || ""));
+  }, [allRawSlots, form.appointment_date, form.doctor_id]);
+
   const currentMonth = viewDate.getMonth();
   const currentYear = viewDate.getFullYear();
 
@@ -228,11 +212,9 @@ const BookingAppointmentPage = () => {
     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
     const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
 
-    // Padding for previous month
     for (let i = 0; i < firstDay; i++) {
       days.push(null);
     }
-
     for (let d = 1; d <= daysInMonth; d++) {
       days.push(d);
     }
@@ -243,29 +225,50 @@ const BookingAppointmentPage = () => {
     setViewDate(new Date(currentYear, currentMonth + offset, 1));
   };
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const handleDateSelect = (day) => {
     if (!day) return;
-    // Format đúng chuẩn YYYY-MM-DD
+    const selectedDate = new Date(currentYear, currentMonth, day);
+    if (selectedDate < today) return;
+
     const monthStr = String(currentMonth + 1).padStart(2, '0');
     const dayStr = String(day).padStart(2, '0');
     const dateString = `${currentYear}-${monthStr}-${dayStr}`;
 
-    // Lưu ngày vào form
     handleChange("appointment_date", dateString);
-
-    // Tự động xóa giờ cũ khi chọn sang ngày mới
     handleChange("start_time", "");
+    handleChange("slot_id", "");
   };
 
-  // --- Time Slots Logic ---
-  // const timeSlots = ["09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM", "04:00 PM"];
+  // --- LOGIC HƯỚNG DẪN & RESET ---
+  const handleResetSelection = () => {
+    handleChange("doctor_id", "");
+    handleChange("appointment_date", "");
+    handleChange("start_time", "");
+    handleChange("slot_id", "");
+  };
 
-  const convertTo24h = (timeStr) => {
-    const [time, modifier] = timeStr.split(' ');
-    let [hours, minutes] = time.split(':');
-    if (hours === '12') hours = '00';
-    if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
-    return `${String(hours).padStart(2, '0')}:${minutes}`;
+  const getGuideMessage = () => {
+    const { doctor_id, appointment_date, start_time } = form;
+
+    if (doctor_id && appointment_date && start_time) {
+      return "Tuyệt vời! Bạn đã chọn đủ thông tin. Hãy nhấn Xác nhận lịch khám bên dưới.";
+    }
+    if (doctor_id && !appointment_date) {
+      return "Bác sĩ đã được chọn. Tiếp theo, vui lòng chọn Ngày khám trên lịch bên phải.";
+    }
+    if (!doctor_id && appointment_date && !start_time) {
+      return "Ngày khám đã được chọn. Tiếp theo, vui lòng chọn Giờ khám ở góc dưới bên phải.";
+    }
+    if (doctor_id && appointment_date && !start_time) {
+      return "Tiếp theo, vui lòng chọn Giờ khám trống hiển thị ở bên dưới lịch.";
+    }
+    if (!doctor_id && appointment_date && start_time) {
+      return "Đã chọn giờ. Vui lòng kiểm tra Bác sĩ phụ trách hoặc chọn thêm ở Form.";
+    }
+    return "Vui lòng chọn Bác sĩ hoặc Ngày khám trên lịch để bắt đầu tìm kiếm slot.";
   };
 
   const MotionDiv = motion.div;
@@ -293,7 +296,7 @@ const BookingAppointmentPage = () => {
         </MotionDiv>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Form */}
+          {/* Form */}
           <MotionDiv
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -301,13 +304,32 @@ const BookingAppointmentPage = () => {
             className="lg:col-span-2 space-y-6"
           >
             <div className="bg-white rounded-3xl p-8 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-800">Đặt lịch khám</h2>
                 {selectedSpecialty && (
                   <div className="flex items-center gap-2 px-4 py-2 bg-sky-50 text-sky-600 rounded-full text-xs font-bold ring-1 ring-sky-500/10 shadow-sm shadow-sky-500/5">
                     <i className="fa-solid fa-stethoscope"></i>
                     {selectedSpecialty}
                   </div>
+                )}
+              </div>
+
+              {/* KHU VỰC THÔNG BÁO HƯỚNG DẪN & NÚT XÓA */}
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <i className="fa-solid fa-circle-info text-emerald-500 mt-1"></i>
+                  <p className="text-sm text-emerald-700 font-medium leading-snug">
+                    {getGuideMessage()}
+                  </p>
+                </div>
+                {(form.doctor_id || form.appointment_date || form.start_time) && (
+                  <button
+                    type="button"
+                    onClick={handleResetSelection}
+                    className="text-xs font-bold text-red-500 hover:text-red-600 bg-white px-3 py-2 rounded-lg border border-red-200 hover:bg-red-50 transition-colors whitespace-nowrap shadow-sm"
+                  >
+                    <i className="fa-solid fa-rotate-right mr-1"></i> Xóa chọn lại
+                  </button>
                 )}
               </div>
 
@@ -345,7 +367,12 @@ const BookingAppointmentPage = () => {
                     <div className="relative">
                       <select
                         value={form.doctor_id}
-                        onChange={(e) => handleChange("doctor_id", e.target.value)}
+                        onChange={(e) => {
+                          handleChange("doctor_id", e.target.value);
+                          handleChange("start_time", "");
+                          handleChange("slot_id", "");
+                          handleChange("appointment_date", "");
+                        }}
                         className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all appearance-none text-gray-700"
                       >
                         <option value="">Chọn bác sĩ</option>
@@ -388,24 +415,26 @@ const BookingAppointmentPage = () => {
                     <label className="text-sm font-semibold text-gray-600 block">Ngày khám</label>
 
                     <div className="relative">
-                      <div className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl flex items-center gap-3 text-gray-700 cursor-default">
+                      <div className={`w-full h-12 px-4 bg-white border rounded-xl flex items-center gap-3 cursor-default transition-all ${form.appointment_date ? 'border-sky-300 text-gray-900' : 'border-gray-200 text-gray-400'}`}>
                         <i className="fa-regular fa-calendar text-sky-500"></i>
-                        <span>{form.appointment_date ? new Date(form.appointment_date).toLocaleDateString('vi-VN', { month: 'long', day: 'numeric', year: 'numeric' }) : "Pick a date"}</span>
+                        <span>{form.appointment_date ? new Date(form.appointment_date).toLocaleDateString('vi-VN', { month: 'long', day: 'numeric', year: 'numeric' }) : "Vui lòng chọn ngày ở lịch bên phải"}</span>
                       </div>
                     </div>
+                    {errors.appointment_date && <p className="text-xs text-red-500 mt-1">{errors.appointment_date}</p>}
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-gray-600 block">Giờ khám</label>
                   <div className="relative">
-                    <div className="w-full h-12 px-4 bg-white border border-gray-200 rounded-xl flex items-center gap-3 text-gray-700 cursor-default">
+                    <div className={`w-full h-12 px-4 bg-white border rounded-xl flex items-center gap-3 cursor-default transition-all ${form.start_time ? 'border-sky-300 text-gray-900 font-medium' : 'border-gray-200 text-gray-400'}`}>
                       <i className="fa-regular fa-clock text-sky-500"></i>
-                      <span className={form.start_time ? "text-gray-900 font-medium" : "text-gray-400"}>
-                        {form.start_time || "Chọn giờ khám"}
+                      <span>
+                        {form.start_time || "Vui lòng chọn giờ trống ở khung bên phải"}
                       </span>
                     </div>
                   </div>
+                  {errors.start_time && <p className="text-xs text-red-500 mt-1">{errors.start_time}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -440,7 +469,7 @@ const BookingAppointmentPage = () => {
             className="space-y-8"
           >
             <div className="bg-white rounded-3xl p-6 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
-              <h3 className="text-lg font-bold text-gray-800 mb-6 font-semibold">Chọn ngày</h3>
+              <h3 className="text-lg text-gray-800 mb-6 font-semibold">Chọn ngày</h3>
               <div className="flex items-center justify-between mb-6">
                 <button type="button" onClick={() => changeMonth(-1)} className="p-2 hover:bg-gray-50 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"><i className="fa-solid fa-chevron-left text-xs"></i></button>
                 <div className="text-center"><span className="font-bold text-gray-700 block text-sm">{MONTHS[currentMonth]} {currentYear}</span></div>
@@ -451,6 +480,12 @@ const BookingAppointmentPage = () => {
               </div>
               <div className="grid grid-cols-7 gap-1">
                 {calendarDays.map((day, idx) => {
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+
+                  const dateOfSlot = day ? new Date(currentYear, currentMonth, day) : null;
+                  const isPast = dateOfSlot && dateOfSlot < today;
+
                   const isSelected =
                     form.appointment_date &&
                     day &&
@@ -463,32 +498,34 @@ const BookingAppointmentPage = () => {
                     new Date().getMonth() === currentMonth &&
                     new Date().getFullYear() === currentYear;
 
-                  // Tạo chuỗi ngày dạng YYYY-MM-DD để check trong availableSlots
                   let hasSlots = false;
                   if (day) {
                     const monthStr = String(currentMonth + 1).padStart(2, "0");
                     const dayStr = String(day).padStart(2, "0");
                     const dateKey = `${currentYear}-${monthStr}-${dayStr}`;
-                    hasSlots = !!(availableSlots[dateKey] && availableSlots[dateKey].length > 0);
+                    hasSlots = availableDates.includes(dateKey);
                   }
 
                   return (
                     <button
                       key={idx}
                       type="button"
-                      disabled={!day}
+                      disabled={!day || isPast || (!hasSlots && !isPast)}
                       onClick={() => handleDateSelect(day)}
                       className={`h-9 w-full rounded-full flex items-center justify-center text-xs font-semibold transition-all
-                        ${!day ? "invisible" : "cursor-pointer"}
-                        ${isSelected
+          ${!day ? "invisible" : ""}
+          ${isPast || (!hasSlots && !isPast && day)
+                          ? "text-gray-300 cursor-not-allowed bg-gray-50 opacity-60"
+                          : "cursor-pointer text-gray-600 hover:bg-sky-50 hover:text-sky-600"}
+          ${isSelected
                           ? "bg-sky-500 text-white shadow-md shadow-sky-500/30"
-                          : "text-gray-600 hover:bg-sky-50 hover:text-sky-600"
+                          : ""
                         }
-                        ${isToday && !isSelected
+          ${isToday && !isSelected && !isPast
                           ? "text-sky-500 ring-1 ring-sky-500"
                           : ""
                         }
-                        ${hasSlots && !isSelected
+          ${hasSlots && !isSelected && !isPast
                           ? "border border-emerald-400 bg-emerald-50 text-emerald-700"
                           : ""
                         }`}
@@ -506,29 +543,36 @@ const BookingAppointmentPage = () => {
               </h3>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {/* Trích xuất mảng giờ của ngày đang chọn */}
-                {(availableSlots[form.appointment_date] || []).length > 0 ? (
-                  (availableSlots[form.appointment_date] || []).map((slot) => {
-                    // Cắt giây nếu API trả về "08:00:00" -> "08:00"
-                    const timeDisplay = slot.start_time.slice(0, 5);
-                    const isSelected = form.start_time === slot.start_time;
+                {isLoadingSlots ? (
+                  <div className="col-span-full text-center text-sm text-gray-400 py-4">Đang tải...</div>
+                ) : filteredTimeSlots.length > 0 ? (
+                  filteredTimeSlots.map((slot) => {
+                    const timeDisplay = slot.start_time?.slice(0, 5) || slot.start_time;
+                    const isSelected = form.slot_id === slot.slot_id;
 
                     return (
                       <button
                         key={slot.slot_id}
                         type="button"
                         onClick={() => {
-                          handleChange("start_time", slot.start_time); // Giữ nguyên để UI hiện màu xanh
-                          handleChange("slot_id", slot.slot_id);       // THÊM DÒNG NÀY: Lưu lại ID của slot
+                          handleChange("start_time", slot.start_time);
+                          handleChange("slot_id", slot.slot_id);
+
+                          if (!form.doctor_id && slot.doctor_id) {
+                            handleChange("doctor_id", slot.doctor_id);
+                          }
                         }}
-                        className={`py-3 px-1 rounded-xl text-[13px] font-bold border transition-all text-center
+                        className={`py-3 px-1 rounded-xl text-[13px] font-bold border transition-all text-center flex flex-col items-center justify-center
                   ${isSelected
                             ? 'bg-white border-sky-500 text-sky-600 border-2 shadow-sm'
                             : 'bg-white border-gray-100 text-gray-500 hover:border-sky-300 hover:text-sky-600 hover:bg-sky-50/30'
                           }
                 `}
                       >
-                        {timeDisplay}
+                        <span>{timeDisplay}</span>
+                        {!form.doctor_id && slot.Doctors?.Users?.full_name && (
+                          <span className="text-[9px] mt-1 font-normal opacity-70 truncate w-full px-1">BS. {slot.Doctors.Users.full_name}</span>
+                        )}
                       </button>
                     );
                   })
@@ -545,4 +589,5 @@ const BookingAppointmentPage = () => {
     </div>
   );
 };
+
 export default BookingAppointmentPage;

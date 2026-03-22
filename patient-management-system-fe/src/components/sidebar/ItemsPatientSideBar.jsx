@@ -12,7 +12,8 @@ export const ItemsPatientSideBar = [
         label: "Đặt lịch khám",
         linkPage: "/patient/booking",
         matchPages: [
-            "/patient/booking"
+            "/patient/booking",
+            "/patient/appointment"
         ]
     },
     {
