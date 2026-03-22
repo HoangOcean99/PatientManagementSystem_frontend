@@ -8,15 +8,6 @@ export const ItemsPatientSideBar = [
         ]
     },
     {
-        icon: 'User',
-        label: "Hồ sơ cá nhân",
-        linkPage: "/patient/profile",
-        matchPages: [
-            "/patient/profile",
-            "/patient/change-password"
-        ]
-    },
-    {
         icon: 'Calendar',
         label: "Đặt lịch khám",
         linkPage: "/patient/booking",
@@ -55,6 +46,15 @@ export const ItemsPatientSideBar = [
         matchPages: [
             "/patient/under-my-care",
             "/patient/under-my-care/key"
+        ]
+    },
+    {
+        icon: 'User',
+        label: "Hồ sơ cá nhân",
+        linkPage: "/patient/profile",
+        matchPages: [
+            "/patient/profile",
+            "/patient/change-password"
         ]
     },
 ];
