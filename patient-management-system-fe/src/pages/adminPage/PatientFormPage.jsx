@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { getPatientById, createPatient, updatePatientInfo } from '../../api/patientApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
+import Swal from 'sweetalert2';
 
 const PatientFormPage = () => {
     const { id } = useParams();
@@ -94,6 +95,19 @@ const PatientFormPage = () => {
             toast.error('Vui lòng kiểm tra lại các trường thông tin');
             return;
         }
+
+        const result = await Swal.fire({
+            title: isEdit ? 'Xác nhận cập nhật?' : 'Xác nhận thêm mới?',
+            text: isEdit ? 'Bạn có muốn lưu các thay đổi này không?' : 'Bạn có muốn tạo bệnh nhân mới với thông tin này không?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy'
+        });
+        
+        if (!result.isConfirmed) return;
 
         setIsSubmitting(true);
         try {

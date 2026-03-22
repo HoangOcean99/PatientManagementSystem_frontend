@@ -16,7 +16,7 @@
 
 .acc-inv-main {
   flex: 1;
-  margin-left: var(--acc-sidebar-width, 260px);
+  margin-left: 0;
   min-height: 100vh;
   overflow-y: auto;
 }

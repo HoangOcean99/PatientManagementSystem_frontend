@@ -5,15 +5,14 @@ import {
   FiSearch,
   FiFilter,
   FiEye,
-  FiPrinter,
   FiX,
   FiCheckCircle,
   FiAlertCircle,
 } from 'react-icons/fi';
 import AccountantSidebar from '../../components/accountant/AccountantSidebar';
-import InvoicePrintTemplate from '../../components/accountant/InvoicePrintTemplate';
 import { getPendingInvoices, payInvoice } from '../../api/accountantApi';
 import { toast, Toaster } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 import './InvoiceManagementPage.css';
 
 const formatCurrency = (amount) =>
@@ -32,6 +31,7 @@ const itemVariants = {
 const STATUS_MAP = {
   paid: { label: 'Đã thanh toán', color: 'paid' },
   unpaid: { label: 'Chưa thanh toán', color: 'unpaid' },
+  partial: { label: 'Chưa thanh toán', color: 'unpaid' },
   cancelled: { label: 'Đã huỷ', color: 'cancelled' },
 };
 
@@ -40,8 +40,8 @@ const InvoiceManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('priority');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [printInvoice, setPrintInvoice] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -55,15 +55,16 @@ const InvoiceManagementPage = () => {
       const mapped = res.data.map(d => ({
         id: d.invoice_id,
         patient_name: d.Patients?.Users?.full_name || 'N/A',
-        patient_code: d.patient_id?.substring(0,8).toUpperCase(),
+        patient_code: d.patient_id?.substring(0, 8).toUpperCase(),
         date: new Date(d.issued_at).toLocaleDateString('vi-VN'),
+        rawDate: new Date(d.issued_at).getTime(),
         status: d.payment_status,
         total: d.total_amount,
         deposit_applied: d.Appointments?.deposit_paid || 0,
         items: (d.InvoiceItems || []).map(i => ({
-            name: i.item_name,
-            qty: i.quantity,
-            price: i.unit_price
+          name: i.item_name,
+          qty: i.quantity,
+          price: i.unit_price
         }))
       }));
       setInvoices(mapped);
@@ -76,7 +77,7 @@ const InvoiceManagementPage = () => {
   };
 
   const filteredInvoices = useMemo(() => {
-    return invoices.filter((inv) => {
+    let result = invoices.filter((inv) => {
       const matchSearch =
         inv.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         inv.patient_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,10 +85,37 @@ const InvoiceManagementPage = () => {
       const matchStatus = statusFilter === 'all' || inv.status === statusFilter;
       return matchSearch && matchStatus;
     });
-  }, [invoices, searchTerm, statusFilter]);
+
+    result.sort((a, b) => {
+      if (sortBy === 'priority') {
+        if (a.status === 'unpaid' && b.status !== 'unpaid') return -1;
+        if (a.status !== 'unpaid' && b.status === 'unpaid') return 1;
+        return b.rawDate - a.rawDate;
+      } else if (sortBy === 'date_desc') {
+        return b.rawDate - a.rawDate;
+      } else if (sortBy === 'date_asc') {
+        return a.rawDate - b.rawDate;
+      }
+      return 0;
+    });
+
+    return result;
+  }, [invoices, searchTerm, statusFilter, sortBy]);
 
   const handleMarkPaid = async (id) => {
-    if(!window.confirm("Bạn có chắc chắn xác nhận thanh toán hóa đơn này?")) return;
+    const result = await Swal.fire({
+      title: 'Xác nhận thanh toán?',
+      text: "Hệ thống sẽ chuyển trạng thái và gửi tính năng biên lai điện tử qua email cho bệnh nhân.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0284c7',
+      cancelButtonColor: '#ef4444',
+      confirmButtonText: 'Có, xác nhận',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       setIsProcessing(true);
       await payInvoice(id, 'cash');
@@ -102,16 +130,9 @@ const InvoiceManagementPage = () => {
     }
   };
 
-  const handlePrint = (invoice) => {
-    setPrintInvoice(invoice);
-    setTimeout(() => {
-      window.print();
-    }, 300);
-  };
-
   return (
-    <div className="acc-inv-layout">
-      <AccountantSidebar activePage="invoices" />
+    <div className="acc-inv-layout" style={{ width: '100%' }}>
+      {/* <AccountantSidebar activePage="invoices" /> */}
       <Toaster position="top-right" />
 
       <main className="acc-inv-main">
@@ -122,7 +143,7 @@ const InvoiceManagementPage = () => {
           animate="visible"
         >
           {/* Page Header */}
-          <motion.div className="acc-inv-header" variants={itemVariants}>
+          <motion.div className="acc-inv-header" style={{ width: '100%' }} variants={itemVariants}>
             <div>
               <h1 className="acc-inv-header__title">
                 <FiFileText size={24} />
@@ -145,6 +166,7 @@ const InvoiceManagementPage = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+
             <div className="acc-inv-filters__status">
               <FiFilter size={16} />
               <select
@@ -152,15 +174,27 @@ const InvoiceManagementPage = () => {
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="all">Tất cả trạng thái</option>
-                <option value="paid">Đã thanh toán</option>
                 <option value="unpaid">Chưa thanh toán</option>
+                <option value="paid">Đã thanh toán</option>
                 <option value="cancelled">Đã huỷ</option>
+              </select>
+            </div>
+
+            <div className="acc-inv-filters__status">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                title="Sắp xếp"
+              >
+                <option value="priority">Ưu tiên chưa thu</option>
+                <option value="date_desc">Ngày: Mới nhất</option>
+                <option value="date_asc">Ngày: Cũ nhất</option>
               </select>
             </div>
           </motion.div>
 
           {/* Table */}
-          <motion.div className="acc-inv-table-wrap" variants={itemVariants}>
+          <motion.div className="acc-inv-table-wrap" style={{ width: '100%' }} variants={itemVariants}>
             <table className="acc-inv-table">
               <thead>
                 <tr>
@@ -185,7 +219,7 @@ const InvoiceManagementPage = () => {
                 ) : (
                   filteredInvoices.map((inv) => (
                     <tr key={inv.id}>
-                      <td className="acc-inv-table__code">{inv.id.substring(0,8).toUpperCase()}</td>
+                      <td className="acc-inv-table__code">{inv.id.substring(0, 8).toUpperCase()}</td>
                       <td className="acc-inv-table__name">{inv.patient_name}</td>
                       <td>{inv.patient_code}</td>
                       <td>{inv.date}</td>
@@ -210,13 +244,16 @@ const InvoiceManagementPage = () => {
                           >
                             <FiEye size={15} />
                           </button>
-                          <button
-                            className="acc-inv-action-btn acc-inv-action-btn--print"
-                            onClick={() => handlePrint(inv)}
-                            title="In hoá đơn"
-                          >
-                            <FiPrinter size={15} />
-                          </button>
+                          {(inv.status === 'unpaid' || inv.status === 'partial') && (
+                            <button
+                              className="acc-inv-action-btn acc-inv-action-btn--paid text-green-600 hover:bg-green-50 disabled:opacity-50"
+                              onClick={() => handleMarkPaid(inv.id)}
+                              title="Xác nhận thanh toán"
+                              disabled={isProcessing}
+                            >
+                              <FiCheckCircle size={15} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -234,125 +271,110 @@ const InvoiceManagementPage = () => {
       </main>
 
       {/* Detail Modal */}
-      {selectedInvoice && (
-        <div className="acc-inv-modal-overlay" onClick={() => setSelectedInvoice(null)}>
-          <motion.div
-            className="acc-inv-modal"
-            onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="acc-inv-modal__header">
-              <h3>Chi tiết hoá đơn — {selectedInvoice.id.substring(0,8).toUpperCase()}</h3>
-              <button className="acc-inv-modal__close" onClick={() => setSelectedInvoice(null)}>
-                <FiX size={20} />
-              </button>
-            </div>
-            <div className="acc-inv-modal__body">
-              <div className="acc-inv-modal__info-grid">
-                <div className="acc-inv-modal__info-item">
-                  <span className="acc-inv-modal__label">Bệnh nhân</span>
-                  <span className="acc-inv-modal__value">{selectedInvoice.patient_name}</span>
-                </div>
-                <div className="acc-inv-modal__info-item">
-                  <span className="acc-inv-modal__label">Mã BN</span>
-                  <span className="acc-inv-modal__value">{selectedInvoice.patient_code}</span>
-                </div>
-                <div className="acc-inv-modal__info-item">
-                  <span className="acc-inv-modal__label">Ngày xuất</span>
-                  <span className="acc-inv-modal__value">{selectedInvoice.date}</span>
-                </div>
-                <div className="acc-inv-modal__info-item">
-                  <span className="acc-inv-modal__label">Trạng thái</span>
-                  <span className={`acc-inv-badge acc-inv-badge--${STATUS_MAP[selectedInvoice.status]?.color}`}>
-                    {STATUS_MAP[selectedInvoice.status]?.label}
-                  </span>
-                </div>
-              </div>
-
-              <div className="acc-inv-modal__items-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>STT</th>
-                      <th>Dịch vụ / Thuốc</th>
-                      <th>SL</th>
-                      <th>Đơn giá</th>
-                      <th>Thành tiền</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedInvoice.items.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{idx + 1}</td>
-                        <td>{item.name}</td>
-                        <td>{item.qty}</td>
-                        <td>{formatCurrency(item.price)}</td>
-                        <td className="acc-inv-modal__item-total">
-                          {formatCurrency(item.qty * item.price)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="acc-inv-modal__summary">
-                <div className="acc-inv-modal__summary-row">
-                  <span>Tổng cộng:</span>
-                  <span>{formatCurrency(selectedInvoice.total)}</span>
-                </div>
-                {selectedInvoice.deposit_applied > 0 && (
-                  <div className="acc-inv-modal__summary-row acc-inv-modal__summary-row--deposit">
-                    <span>Đã đặt cọc:</span>
-                    <span>-{formatCurrency(selectedInvoice.deposit_applied)}</span>
-                  </div>
-                )}
-                <div className="acc-inv-modal__summary-row acc-inv-modal__summary-row--total">
-                  <span>Còn phải trả:</span>
-                  <span>{formatCurrency(selectedInvoice.total - selectedInvoice.deposit_applied)}</span>
-                </div>
-              </div>
-            </div>
-            <div className="acc-inv-modal__footer">
-              {selectedInvoice.status === 'unpaid' && (
-                <button
-                  className="acc-inv-modal__btn acc-inv-modal__btn--paid hover:opacity-90 transition-opacity"
-                  onClick={() => handleMarkPaid(selectedInvoice.id)}
-                  disabled={isProcessing}
-                >
-                  <FiCheckCircle size={16} /> Đánh dấu đã TT
+      {
+        selectedInvoice && (
+          <div className="acc-inv-modal-overlay" onClick={() => setSelectedInvoice(null)}>
+            <motion.div
+              className="acc-inv-modal"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className="acc-inv-modal__header">
+                <h3>Chi tiết hoá đơn — {selectedInvoice.id.substring(0, 8).toUpperCase()}</h3>
+                <button className="acc-inv-modal__close" onClick={() => setSelectedInvoice(null)}>
+                  <FiX size={20} />
                 </button>
-              )}
-              <button
-                className="acc-inv-modal__btn acc-inv-modal__btn--print"
-                onClick={() => {
-                  setSelectedInvoice(null);
-                  handlePrint(selectedInvoice);
-                }}
-              >
-                <FiPrinter size={16} /> In hoá đơn
-              </button>
-              <button
-                className="acc-inv-modal__btn acc-inv-modal__btn--close"
-                onClick={() => setSelectedInvoice(null)}
-              >
-                Đóng
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+              </div>
+              <div className="acc-inv-modal__body">
+                <div className="acc-inv-modal__info-grid">
+                  <div className="acc-inv-modal__info-item">
+                    <span className="acc-inv-modal__label">Bệnh nhân</span>
+                    <span className="acc-inv-modal__value">{selectedInvoice.patient_name}</span>
+                  </div>
+                  <div className="acc-inv-modal__info-item">
+                    <span className="acc-inv-modal__label">Mã BN</span>
+                    <span className="acc-inv-modal__value">{selectedInvoice.patient_code}</span>
+                  </div>
+                  <div className="acc-inv-modal__info-item">
+                    <span className="acc-inv-modal__label">Ngày xuất</span>
+                    <span className="acc-inv-modal__value">{selectedInvoice.date}</span>
+                  </div>
+                  <div className="acc-inv-modal__info-item">
+                    <span className="acc-inv-modal__label">Trạng thái</span>
+                    <span className={`acc-inv-badge acc-inv-badge--${STATUS_MAP[selectedInvoice.status]?.color}`}>
+                      {STATUS_MAP[selectedInvoice.status]?.label}
+                    </span>
+                  </div>
+                </div>
 
-      {/* Print Template (hidden, only shows when printing) */}
-      {printInvoice && (
-        <InvoicePrintTemplate
-          invoice={printInvoice}
-          onAfterPrint={() => setPrintInvoice(null)}
-        />
-      )}
-    </div>
+                <div className="acc-inv-modal__items-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>STT</th>
+                        <th>Dịch vụ / Thuốc</th>
+                        <th>SL</th>
+                        <th>Đơn giá</th>
+                        <th>Thành tiền</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedInvoice.items.map((item, idx) => (
+                        <tr key={idx}>
+                          <td>{idx + 1}</td>
+                          <td>{item.name}</td>
+                          <td>{item.qty}</td>
+                          <td>{formatCurrency(item.price)}</td>
+                          <td className="acc-inv-modal__item-total">
+                            {formatCurrency(item.qty * item.price)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="acc-inv-modal__summary">
+                  <div className="acc-inv-modal__summary-row">
+                    <span>Tổng cộng:</span>
+                    <span>{formatCurrency(selectedInvoice.total)}</span>
+                  </div>
+                  {selectedInvoice.deposit_applied > 0 && (
+                    <div className="acc-inv-modal__summary-row acc-inv-modal__summary-row--deposit">
+                      <span>Đã đặt cọc:</span>
+                      <span>-{formatCurrency(selectedInvoice.deposit_applied)}</span>
+                    </div>
+                  )}
+                  <div className="acc-inv-modal__summary-row acc-inv-modal__summary-row--total">
+                    <span>Còn phải trả:</span>
+                    <span>{formatCurrency(selectedInvoice.total - selectedInvoice.deposit_applied)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="acc-inv-modal__footer">
+                {selectedInvoice.status === 'unpaid' && (
+                  <button
+                    className="acc-inv-modal__btn acc-inv-modal__btn--paid hover:opacity-90 transition-opacity"
+                    onClick={() => handleMarkPaid(selectedInvoice.id)}
+                    disabled={isProcessing}
+                  >
+                    <FiCheckCircle size={16} /> Đánh dấu đã TT
+                  </button>
+                )}
+                <button
+                  className="acc-inv-modal__btn acc-inv-modal__btn--close"
+                  onClick={() => setSelectedInvoice(null)}
+                >
+                  Đóng
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )
+      }
+    </div >
   );
 };
 

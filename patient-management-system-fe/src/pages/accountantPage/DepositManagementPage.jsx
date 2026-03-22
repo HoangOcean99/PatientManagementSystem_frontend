@@ -2,18 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiSearch,
-  FiPlus,
-  FiCheck,
-  FiX,
   FiLoader,
-  FiExternalLink,
-  FiUser,
-  FiPhone,
-  FiCalendar,
   FiChevronLeft,
   FiChevronRight,
   FiChevronsLeft,
   FiChevronsRight,
+  FiMoreVertical,
 } from 'react-icons/fi';
 import AccountantSidebar from '../../components/accountant/AccountantSidebar';
 import {
@@ -22,6 +16,7 @@ import {
   searchApptsForDeposit
 } from '../../api/accountantApi';
 import { toast, Toaster } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 import './DepositManagementPage.css';
 
 const formatCurrency = (amount) =>
@@ -43,19 +38,13 @@ const DepositManagementPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Modal states
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [searchApptQuery, setSearchApptQuery] = useState('');
-  const [apptResults, setApptResults] = useState([]);
-  const [isSearchingAppt, setIsSearchingAppt] = useState(false);
-  const [selectedAppt, setSelectedAppt] = useState(null);
-
   useEffect(() => { fetchDeposits(); }, []);
 
   const fetchDeposits = async () => {
     try {
       setLoading(true);
       const res = await getPendingDeposits();
+      console.log(res.data);
       const mapped = (res.data || []).map((d, idx) => ({
         id: d.appointment_id,
         code: `DP${String(idx + 1).padStart(3, '0')}`,
@@ -78,8 +67,8 @@ const DepositManagementPage = () => {
     return deposits.filter((dep) => {
       const q = searchTerm.toLowerCase();
       const matchSearch = dep.patient_name.toLowerCase().includes(q) ||
-                          dep.code.toLowerCase().includes(q) ||
-                          dep.id.toLowerCase().includes(q);
+        dep.code.toLowerCase().includes(q) ||
+        dep.id.toLowerCase().includes(q);
       const matchStatus = statusFilter === 'all' || dep.status === statusFilter;
       return matchSearch && matchStatus;
     });
@@ -91,34 +80,20 @@ const DepositManagementPage = () => {
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Appointment search for modal
-  useEffect(() => {
-    if (!showAddModal) return;
-    
-    const t = setTimeout(() => {
-      searchAppts(searchApptQuery);
-    }, 400);
-    return () => clearTimeout(t);
-  }, [searchApptQuery, showAddModal]);
-
-  const searchAppts = async (q = '') => {
-    try {
-      setIsSearchingAppt(true);
-      const res = await searchApptsForDeposit(q);
-      setApptResults(res.data || []);
-    } catch { /* silent */ } finally {
-      setIsSearchingAppt(false);
-    }
-  };
-
-  const handleSelectAppt = (appt) => {
-    setSelectedAppt(appt);
-    setSearchApptQuery(appt.patient_name);
-    setApptResults([]);
-  };
-
   const handleConfirm = async (id, amount) => {
-    if (!window.confirm('Xác nhận thu cọc?')) return;
+    const result = await Swal.fire({
+      title: 'Xác nhận thu cọc?',
+      text: "Hệ thống sẽ cập nhật trạng thái và tự động gửi email thông báo xác nhận lịch hẹn.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0284c7',
+      cancelButtonColor: '#ef4444',
+      confirmButtonText: 'Đồng ý',
+      cancelButtonText: 'Hủy'
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       setIsProcessing(true);
       await confirmDeposit(id, amount);
@@ -131,33 +106,9 @@ const DepositManagementPage = () => {
     }
   };
 
-  const handleCreateDeposit = async () => {
-    if (!selectedAppt) return toast.error('Chọn một lịch hẹn!');
-    try {
-      setIsProcessing(true);
-      await confirmDeposit(selectedAppt.id, selectedAppt.amount);
-      toast.success('Tạo đặt cọc thành công!');
-      setShowAddModal(false);
-      setSelectedAppt(null);
-      setSearchApptQuery('');
-      fetchDeposits();
-    } catch {
-      toast.error('Có lỗi xảy ra!');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const openAddModal = () => {
-    setShowAddModal(true);
-    setSelectedAppt(null);
-    setSearchApptQuery('');
-    setApptResults([]);
-  };
-
   return (
-    <div className="dep-layout">
-      <AccountantSidebar activePage="deposits" />
+    <div className="dep-layout" style={{ width: '100%' }}>
+      {/* <AccountantSidebar activePage="deposits" /> */}
       <Toaster position="top-right" />
 
       <div className="dep-main">
@@ -198,9 +149,6 @@ const DepositManagementPage = () => {
                 <option value="confirmed">Đã cọc</option>
                 <option value="refunded">Hoàn trả</option>
               </select>
-              <button className="dep-btn-create" onClick={openAddModal}>
-                Tạo đặt lịch mới
-              </button>
             </div>
           </div>
 
@@ -250,12 +198,6 @@ const DepositManagementPage = () => {
                           >
                             Xác nhận
                           </button>
-                          <button className="dep-act dep-act--refund" disabled={dep.status === 'refunded'}>
-                            Hoàn trả
-                          </button>
-                          <button className="dep-act-icon">
-                            <FiExternalLink size={14} />
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -283,74 +225,6 @@ const DepositManagementPage = () => {
           © 2026 Quản Lý Tài Chính Phòng Khám. All rights reserved.
         </footer>
       </div>
-
-      {/* Create New Deposit Modal */}
-      <AnimatePresence>
-        {showAddModal && (
-          <div className="dep-overlay" onClick={() => setShowAddModal(false)}>
-            <motion.div
-              className="dep-modal"
-              onClick={(e) => e.stopPropagation()}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-            >
-              <div className="dep-modal__head">
-                <h3>Tạo đặt lịch mới</h3>
-                <button onClick={() => setShowAddModal(false)}><FiX size={20} /></button>
-              </div>
-              <div className="dep-modal__body">
-                <div className="dep-field" style={{ position: 'relative' }}>
-                  <label>Tìm kiếm bệnh nhân / mã đặt lịch</label>
-                  <div className="dep-search-wrap">
-                    <FiSearch className="dep-search-wrap__icon" />
-                    <input
-                      type="text"
-                      placeholder="Nhập tên hoặc mã..."
-                      value={searchApptQuery}
-                      onChange={(e) => { setSearchApptQuery(e.target.value); setSelectedAppt(null); }}
-                    />
-                    {isSearchingAppt && <FiLoader className="dep-spin dep-search-wrap__loader" />}
-                  </div>
-
-                  {apptResults.length > 0 && (
-                    <div className="dep-dropdown">
-                      {apptResults.map(a => (
-                        <div key={a.id} className="dep-dropdown__item" onClick={() => handleSelectAppt(a)}>
-                          <div>
-                            <strong>{a.patient_name}</strong>
-                            <span>#{a.id.substring(0, 8)} • {a.service_name}</span>
-                          </div>
-                          <span className="dep-dropdown__price">{formatCurrency(a.amount)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {selectedAppt && (
-                  <motion.div
-                    className="dep-selected"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                  >
-                    <div className="dep-selected__row"><FiUser size={14} /> {selectedAppt.patient_name} ({selectedAppt.patient_code})</div>
-                    <div className="dep-selected__row"><FiPhone size={14} /> {selectedAppt.phone || 'N/A'}</div>
-                    <div className="dep-selected__row"><FiCalendar size={14} /> {selectedAppt.date}</div>
-                    <div className="dep-selected__total">Số tiền cọc: <strong>{formatCurrency(selectedAppt.amount)}</strong></div>
-                  </motion.div>
-                )}
-              </div>
-              <div className="dep-modal__foot">
-                <button className="dep-btn-create" onClick={handleCreateDeposit} disabled={!selectedAppt || isProcessing}>
-                  {isProcessing ? <FiLoader className="dep-spin" /> : 'Xác nhận & Tạo cọc'}
-                </button>
-                <button className="dep-btn-cancel" onClick={() => setShowAddModal(false)}>Hủy</button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

@@ -14,10 +14,10 @@ import {
   FiZap,
   FiPower,
 } from 'react-icons/fi';
-import DoctorSidebar from '../../components/doctor/DoctorSidebar';
 import { getAppointmentsByDoctorId, getDoctorById } from '../../api/doctorApi';
 import { updateRoomStatusByDoctor } from '../../api/roomApi';
 import { supabase } from '../../../supabaseClient';
+import Swal from 'sweetalert2';
 import './DoctorDashboardPage.css';
 
 // ===== HELPERS =====
@@ -194,8 +194,17 @@ const DoctorDashboardPage = () => {
 
   const handleEndShift = async () => {
     if (!doctorId) return;
-    const confirm = window.confirm('Bạn chắc chắn muốn kết thúc ca làm việc?');
-    if (!confirm) return;
+    const confirm = await Swal.fire({
+      title: 'Kết thúc ca làm việc?',
+      text: "Bạn chắc chắn muốn kết thúc ca làm việc và đổi trạng thái phòng thành 'Chưa sẵn sàng'?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Đồng ý',
+      cancelButtonText: 'Hủy'
+    });
+    if (!confirm.isConfirmed) return;
     try {
       setRoomLoading(true);
       await updateRoomStatusByDoctor(doctorId, 'on');

@@ -27,6 +27,7 @@ import { getAppointmentsByDoctorId } from '../../api/doctorApi';
 import medicalRecordApi from '../../api/medicalRecordApi';
 import labOrderApi from '../../api/labOrderApi';
 import { updateRoomStatusByDoctor } from '../../api/roomApi';
+import Swal from 'sweetalert2';
 import './ExaminationPage.css';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { supabase } from '../../../supabaseClient';
@@ -537,10 +538,17 @@ const ExaminationPage = () => {
 
     // Kiểm tra có lab draft chưa gửi không
     if (hasDraftLabs) {
-      const confirmSend = window.confirm(
-        'Còn xét nghiệm chưa gửi. Bạn có muốn bỏ qua và hoàn tất?'
-      );
-      if (!confirmSend) return;
+      const result = await Swal.fire({
+        title: 'Bỏ qua xét nghiệm?',
+        text: 'Còn xét nghiệm chưa gửi. Bạn có muốn bỏ qua và hoàn tất?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Hoàn tất',
+        cancelButtonText: 'Hủy'
+      });
+      if (!result.isConfirmed) return;
     }
 
     try {

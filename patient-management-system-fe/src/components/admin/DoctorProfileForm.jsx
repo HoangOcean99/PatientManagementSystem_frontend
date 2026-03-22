@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { getAllDepartments } from '../../api/departmentApi';
 import { getListActiveRooms } from '../../api/roomApi';
+import Swal from 'sweetalert2';
 
 // ===== COMPONENT =====
 const DoctorProfileForm = ({ doctor, onSave, isAdmin }) => {
@@ -49,6 +50,19 @@ const DoctorProfileForm = ({ doctor, onSave, isAdmin }) => {
     }, [doctor, reset]);
 
     const onSubmit = async (data) => {
+        const result = await Swal.fire({
+            title: 'Lưu thay đổi?',
+            text: 'Bạn có chắc chắn muốn lưu các thông tin này?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) return;
+
         try {
             await onSave(data);
             toast.success('Cập nhật thông tin thành công!');

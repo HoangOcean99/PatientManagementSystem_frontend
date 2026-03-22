@@ -6,6 +6,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import toast from 'react-hot-toast';
 import { updateUserRoleApi } from '../../api/userApi';
+import Swal from 'sweetalert2';
 
 
 
@@ -193,6 +194,22 @@ const PatientListPage = () => {
     };
 
     const handleRoleChange = async (userId, newRole) => {
+        const result = await Swal.fire({
+            title: 'Thay đổi chức danh?',
+            text: "Việc đổi chức danh có thể ảnh hưởng đến quyền truy cập của người dùng này trên hệ thống.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) {
+            refetch(); // force reset default UI select
+            return;
+        }
+
         try {
             await updateUserRoleApi(userId, newRole);
             toast.success('Cập nhật chức danh thành công');

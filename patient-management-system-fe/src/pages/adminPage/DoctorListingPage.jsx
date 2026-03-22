@@ -7,6 +7,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import DoctorDetailsAdminPage from './DoctorDetailsAdminPage';
 import { updateUserRoleApi } from '../../api/userApi';
+import Swal from 'sweetalert2';
 
 // ===== HELPERS =====
 const SORT_OPTIONS = [
@@ -81,6 +82,22 @@ const DoctorListingPage = () => {
     };
 
     const handleRoleChange = async (userId, newRole) => {
+        const result = await Swal.fire({
+            title: 'Thay đổi chức danh?',
+            text: "Việc đổi chức danh có thể làm xóa quyền bác sĩ và dữ liệu phòng khám liên kết hiện tại.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) {
+            fetchDoctors();
+            return;
+        }
+
         try {
             await updateUserRoleApi(userId, newRole);
             toast.success('Cập nhật chức danh thành công');

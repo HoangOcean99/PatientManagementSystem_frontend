@@ -83,12 +83,10 @@ const AccountantDashboardPage = () => {
   }, []);
 
   return (
-    <div className="acc-dash-layout">
-      <AccountantSidebar />
-
+    <div className="acc-dash-layout" style={{ width: '100%' }}>
       <Toaster position="top-right" />
 
-      <main className="acc-dash-main">
+      <main className="acc-dash-main" style={{ width: '100%' }}>
         <motion.div
           className="acc-dash-content"
           variants={containerVariants}
@@ -174,8 +172,8 @@ const AccountantDashboardPage = () => {
               ) : (
                 <AnimatePresence>
                   {recentTransactions.map((txn, idx) => (
-                    <motion.div 
-                      key={txn.id + idx} 
+                    <motion.div
+                      key={txn.id + idx}
                       className="acc-dash-txn-item hover:bg-slate-50 transition-colors"
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}

@@ -5,6 +5,7 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import toast from 'react-hot-toast';
 import { getAllAdmins, getAllReceptionists, getAllAccountants, updateUserRoleApi } from '../../api/userApi';
+import Swal from 'sweetalert2';
 
 // ===== HELPERS =====
 const ROLE_CONFIG = {
@@ -219,6 +220,22 @@ const StaffListingPage = () => {
     };
 
     const handleRoleChange = async (userId, newRole) => {
+        const result = await Swal.fire({
+            title: 'Thay đổi chức danh?',
+            text: "Xác nhận đổi chức danh / quyền truy cập hệ thống của nhân viên này?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) {
+            refetch();
+            return;
+        }
+
         try {
             await updateUserRoleApi(userId, newRole);
             toast.success('Cập nhật chức danh thành công');
