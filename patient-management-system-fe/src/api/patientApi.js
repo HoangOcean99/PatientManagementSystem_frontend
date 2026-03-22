@@ -30,6 +30,7 @@ export const linkFamilyMember = async (data) => await axiosClient.post('/patient
 export const updateInvoiceStatus = async (invoiceId, status = 'paid', payment_method = 'transfer') => await axiosClient.put(`/invoices/${invoiceId}/status`, { status, payment_method });
 export const createPayment = async (data) => await axiosClient.post('/invoices', data);
 export const getMyInvoices = async (patientId) => await axiosClient.get('/invoices', { params: { patient_id: patientId } });
+export const payInvoiceApi = async (invoiceId) => await axiosClient.post(`/invoices/${invoiceId}/pay`);
 export const deleteUser = async (id) => await axiosClient.delete(`/users/${id}`);
 
 export const getDependents = async () => await axiosClient.get('/under-my-care');

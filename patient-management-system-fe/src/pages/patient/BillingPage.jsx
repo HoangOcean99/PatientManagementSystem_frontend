@@ -8,6 +8,7 @@ import { getMyInvoices, updateInvoiceStatus } from '../../api/patientApi';
 import { useSearchParams } from 'react-router-dom';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
+import { payInvoiceApi, getDependents } from '../../api/patientApi';
 
 const INVOICE_STATUS = {
     unpaid: { label: 'Chưa trả', color: 'text-sky-700', bg: 'bg-sky-50', border: 'border-sky-200' },
@@ -29,23 +30,39 @@ const BillingPage = () => {
     const [loading, setLoading] = useState(true);
     const [isPaying, setIsPaying] = useState(false);
     const [filter, setFilter] = useState('all');
-    const [searchParams] = useSearchParams();
-    const dependentId = searchParams.get('patient_id');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [isPaying, setIsPaying] = useState(false);
 
+    // New states for patient selection
+    const [myself, setMyself] = useState(null);
+    const [dependents, setDependents] = useState([]);
+    const [selectedPatientId, setSelectedPatientId] = useState(searchParams.get('patient_id') || '');
+
+    // 1. Initial Load: Fetch current user & dependents
     useEffect(() => {
-        const load = async () => {
+        const initData = async () => {
             try {
                 const { data: authData } = await supabase.auth.getUser();
-                const userId = authData?.user?.id;
-                if (!userId) return;
+                const user = authData?.user;
+                if (!user) return;
+                
+                const myInfo = {
+                    user_id: user.id,
+                    full_name: user.user_metadata?.full_name || 'Bản thân'
+                };
+                setMyself(myInfo);
 
-                const targetUserId = dependentId || userId;
+                if (!selectedPatientId) {
+                    setSelectedPatientId(user.id);
+                }
 
                 const res = await getMyInvoices(targetUserId);
                 const fetchedInvoices = res.data?.data || res.data || [];
                 setInvoices(fetchedInvoices);
                 if (fetchedInvoices.length > 0) {
                     setSelectedId(fetchedInvoices[0].invoice_id);
+                } else {
+                    setSelectedId(null);
                 }
             } catch (err) {
                 console.error('Failed to load invoices:', err);
@@ -54,8 +71,14 @@ const BillingPage = () => {
                 setLoading(false);
             }
         };
-        load();
-    }, [dependentId]);
+        loadInvoices();
+    }, [selectedPatientId]);
+
+    const handlePatientChange = (e) => {
+        const newId = e.target.value;
+        setSelectedPatientId(newId);
+        setSearchParams({ patient_id: newId });
+    };
 
     const handleConfirmPayment = async () => {
         if (!selectedId) return;
@@ -96,6 +119,25 @@ const BillingPage = () => {
     const filtered = filter === 'all' ? invoices : invoices.filter(i => i.payment_status === filter);
     const selected = invoices.find(i => i.invoice_id === selectedId) || null;
 
+    const handlePayment = async (invoiceId) => {
+        if (!invoiceId) return;
+        try {
+            setIsPaying(true);
+            await payInvoiceApi(invoiceId);
+            toast.success('Thanh toán thành công!');
+            
+            // Lấy lại danh sách hóa đơn
+            const res = await axiosClient.get('/invoices', { params: { patient_id: selectedPatientId } });
+            setInvoices(res.data?.data || res.data || []);
+        } catch (error) {
+            console.error('Lỗi thanh toán:', error);
+            const errDetails = error.response?.data?.message || '';
+            toast.error(`Thanh toán thất bại. ${errDetails}`);
+        } finally {
+            setIsPaying(false);
+        }
+    };
+
     const formatCurrency = (n) => Number(n).toLocaleString('vi-VN') + ' đ';
     const formatDate = (d) => {
         if (!d) return '—';
@@ -117,13 +159,42 @@ const BillingPage = () => {
             {/* Header */}
             <div className="sticky top-0 z-30 border-b border-blue-100/40" style={{ background: 'linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.9) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 mb-1">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Thanh toán</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 mb-1">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Thanh toán</span>
+                            </div>
+                            <h1 className="text-2xl font-extrabold text-gray-900">
+                                Thanh toán viện phí
+                            </h1>
+                        </div>
+                        {/* Dropdown chooser */}
+                        <div className="flex bg-white rounded-xl shadow-sm border border-gray-200 p-1 items-center max-w-[280px] sm:max-w-xs w-full">
+                            <div className="pl-3 pr-2 text-gray-400">
+                                <i className="fa-solid fa-users"></i>
+                            </div>
+                            <select
+                                value={selectedPatientId}
+                                onChange={handlePatientChange}
+                                className="w-full bg-transparent border-none outline-none text-[13.5px] font-semibold text-gray-700 py-2.5 pr-4 cursor-pointer truncate"
+                            >
+                                {myself && (
+                                    <option value={myself.user_id}>{myself.full_name} (Bản thân)</option>
+                                )}
+                                {dependents.map((dep) => {
+                                    const child = dep.Users || dep.ChildUser || {};
+                                    const childUserId = child.user_id || dep.child_user_id;
+                                    const relation = dep.relationship === 'father' || dep.relationship === 'mother' ? 'Con' : 'Người thân';
+                                    return (
+                                        <option key={dep.relationship_id} value={childUserId}>
+                                            {child.full_name || 'Chưa cập nhật'} ({relation})
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                        </div>
                     </div>
-                    <h1 className="text-2xl font-extrabold text-gray-900">
-                        Thanh toán viện phí {dependentId && <span className="text-emerald-600 text-lg font-bold ml-2">(Người phụ thuộc)</span>}
-                    </h1>
                 </div>
             </div>
 
