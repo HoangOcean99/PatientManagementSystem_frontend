@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { getDependents, addDependent, removeDependent } from '../../api/patientApi';
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
+import { getListAppointmentsByStatus, cancelAppointment } from '../../api/appointmentApi';
 
 const RELATION_MAP = {
     father: 'Con',
@@ -65,6 +66,14 @@ const UnderMyCarePage = () => {
     const [deletingId, setDeletingId] = useState(null);
     const [confirmDelete, setConfirmDelete] = useState(null);
 
+    // New states for appointments modal
+    const [showAppointmentsModal, setShowAppointmentsModal] = useState(false);
+    const [selectedDependent, setSelectedDependent] = useState(null);
+    const [activeTab, setActiveTab] = useState('pending');
+    const [appointmentsByTab, setAppointmentsByTab] = useState([]);
+    const [loadingAppointments, setLoadingAppointments] = useState(false);
+    const [cancelingId, setCancelingId] = useState(null);
+
     const loadDependents = async () => {
         try {
             const res = await getDependents();
@@ -78,6 +87,55 @@ const UnderMyCarePage = () => {
     };
 
     useEffect(() => { loadDependents(); }, []);
+
+    useEffect(() => {
+        const fetchAppointments = async () => {
+            if (!showAppointmentsModal || !selectedDependent) return;
+            setLoadingAppointments(true);
+            try {
+                const res = await getListAppointmentsByStatus(activeTab);
+                const allApps = res.data?.data || res.data || [];
+                const childId = selectedDependent.Users?.user_id || selectedDependent.child_user_id || selectedDependent.ChildUser?.user_id || '';
+
+                const filtered = allApps.filter(app => {
+                    const appUserId = app.Patients?.Users?.user_id || app.patient_id || '';
+                    return appUserId === childId || app.Patients?.patient_id === childId;
+                });
+
+                setAppointmentsByTab(filtered);
+            } catch (err) {
+                console.error('Failed to fetch appointments:', err);
+            } finally {
+                setLoadingAppointments(false);
+            }
+        };
+        fetchAppointments();
+    }, [activeTab, showAppointmentsModal, selectedDependent]);
+
+    const handleCancelAppointment = async (appointmentId) => {
+        if (!window.confirm('Bạn có chắc chắn muốn hủy lịch khám này?')) return;
+        try {
+            setCancelingId(appointmentId);
+            await cancelAppointment(appointmentId);
+            toast.success('Hủy lịch thành công!');
+            
+            // Refresh in-place
+            const res = await getListAppointmentsByStatus(activeTab);
+            const allApps = res.data?.data || res.data || [];
+            const childId = selectedDependent.Users?.user_id || selectedDependent.child_user_id || selectedDependent.ChildUser?.user_id || '';
+
+            const filtered = allApps.filter(app => {
+                const appUserId = app.Patients?.Users?.user_id || app.patient_id || '';
+                return appUserId === childId || app.Patients?.patient_id === childId;
+            });
+
+            setAppointmentsByTab(filtered);
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Hủy lịch thất bại');
+        } finally {
+            setCancelingId(null);
+        }
+    };
 
     const handleChange = (field, value) => {
         setForm(prev => ({ ...prev, [field]: value }));
@@ -209,7 +267,8 @@ const UnderMyCarePage = () => {
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: idx * 0.04, duration: 0.4 }}
-                                        className="group"
+                                        className="group cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-transform"
+                                        onClick={() => { setSelectedDependent(dep); setShowAppointmentsModal(true); setActiveTab('pending'); }}
                                     >
                                         <div className="relative bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] hover:border-blue-200/60 transition-all duration-500 p-5">
                                             <div className="flex items-center gap-4">
@@ -260,24 +319,12 @@ const UnderMyCarePage = () => {
                                             </div>
                                             
                                             {/* Action Buttons */}
-                                            <div className="mt-4 pt-4 border-t border-gray-100/60 grid grid-cols-3 gap-2">
+                                            <div className="mt-4 pt-4 border-t border-gray-100/60 flex justify-center">
                                                 <button
                                                     onClick={() => navigate(`/patient/medical-records?patient_id=${childUserId}`)}
-                                                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+                                                    className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
                                                 >
                                                     <i className="fa-solid fa-file-medical"></i> Xem bệnh án
-                                                </button>
-                                                <button
-                                                    onClick={() => navigate('/patient/booking', { state: { preselectPatient: childUserId } })}
-                                                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors cursor-pointer"
-                                                >
-                                                    <i className="fa-regular fa-calendar-check"></i> Đặt lịch hộ
-                                                </button>
-                                                <button
-                                                    onClick={() => navigate(`/patient/billing?patient_id=${childUserId}`)}
-                                                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors cursor-pointer"
-                                                >
-                                                    <i className="fa-solid fa-file-invoice-dollar"></i> Thanh toán hộ
                                                 </button>
                                             </div>
                                         </div>
@@ -452,6 +499,142 @@ const UnderMyCarePage = () => {
                                         <><i className="fa-solid fa-trash-can"></i> Xóa</>
                                     )}
                                 </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Appointments Modal */}
+            <AnimatePresence>
+                {showAppointmentsModal && selectedDependent && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+                        onClick={(e) => { if (e.target === e.currentTarget) setShowAppointmentsModal(false); }}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            transition={{ duration: 0.3 }}
+                            className="bg-[#F8F9FB] rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+                        >
+                            {/* Modal Header */}
+                            <div className="bg-white px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-xl font-extrabold text-gray-900">
+                                            Lịch khám của {(selectedDependent.Users || selectedDependent.ChildUser || {}).full_name || 'người thân'}
+                                        </h2>
+                                        <p className="text-sm text-gray-400 mt-1">Quản lý các lịch khám hiện tại và trong quá khứ</p>
+                                    </div>
+                                    <button onClick={() => setShowAppointmentsModal(false)} className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all cursor-pointer">
+                                        <i className="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Modal Tabs */}
+                            <div className="bg-white px-6 py-4 flex-shrink-0">
+                                <div className="flex bg-[#5ba4f8] items-center p-1 rounded-xl shadow-sm relative">
+                                    {[
+                                        { id: "pending", label: "Chờ Xác Nhận" },
+                                        { id: "confirmed", label: "Đã Xác Nhận" },
+                                        { id: "cancelled", label: "Bỏ Lỡ" },
+                                        { id: "completed", label: "Hoàn Thành" }
+                                    ].map((tab, index, array) => (
+                                        <React.Fragment key={tab.id}>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setActiveTab(tab.id); }}
+                                                className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 z-10 cursor-pointer ${activeTab === tab.id
+                                                    ? "bg-white text-[#5ba4f8] shadow-sm"
+                                                    : "text-white hover:bg-white/10"
+                                                }`}
+                                            >
+                                                {tab.label}
+                                            </button>
+                                            {index < array.length - 1 && (
+                                                <div
+                                                    className={`h-5 w-px self-center transition-colors duration-300 mx-1 ${
+                                                        activeTab === array[index].id || activeTab === array[index + 1].id
+                                                            ? "bg-transparent"
+                                                            : "bg-white/30"
+                                                    }`}
+                                                ></div>
+                                            )}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Modal Body / List */}
+                            <div className="p-6 overflow-y-auto flex-1 h-full">
+                                {loadingAppointments ? (
+                                    <div className="flex flex-col justify-center items-center h-48 gap-3">
+                                        <LoadingSpinner />
+                                        <span className="text-sm text-blue-500/60 font-medium">Đang tải lịch khám...</span>
+                                    </div>
+                                ) : appointmentsByTab.length === 0 ? (
+                                    <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
+                                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                                            <i className="fa-solid fa-calendar-xmark text-2xl"></i>
+                                        </div>
+                                        <p className="text-gray-400 font-medium">Chưa có lịch khám nào trong danh mục này.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                                        {appointmentsByTab.map((app) => (
+                                            <div key={app.appointment_id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_2px_10px_-5px_rgba(0,0,0,0.05)] flex flex-col">
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <div className="flex items-center text-[#5ba4f8] font-medium text-sm">
+                                                        <i className="fa-regular fa-clock mr-2"></i>
+                                                        {app.DoctorSlots?.start_time?.slice(0, 5)} - {app.DoctorSlots?.end_time?.slice(0, 5)}
+                                                    </div>
+                                                    <span className={`text-[11px] font-bold uppercase ${
+                                                        app.status === 'pending' ? 'text-sky-500' :
+                                                        app.status === 'confirmed' ? 'text-[#5ba4f8]' :
+                                                        app.status === 'cancelled' ? 'text-gray-500' :
+                                                        'text-green-500'
+                                                    }`}>
+                                                        {app.status === 'pending' ? 'Chờ xác nhận' :
+                                                         app.status === 'confirmed' ? 'Đã xác nhận' :
+                                                         app.status === 'cancelled' ? 'Bỏ lỡ' : 'Hoàn thành'}
+                                                    </span>
+                                                </div>
+
+                                                <div className="mb-3">
+                                                    <h4 className="font-bold text-gray-900 mb-1 leading-tight">{app.ClinicServices?.name || 'Dịch vụ khám'}</h4>
+                                                    <p className="text-[13px] text-gray-500 flex items-center gap-2 mt-2">
+                                                        <i className="fa-solid fa-user-doctor text-gray-400 w-4"></i>
+                                                        BS. {app.Doctors?.Users?.full_name || 'N/A'} • {app.ClinicServices?.Departments?.name || 'Chuyên khoa'}
+                                                    </p>
+                                                    <p className="text-[13px] text-gray-500 flex items-center gap-2 mt-1">
+                                                        <i className="fa-regular fa-calendar text-gray-400 w-4 pl-[1px]"></i>
+                                                        Ngày: {app.DoctorSlots?.slot_date ? new Date(app.DoctorSlots.slot_date).toLocaleDateString('vi-VN') : '—'}
+                                                    </p>
+                                                </div>
+
+                                                <div className="mt-auto pt-3 border-t border-gray-100 flex justify-end">
+                                                    {(app.status === 'pending' || app.status === 'confirmed') && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleCancelAppointment(app.appointment_id); }}
+                                                            disabled={cancelingId === app.appointment_id}
+                                                            className="px-4 py-1.5 rounded-lg text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                                                        >
+                                                            {cancelingId === app.appointment_id ? (
+                                                                <div className="w-3 h-3 border-2 border-red-300 border-t-red-500 rounded-full animate-spin"></div>
+                                                            ) : <i className="fa-solid fa-ban"></i>}
+                                                            Hủy lịch
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     </motion.div>

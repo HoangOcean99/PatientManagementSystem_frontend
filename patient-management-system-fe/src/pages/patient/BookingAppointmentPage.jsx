@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { supabase } from "../../../supabaseClient";
 // import { getAllDoctors } from "../../api/doctorApi"; 
 import { createAppointment } from "../../api/appointmentApi";
-// import { getPatients } from "../../api/patientApi";
+import { getDependents } from "../../api/patientApi";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 // import { getAllServices } from "../../api/serviceApi";
 import { getDoctorbyDepartmentId } from "../../api/doctorApi";
@@ -14,10 +14,10 @@ import { getListSchedulesByDoctorIdAndDate } from "../../api/scheduleApi";
 
 
 const RELATION_MAP = {
-  father: "Cha",
-  mother: "Mẹ",
-  guardian: "Người giám hộ",
-  other: "Khác",
+  father: "Con",
+  mother: "Con",
+  guardian: "Người được giám hộ",
+  other: "Người thân",
 };
 
 // --- Helper for Calendar ---
@@ -78,13 +78,8 @@ const BookingAppointmentPage = () => {
           setForm(prev => ({ ...prev, patient_id: userId, is_dependent: false }));
         }
 
-        // const [docRes, svcRes, depRes] = await Promise.all([
-        //   getDoctorbyDepartmentId().catch(() => ({ data: [] })),
-        //   getAllServices().catch(() => ({ data: [] })),
-        //   userId 
-        //     ? getPatients({ parent_user_id: userId }).catch(() => ({ data: [] }))
-        //     : Promise.resolve({ data: [] }),
-        // ]);
+        const depRes = await getDependents().catch(() => ({ data: [] }));
+        setDependents(depRes.data?.data || depRes.data || []);
       } catch (err) {
         console.error("Failed to load data:", err);
         toast.error("Không thể tải dữ liệu");
@@ -327,11 +322,15 @@ const BookingAppointmentPage = () => {
                       >
                         <option value="">Chọn bệnh nhân</option>
                         <option value={myself?.user_id}>{myself?.full_name} (Bản thân)</option>
-                        {dependents.map((dep) => (
-                          <option key={dep.relationship_id} value={dep.ChildUser?.user_id}>
-                            {dep.ChildUser?.full_name} ({RELATION_MAP[dep.relationship] || dep.relationship})
-                          </option>
-                        ))}
+                        {dependents.map((dep) => {
+                          const child = dep.Users || dep.ChildUser || {};
+                          const childUserId = child.user_id || dep.child_user_id;
+                          return (
+                            <option key={dep.relationship_id} value={childUserId}>
+                              {child.full_name || 'Chưa cập nhật'} ({RELATION_MAP[dep.relationship] || dep.relationship})
+                            </option>
+                          );
+                        })}
                       </select>
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                         <i className="fa-solid fa-chevron-down text-xs"></i>
