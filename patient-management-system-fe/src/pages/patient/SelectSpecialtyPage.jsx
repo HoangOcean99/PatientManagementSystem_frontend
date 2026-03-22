@@ -4,73 +4,89 @@ import { motion } from "framer-motion";
 import { getAllDepartments } from "../../api/departmentsApi";
 import { supabase } from "../../../supabaseClient";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import { getListAppointments } from "../../api/scheduleApi";
-import { getListAppointmentsByStatus } from "../../api/appointmentApi";
-import { useSearchParams } from "react-router-dom";
+import { getListAppointmentsByCurrentUserId } from "../../api/appointmentApi";
 
 const SelectSpecialtyPage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
-  const [appointments, setAppointments] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [latestAppointment, setLatestAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [appointmentsByStatus, setAppointmentsByStatus] = useState([]);
 
+  // 1. Chỉ lấy danh sách khoa khi mount
   useEffect(() => {
-    const fetchAppointments = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const res = await getListAppointments({ activeTab });
-          const allApps = res.data?.data || [];
-
-          // Sort to find the latest
-          const sorted = [...allApps].sort((a, b) => {
-            const dateA = new Date(`${a.appointment_date}T${a.start_time || '00:00'}`);
-            const dateB = new Date(`${b.appointment_date}T${b.start_time || '00:00'}`);
-            return dateB - dateA;
-          });
-
-          setAppointments(allApps);
-          if (sorted.length > 0) {
-            setLatestAppointment(sorted[0]);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch appointments:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const fetchDepartments = async () => {
       try {
         const res = await getAllDepartments();
         setDepartments(res.data);
       } catch (err) {
-        console.error("Failed to fetch departments:", err);
+        console.error("Dept Error:", err);
+      } finally {
+        setLoading(false); // Kết thúc loading chung
       }
     };
-    fetchAppointments();
     fetchDepartments();
   }, []);
 
-  useEffect(() => {
-    const fetchAppointmentsByStatus = async () => {
-      try {
+  const normalizeAppointmentList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (payload?.data != null && Array.isArray(payload.data)) return payload.data;
+    return [];
+  };
 
-        const res = await getListAppointmentsByStatus(activeTab);
-        setAppointmentsByStatus(res.data?.data || res.data || []);
+  const appointmentSortDate = (a) =>
+    new Date(
+      a.appointment_date || a.DoctorSlots?.slot_date || a.created_at || 0
+    );
+
+  // Lịch gần nhất (hoàn thành) cho banner — tách khỏi tab để luôn có dữ liệu đúng
+  useEffect(() => {
+    let isMounted = true;
+    const fetchLatest = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !isMounted) return;
+      try {
+        const res = await getListAppointmentsByCurrentUserId("completed", user.id);
+        const list = normalizeAppointmentList(res.data);
+        if (!isMounted || !list.length) return;
+        const sorted = [...list].sort(
+          (a, b) => appointmentSortDate(b) - appointmentSortDate(a)
+        );
+        setLatestAppointment(sorted[0]);
       } catch (err) {
-        console.error("Failed to fetch appointments by status:", err);
+        console.error("Latest appt error:", err);
+      }
+    };
+    fetchLatest();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Lấy lịch khám theo tab + user
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !isMounted) return;
+
+      try {
+        const res = await getListAppointmentsByCurrentUserId(activeTab, user.id);
+        if (isMounted) {
+          setAppointmentsByStatus(normalizeAppointmentList(res.data));
+        }
+      } catch (err) {
+        console.error("Appt Error:", err);
       }
     };
 
-    if (activeTab) {
-      fetchAppointmentsByStatus();
-    }
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
   }, [activeTab]);
 
   const filteredDepartments = departments.filter(d =>
@@ -80,7 +96,7 @@ const SelectSpecialtyPage = () => {
 
   const MotionDiv = motion.div;
 
-  if (loading) return <div className="flex-1 h-full flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><LoadingSpinner /></div>;
 
   const getDepartmentUI = (name) => {
     const lowerName = name?.toLowerCase() || "";
@@ -137,15 +153,15 @@ const SelectSpecialtyPage = () => {
             <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-6 w-full">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Last Appointment</p>
-                <p className="text-gray-900 font-bold">{new Date(latestAppointment.appointment_date).toLocaleDateString('vi-VN')}</p>
+                <p className="text-gray-900 font-bold">{new Date(latestAppointment.appointment_date || latestAppointment.DoctorSlots?.slot_date || latestAppointment.created_at).toLocaleDateString('vi-VN')}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Doctor</p>
-                <p className="text-gray-900 font-bold">Dr. {latestAppointment.Doctor?.Users?.full_name || "N/A"}</p>
+                <p className="text-gray-900 font-bold">Dr. {latestAppointment.Doctors?.Users?.full_name || "N/A"}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Specialty</p>
-                <p className="text-gray-900 font-bold">{latestAppointment.Doctor?.specialization || "General"}</p>
+                <p className="text-gray-900 font-bold">{latestAppointment.Doctors?.specialization || "General"}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Status</p>
@@ -157,12 +173,7 @@ const SelectSpecialtyPage = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => navigate(`/patient/exam/${latestAppointment.appointment_id}`)}
-              className="px-6 py-3 bg-gray-50 hover:bg-sky-500 hover:text-white text-gray-600 font-bold rounded-xl transition-all text-sm whitespace-nowrap"
-            >
-              View Results
-            </button>
+
           </MotionDiv>
         )}
 
@@ -289,7 +300,7 @@ const SelectSpecialtyPage = () => {
                       </div>
                     </div>
 
-                    {/* Footer: Thông tin Bác sĩ & Phòng khám */}
+                    {/* Footer: Bác sĩ & ngày đặt lịch */}
                     <div className="space-y-2 text-[13px] text-gray-600 flex-1">
                       <p className="flex items-start gap-2">
                         <i className="fa-solid fa-stethoscope mt-0.5 text-gray-400 w-4"></i>
@@ -302,15 +313,26 @@ const SelectSpecialtyPage = () => {
                         </span>
                       </p>
                       <p className="flex items-start gap-2">
-                        <i className="fa-solid fa-location-dot mt-0.5 text-gray-400 w-4 ml-[1px]"></i>
-                        <span>Tầng 4, Tòa nhà A</span>
+                        <i className="fa-regular fa-calendar-days mt-0.5 text-gray-400 w-4 ml-[1px]"></i>
+                        <span>
+                          {new Date(
+                            app.appointment_date ||
+                            app.DoctorSlots?.slot_date ||
+                            app.created_at
+                          ).toLocaleDateString("vi-VN", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
                       </p>
                     </div>
 
                     {/* Nút Xem chi tiết */}
                     <div className="flex justify-end pt-2 mt-auto">
                       <button
-                        onClick={() => navigate(`/patient/exam/${app.appointment_id}`)}
+                        onClick={() => navigate(`/patient/appointment/${app.appointment_id}`)}
                         className="text-[#5ba4f8] text-xs font-semibold hover:text-sky-600 transition-colors flex items-center gap-1"
                       >
                         Xem chi tiết

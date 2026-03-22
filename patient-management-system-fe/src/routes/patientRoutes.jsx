@@ -2,6 +2,7 @@ import PatientDashboard from "../pages/patient/PatientDashboard";
 import UserProfilePage from "../pages/patient/UserProfilePage";
 import ExamHistoryPage from "../pages/patient/ExamHistoryPage";
 import ExamDetailPage from "../pages/patient/ExamDetailPage";
+import AppointmentDetail from "../pages/patient/AppointmentDetail";
 import BookingAppointmentPage from "../pages/patient/BookingAppointmentPage";
 import SelectSpecialtyPage from "../pages/patient/SelectSpecialtyPage";
 import PaymentPage from "../pages/patient/PaymentPage";
@@ -43,6 +44,14 @@ const patientRoutes = [
         element: (
             <ProtectedRoute allowedRoles={["patient"]}>
                 <ExamDetailPage />
+            </ProtectedRoute>
+        )
+    },
+    {
+        path: '/patient/appointment/:id',
+        element: (
+            <ProtectedRoute allowedRoles={["patient"]}>
+                <AppointmentDetail />
             </ProtectedRoute>
         )
     },

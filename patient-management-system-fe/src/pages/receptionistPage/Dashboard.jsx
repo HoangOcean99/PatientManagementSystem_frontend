@@ -3,7 +3,6 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { vi } from 'date-fns/locale';
 import { getListAppointments } from '../../api/appointmentApi';
-import { getListSchedulesByDoctorIdAndDate } from '../../api/scheduleApi';
 import { getAvailableDoctorSlotsByDate } from '../../api/doctorApi';
 import { rescheduleAppointment } from '../../api/appointmentApi';
 import { updateAppointmentStatus } from '../../api/appointmentApi';
@@ -58,7 +57,6 @@ const Dashboard = () => {
                 const values = arr.map(item => path.split('.').reduce((obj, key) => obj?.[key], item));
                 return [...new Set(values)].filter(Boolean);
             };
-
             setDepartments(getUnique(filteredData, 'ClinicServices.Departments.name'));
             setDoctors(getUnique(filteredData, 'Doctors.Users.full_name'));
             setServices(getUnique(filteredData, 'ClinicServices.name'));
