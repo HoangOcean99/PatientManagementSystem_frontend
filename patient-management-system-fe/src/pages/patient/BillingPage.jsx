@@ -7,11 +7,11 @@ import axiosClient from '../../api/axiosClient';
 import { useSearchParams } from 'react-router-dom';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
-import { payInvoiceApi, getDependents } from '../../api/patientApi';
+import { payInvoiceApi, getDependents, updateInvoiceStatus } from '../../api/patientApi';
 
 const INVOICE_STATUS = {
-    unpaid: { label: 'Chưa trả', color: 'text-sky-700', bg: 'bg-sky-50', border: 'border-sky-200' },
-    partial: { label: 'Trả một phần', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
+    nostatus: { label: 'Chưa trả', color: 'text-sky-700', bg: 'bg-sky-50', border: 'border-sky-200' },
+    unpaid: { label: 'Chờ xác nhận', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
     paid: { label: 'Đã trả', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
     refunded: { label: 'Đã hoàn', color: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-200' },
 };
@@ -101,8 +101,8 @@ const BillingPage = () => {
         if (!invoiceId) return;
         try {
             setIsPaying(true);
-            await payInvoiceApi(invoiceId);
-            toast.success('Thanh toán thành công!');
+            await updateInvoiceStatus(invoiceId, 'unpaid', 'transfer');
+            toast.success('Xác nhận thanh toán thành công! Vui lòng chờ nhân viên đối soát.');
 
             // Lấy lại danh sách hóa đơn
             const res = await axiosClient.get('/invoices', { params: { patient_id: selectedPatientId } });
@@ -195,8 +195,8 @@ const BillingPage = () => {
                                     className="text-xs font-semibold text-sky-600 bg-transparent border-none outline-none cursor-pointer"
                                 >
                                     <option value="all">Tất cả</option>
-                                    <option value="unpaid">Chưa trả</option>
-                                    <option value="partial">Trả một phần</option>
+                                    <option value="nostatus">Chưa trả</option>
+                                    <option value="unpaid">Chờ xác nhận</option>
                                     <option value="paid">Đã trả</option>
                                 </select>
                             </div>
@@ -297,25 +297,55 @@ const BillingPage = () => {
 
                                 {/* QR Section */}
                                 <div className="px-6 pb-6">
-                                    <div className="bg-gray-50 rounded-2xl p-6 text-center">
-                                        <p className="font-bold text-gray-700 mb-4">Quét mã QR để thanh toán</p>
-                                        <div className="w-32 h-32 mx-auto bg-white rounded-xl border border-gray-200 flex items-center justify-center mb-4 shadow-sm">
-                                            <i className="fa-solid fa-qrcode text-5xl text-gray-300"></i>
+                                    {selected.payment_status === 'paid' ? (
+                                        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6 text-center">
+                                            <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                                                <i className="fa-solid fa-check text-2xl text-emerald-600"></i>
+                                            </div>
+                                            <p className="font-bold text-emerald-800 text-lg mb-1">Hóa đơn đã được thanh toán</p>
+                                            <p className="text-sm text-emerald-600 mb-0">Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi.</p>
                                         </div>
-                                        <button
-                                            onClick={() => handlePayment(selected.invoice_id)}
-                                            disabled={isPaying || selected.payment_status === 'paid'}
-                                            className="w-full max-w-xs mx-auto py-3.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-sky-500/30 hover:shadow-sky-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:-translate-y-0 disabled:active:scale-100"
-                                            style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)' }}
-                                        >
-                                            {isPaying ? (
-                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                            ) : (
-                                                <><i className="fa-solid fa-wallet"></i> {selected.payment_status === 'paid' ? 'Đã thanh toán' : 'Thanh toán ngay'}</>
-                                            )}
-                                        </button>
-                                        <p className="text-xs text-gray-400 mt-3">Sử dụng ứng dụng ngân hàng hoặc ví điện tử của bạn để quét mã.</p>
-                                    </div>
+                                    ) : selected.payment_status === 'unpaid' ? (
+                                        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 text-center">
+                                            <div className="w-16 h-16 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                                                <i className="fa-solid fa-clock-rotate-left text-2xl text-amber-600"></i>
+                                            </div>
+                                            <p className="font-bold text-amber-800 text-lg mb-1">Hóa đơn đang chờ xác nhận</p>
+                                            <p className="text-sm text-amber-600 mb-0">Bộ phận kế toán đang kiểm tra giao dịch của bạn. Quá trình này có thể mất ít phút.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-sky-50/40 rounded-2xl p-6 text-center border border-sky-100">
+                                            <p className="font-bold text-gray-700 mb-4">Quét mã QR để thanh toán</p>
+                                            <div className="w-32 h-32 mx-auto bg-white rounded-xl border border-gray-200 flex items-center justify-center mb-4 shadow-sm relative">
+                                                <i className="fa-solid fa-qrcode text-5xl text-gray-300"></i>
+                                                <div className="absolute inset-0 bg-[url('/qrBank.jpg')] bg-cover bg-center bg-no-repeat rounded-xl"></div>
+                                            </div>
+                                            <button
+                                                onClick={() => handlePayment(selected.invoice_id)}
+                                                disabled={isPaying}
+                                                className="w-full max-w-xs mx-auto py-3.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-sky-500/30 hover:shadow-sky-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:-translate-y-0 disabled:active:scale-100"
+                                                style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)' }}
+                                            >
+                                                {isPaying ? (
+                                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                ) : (
+                                                    <><i className="fa-solid fa-wallet"></i> Xác nhận thanh toán</>
+                                                )}
+                                            </button>
+                                            <div className="w-full max-w-xs mx-auto mt-4 text-left">
+                                                <p className="text-xs text-gray-400 mb-2 text-center">Sử dụng ứng dụng ngân hàng hoặc ví điện tử của bạn để quét mã.</p>
+                                                <div className="bg-rose-50 border border-rose-100 rounded-lg p-3">
+                                                    <p className="text-[11px] font-semibold text-rose-600 mb-1 flex items-center gap-1.5">
+                                                        <i className="fa-solid fa-circle-info"></i> Lưu ý quan trọng
+                                                    </p>
+                                                    <p className="text-xs text-rose-800 leading-relaxed">
+                                                        Vui lòng ghi rõ nội dung chuyển khoản: <br />
+                                                        <span className="font-bold text-rose-900 bg-rose-100/50 px-1 py-0.5 rounded uppercase mt-1 inline-block">Thanh toan HD {selected.invoice_id.slice(0, 8)}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ) : (

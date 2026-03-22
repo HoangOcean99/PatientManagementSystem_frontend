@@ -1,8 +1,9 @@
+import React, { lazy } from 'react';
 import ProtectedRoute from '../components/security/ProtectedRoute';
-import AccountantDashboardPage from '../pages/accountantPage/AccountantDashboardPage';
-import AccountantProfilePage from '../pages/accountantPage/AccountantProfilePage';
-import DepositManagementPage from '../pages/accountantPage/DepositManagementPage';
-import InvoiceManagementPage from '../pages/accountantPage/InvoiceManagementPage';
+const AccountantDashboardPage = lazy(() => import('../pages/accountantPage/AccountantDashboardPage'));
+const AccountantProfilePage = lazy(() => import('../pages/accountantPage/AccountantProfilePage'));
+const DepositManagementPage = lazy(() => import('../pages/accountantPage/DepositManagementPage'));
+const InvoiceManagementPage = lazy(() => import('../pages/accountantPage/InvoiceManagementPage'));
 
 const accountantRoutes = [
     {

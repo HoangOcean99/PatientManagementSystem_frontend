@@ -21,14 +21,14 @@ export const ItemsAdminSideBar = [
             '/admin/staffs'
         ]
     },
-    {
-        icon: "Calendar",
-        label: "Thiết lập lịch trình",
-        linkPage: '/admin/schedule-management',
-        matchPages: [
-            '/admin/schedule-management'
-        ]
-    },
+    // {
+    //     icon: "Calendar",
+    //     label: "Thiết lập lịch trình",
+    //     linkPage: '/admin/schedule-management',
+    //     matchPages: [
+    //         '/admin/schedule-management'
+    //     ]
+    // },
     {
         icon: "Briefcase",
         label: "Quản lý dịch vụ",

@@ -13,15 +13,8 @@ export const ItemsPatientSideBar = [
         linkPage: "/patient/booking",
         matchPages: [
             "/patient/booking",
-            "/patient/appointment"
-        ]
-    },
-    {
-        icon: 'Clock',
-        label: "Lịch hẹn đã lỡ",
-        linkPage: "/patient/missed-appointments",
-        matchPages: [
-            "/patient/missed-appointments"
+            "/patient/appointment",
+            "/patient/payment"
         ]
     },
     {

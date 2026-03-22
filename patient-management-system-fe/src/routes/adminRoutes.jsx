@@ -1,20 +1,21 @@
+import React, { lazy } from 'react';
 import ProtectedRoute from '../components/security/ProtectedRoute';
-import AdminDashboard from '../pages/adminPage/AdminDashboard';
-import AdminProfile from '../pages/adminPage/AdminProfile';
-import ClinicServiceDetail from '../pages/adminPage/ClinicServiceDetail';
-import ClinicServicesManagement from '../pages/adminPage/ClinicServicesManagement';
-import DepartmentManagement from '../pages/adminPage/DepartmentManagement';
-import RoleSelection from '../pages/adminPage/RoleSelection';
-import ScheduleManagement from '../pages/adminPage/ScheduleManagement';
-import UserManagement from '../pages/adminPage/UserManagement';
-import UserProfileEdit from '../pages/adminPage/UserProfileEdit';
-import UserProfileManagement from '../pages/adminPage/UserProfileManagement';
-import PatientListPage from '../pages/adminPage/PatientListPage';
-import PatientFormPage from '../pages/adminPage/PatientFormPage';
-import DoctorListingPage from '../pages/adminPage/DoctorListingPage';
-import DoctorDetailsAdminPage from '../pages/adminPage/DoctorDetailsAdminPage';
-import StaffListingPage from '../pages/adminPage/StaffListingPage';
-import StaffDetailsPage from '../pages/adminPage/StaffDetailsPage';
+const AdminDashboard = lazy(() => import('../pages/adminPage/AdminDashboard'));
+const AdminProfile = lazy(() => import('../pages/adminPage/AdminProfile'));
+const ClinicServiceDetail = lazy(() => import('../pages/adminPage/ClinicServiceDetail'));
+const ClinicServicesManagement = lazy(() => import('../pages/adminPage/ClinicServicesManagement'));
+const DepartmentManagement = lazy(() => import('../pages/adminPage/DepartmentManagement'));
+const RoleSelection = lazy(() => import('../pages/adminPage/RoleSelection'));
+const ScheduleManagement = lazy(() => import('../pages/adminPage/ScheduleManagement'));
+const UserManagement = lazy(() => import('../pages/adminPage/UserManagement'));
+const UserProfileEdit = lazy(() => import('../pages/adminPage/UserProfileEdit'));
+const UserProfileManagement = lazy(() => import('../pages/adminPage/UserProfileManagement'));
+const PatientListPage = lazy(() => import('../pages/adminPage/PatientListPage'));
+const PatientFormPage = lazy(() => import('../pages/adminPage/PatientFormPage'));
+const DoctorListingPage = lazy(() => import('../pages/adminPage/DoctorListingPage'));
+const DoctorDetailsAdminPage = lazy(() => import('../pages/adminPage/DoctorDetailsAdminPage'));
+const StaffListingPage = lazy(() => import('../pages/adminPage/StaffListingPage'));
+const StaffDetailsPage = lazy(() => import('../pages/adminPage/StaffDetailsPage'));
 
 const adminRoutes = [
     {

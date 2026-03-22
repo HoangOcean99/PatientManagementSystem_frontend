@@ -1,8 +1,9 @@
+import React, { lazy } from 'react';
 import ProtectedRoute from "../components/security/ProtectedRoute";
 
-import Dashboard from "../pages/receptionistPage/Dashboard";
-import Coordinator from "../pages/receptionistPage/Coordinator";
-import ReceptionistProfile from "../pages/receptionistPage/ReceptionistProfile";
+const Dashboard = lazy(() => import('../pages/receptionistPage/Dashboard'));
+const Coordinator = lazy(() => import('../pages/receptionistPage/Coordinator'));
+const ReceptionistProfile = lazy(() => import('../pages/receptionistPage/ReceptionistProfile'));
 
 const receptionistRoutes = [
     {

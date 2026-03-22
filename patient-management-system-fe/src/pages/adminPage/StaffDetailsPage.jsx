@@ -148,7 +148,7 @@ const StaffDetailsPage = () => {
     const staffAvatar = staff?.avatar_url || 'https://i.pravatar.cc/150?img=11';
 
     return (
-        <div className="min-h-screen pb-12 overflow-y-auto" style={{ width: '100vw', background: `linear-gradient(160deg, ${roleConfig.color}15 0%, ${roleConfig.color}10 50%, #f0f9ff 100%)` }}>
+        <div className="min-h-screen pb-12 overflow-y-auto" style={{ width: '100%', background: `linear-gradient(160deg, ${roleConfig.color}15 0%, ${roleConfig.color}10 50%, #f0f9ff 100%)` }}>
             {scrollbarStyles}
 
             {/* Header */}

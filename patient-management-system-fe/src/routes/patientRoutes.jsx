@@ -1,17 +1,17 @@
-import PatientDashboard from "../pages/patient/PatientDashboard";
-import UserProfilePage from "../pages/patient/UserProfilePage";
-import ExamHistoryPage from "../pages/patient/ExamHistoryPage";
-import ExamDetailPage from "../pages/patient/ExamDetailPage";
-import AppointmentDetail from "../pages/patient/AppointmentDetail";
-import BookingAppointmentPage from "../pages/patient/BookingAppointmentPage";
-import SelectSpecialtyPage from "../pages/patient/SelectSpecialtyPage";
-import PaymentPage from "../pages/patient/PaymentPage";
-import UnderMyCarePage from "../pages/patient/UnderMyCarePage";
-import KeyCodePage from "../pages/patient/KeyCodePage";
-import MissedAppointmentsPage from "../pages/patient/MissedAppointmentsPage";
-import BillingPage from "../pages/patient/BillingPage";
-import MedicalRecordsPage from "../pages/patient/MedicalRecordsPage";
-import AppointmentDetailPage from "../pages/patient/AppointmentDetailPage";
+import React, { lazy } from 'react';
+const PatientDashboard = lazy(() => import('../pages/patient/PatientDashboard'));
+const UserProfilePage = lazy(() => import('../pages/patient/UserProfilePage'));
+const ExamHistoryPage = lazy(() => import('../pages/patient/ExamHistoryPage'));
+const ExamDetailPage = lazy(() => import('../pages/patient/ExamDetailPage'));
+const AppointmentDetail = lazy(() => import('../pages/patient/AppointmentDetail'));
+const BookingAppointmentPage = lazy(() => import('../pages/patient/BookingAppointmentPage'));
+const SelectSpecialtyPage = lazy(() => import('../pages/patient/SelectSpecialtyPage'));
+const PaymentPage = lazy(() => import('../pages/patient/PaymentPage'));
+const UnderMyCarePage = lazy(() => import('../pages/patient/UnderMyCarePage'));
+const KeyCodePage = lazy(() => import('../pages/patient/KeyCodePage'));
+const BillingPage = lazy(() => import('../pages/patient/BillingPage'));
+const MedicalRecordsPage = lazy(() => import('../pages/patient/MedicalRecordsPage'));
+const AppointmentDetailPage = lazy(() => import('../pages/patient/AppointmentDetailPage'));
 import ProtectedRoute from '../components/security/ProtectedRoute';
 
 const patientRoutes = [
@@ -92,14 +92,6 @@ const patientRoutes = [
         element: (
             <ProtectedRoute allowedRoles={["patient"]}>
                 <KeyCodePage />
-            </ProtectedRoute>
-        )
-    },
-    {
-        path: '/patient/missed-appointments',
-        element: (
-            <ProtectedRoute allowedRoles={["patient"]}>
-                <MissedAppointmentsPage />
             </ProtectedRoute>
         )
     },

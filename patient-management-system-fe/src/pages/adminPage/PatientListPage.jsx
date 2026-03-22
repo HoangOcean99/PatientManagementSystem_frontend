@@ -7,6 +7,7 @@ import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import toast from 'react-hot-toast';
 import { updateUserRoleApi } from '../../api/userApi';
 import Swal from 'sweetalert2';
+import Pagination from '../../components/common/Pagination';
 
 
 
@@ -350,51 +351,12 @@ const PatientListPage = () => {
 
                         {/* Pagination */}
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-1.5 mt-10">
-                                <button
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1}
-                                    className="w-10 h-10 rounded-xl hover:bg-white/80 flex items-center justify-center text-gray-400 transition-all disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
-                                >
-                                    <i className="fa-solid fa-chevron-left text-sm"></i>
-                                </button>
-
-                                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                    .filter(page => {
-                                        if (totalPages <= 7) return true;
-                                        if (page === 1 || page === totalPages) return true;
-                                        return Math.abs(page - currentPage) <= 1;
-                                    })
-                                    .reduce((acc, page, i, arr) => {
-                                        if (i > 0 && page - arr[i - 1] > 1) acc.push('...');
-                                        acc.push(page);
-                                        return acc;
-                                    }, [])
-                                    .map((item, i) =>
-                                        item === '...' ? (
-                                            <span key={`d-${i}`} className="px-2 text-gray-300 text-sm">...</span>
-                                        ) : (
-                                            <button
-                                                key={item}
-                                                onClick={() => setCurrentPage(item)}
-                                                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all cursor-pointer ${currentPage === item
-                                                    ? 'text-white shadow-lg shadow-blue-500/25'
-                                                    : 'text-gray-500 hover:bg-white/80'
-                                                    }`}
-                                                style={currentPage === item ? { background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' } : {}}
-                                            >
-                                                {item}
-                                            </button>
-                                        )
-                                    )}
-
-                                <button
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage === totalPages}
-                                    className="w-10 h-10 rounded-xl hover:bg-white/80 flex items-center justify-center text-gray-400 transition-all disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
-                                >
-                                    <i className="fa-solid fa-chevron-right text-sm"></i>
-                                </button>
+                            <div className="flex items-center justify-center mt-10">
+                                <Pagination 
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
                             </div>
                         )}
                     </>
