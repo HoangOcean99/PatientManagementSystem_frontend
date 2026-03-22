@@ -1,12 +1,10 @@
-import DoctorProfileForm from "../components/admin/DoctorProfileForm";
 import PublicRoute from "../components/security/PublicRoute";
+import DoctorListingPage from "../pages/adminPage/DoctorListingPage";
 import AuthCallback from "../pages/commonPage/AuthCallback";
 import ForgotPasswordPage from "../pages/commonPage/ForgotPasswordPage";
 import LandingPage from "../pages/commonPage/LandingPage";
 import LoginPage from "../pages/commonPage/LoginPage";
 import RegisterKidPage from "../pages/commonPage/RegisterKidPage";
-import DoctorListingPage from "../pages/doctor/DoctorListingPage";
-import DoctorProfilePage from "../pages/doctor/DoctorProfilePage";
 
 const commonRoutes = [
     {
@@ -45,11 +43,6 @@ const commonRoutes = [
                 <ForgotPasswordPage />
             </PublicRoute>
     },
-    {
-        path: '/doctors',
-        element: <DoctorListingPage />
-    },
-
 ];
 
 export default commonRoutes;

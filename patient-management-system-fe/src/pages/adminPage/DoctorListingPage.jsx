@@ -6,6 +6,7 @@ import { getAllDoctors, searchDoctors } from '../../api/doctorApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import DoctorDetailsAdminPage from './DoctorDetailsAdminPage';
+import { updateUserRoleApi } from '../../api/userApi';
 
 // ===== HELPERS =====
 const SORT_OPTIONS = [
@@ -79,6 +80,17 @@ const DoctorListingPage = () => {
         fetchDoctors();
     };
 
+    const handleRoleChange = async (userId, newRole) => {
+        try {
+            await updateUserRoleApi(userId, newRole);
+            toast.success('Cập nhật chức danh thành công');
+            fetchDoctors();
+        } catch (err) {
+            console.error(err);
+            toast.error('Lỗi khi cập nhật chức danh');
+        }
+    };
+
     // ===== DERIVED DATA =====
     // Unique specialties
     const specialties = useMemo(
@@ -137,29 +149,19 @@ const DoctorListingPage = () => {
             {scrollbarStyles}
 
             {/* ===== HEADER ===== */}
-            <div className={`border-b border-gray-100 sticky top-0 z-30 shadow-sm ${isAdminView ? 'bg-white' : 'bg-white/90 backdrop-blur-md'}`}>
-                <div className="max-w-6xl mx-auto px-4 py-6">
+            <div className={`border-b border-gray-100 top-0 z-30 shadow-sm ${isAdminView ? 'bg-white' : 'bg-white/90 backdrop-blur-md'}`}>
+                <div className="mx-auto px-4 py-6">
                     {/* Title */}
                     <div className="text-center mb-6">
-                        <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full mb-3 ${isAdminView ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                            }`}>
-                            <i className={`fa-solid ${isAdminView ? 'fa-user-tie' : 'fa-stethoscope'} mr-2`}></i>
-                            {isAdminView ? 'Hệ thống Quản trị' : 'Đội ngũ chuyên gia'}
-                        </span>
                         <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-1">
                             {isAdminView ? 'Quản lý Hồ sơ Bác sĩ' : 'Tìm bác sĩ của bạn'}
                         </h1>
-                        <p className="text-gray-500 text-sm">
-                            {isAdminView
-                                ? `${doctors.length} bác sĩ — ${activeCount} đang hoạt động`
-                                : 'Đặt lịch khám với các chuyên gia y tế hàng đầu'}
-                        </p>
                     </div>
 
                     {/* Search Row */}
                     <div className={`rounded-2xl p-2 flex flex-col md:flex-row gap-2 ${isAdminView
-                            ? 'bg-gray-50 border border-gray-200'
-                            : 'bg-white border border-gray-100 shadow-lg shadow-blue-500/5'
+                        ? 'bg-gray-50 border border-gray-200'
+                        : 'bg-white border border-gray-100 shadow-lg shadow-blue-500/5'
                         }`}>
                         {/* Search Input */}
                         <div className="flex-1 relative group">
@@ -197,8 +199,8 @@ const DoctorListingPage = () => {
                         <button
                             onClick={handleSearch}
                             className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap text-sm ${isAdminView
-                                    ? 'bg-gray-900 hover:bg-black text-white'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
+                                ? 'bg-gray-900 hover:bg-black text-white'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
                                 }`}
                         >
                             Tìm kiếm
@@ -264,7 +266,7 @@ const DoctorListingPage = () => {
             </div>
 
             {/* ===== LIST ===== */}
-            <div className="max-w-6xl mx-auto px-4 py-8">
+            <div className="mx-auto px-4 py-8">
                 {loading ? (
                     <div className="flex justify-center items-center h-52 opacity-50">
                         <LoadingSpinner />
@@ -276,6 +278,7 @@ const DoctorListingPage = () => {
                                 key={doctor.doctor_id}
                                 doctor={doctor}
                                 isAdminView={isAdminView}
+                                onRoleChange={handleRoleChange}
                             />
                         ))}
                     </div>
@@ -295,7 +298,6 @@ const DoctorListingPage = () => {
                     </div>
                 )}
 
-                {/* Pagination Footer */}
                 <div className="mt-12 flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
                     <span className="text-sm text-gray-400">Hiển thị {filteredDoctors.length} kết quả</span>
                     <div className="flex gap-2">

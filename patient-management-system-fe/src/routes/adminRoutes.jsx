@@ -9,10 +9,12 @@ import ScheduleManagement from '../pages/adminPage/ScheduleManagement';
 import UserManagement from '../pages/adminPage/UserManagement';
 import UserProfileEdit from '../pages/adminPage/UserProfileEdit';
 import UserProfileManagement from '../pages/adminPage/UserProfileManagement';
-import PatientListPage from '../components/patient/PatientListPage';
-import PatientFormPage from '../components/patient/PatientFormPage';
-import DoctorListingPage from '../pages/doctor/DoctorListingPage';
-import DoctorDetailsAdminPage from '../pages/doctor/DoctorDetailsAdminPage';
+import PatientListPage from '../pages/adminPage/PatientListPage';
+import PatientFormPage from '../pages/adminPage/PatientFormPage';
+import DoctorListingPage from '../pages/adminPage/DoctorListingPage';
+import DoctorDetailsAdminPage from '../pages/adminPage/DoctorDetailsAdminPage';
+import StaffListingPage from '../pages/adminPage/StaffListingPage';
+import StaffDetailsPage from '../pages/adminPage/StaffDetailsPage';
 
 const adminRoutes = [
     {
@@ -104,14 +106,6 @@ const adminRoutes = [
         )
     },
     {
-        path: '/admin/patients/create',
-        element: (
-            <ProtectedRoute allowedRoles={["admin"]}>
-                <PatientFormPage />
-            </ProtectedRoute>
-        )
-    },
-    {
         path: '/admin/patients/:id/edit',
         element: (
             <ProtectedRoute allowedRoles={["admin"]}>
@@ -126,7 +120,24 @@ const adminRoutes = [
     {
         path: '/admin/doctors/:id',
         element: <DoctorDetailsAdminPage />
-    }
+    },
+    {
+        path: '/admin/staffs/:role',
+        element: (
+            <ProtectedRoute allowedRoles={["admin"]}>
+                <StaffListingPage />
+            </ProtectedRoute>
+        )
+    },
+    {
+        path: '/admin/staffs/:role/:id',
+        element: (
+            <ProtectedRoute allowedRoles={["admin"]}>
+                <StaffDetailsPage />
+            </ProtectedRoute>
+        )
+    },
+
 ];
 
 export default adminRoutes;

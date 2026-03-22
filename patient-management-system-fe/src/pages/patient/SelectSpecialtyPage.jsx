@@ -18,7 +18,6 @@ const SelectSpecialtyPage = () => {
   const [loading, setLoading] = useState(true);
   const [appointmentsByStatus, setAppointmentsByStatus] = useState([]);
 
-  console.log(appointmentsByStatus);
   useEffect(() => {
     const fetchAppointments = async () => {
       try {

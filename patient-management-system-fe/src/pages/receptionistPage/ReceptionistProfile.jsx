@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import * as Icons from "lucide-react";
 import ProfilePage from '../commonPage/ProfilePage';
 import { useEffect } from 'react';
-import toast, { ToastBar } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { getUserById, updateUser } from '../../api/userApi';
 import { supabase } from '../../../supabaseClient';
 
@@ -24,9 +23,9 @@ const ReceptionistProfile = () => {
         fetchData();
     }, []);
 
-     const handleUpdateUser = async (formData, avatarFile) => {
+    const handleUpdateUser = async (formData, avatarFile) => {
         await updateUser(formData, avatarFile)
-      }
+    }
 
     return (
         <>

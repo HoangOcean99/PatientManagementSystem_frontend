@@ -37,7 +37,6 @@ const ExamDetailPage = () => {
         const load = async () => {
             try {
                 const res = await getMedicalRecordDetail(id);
-                console.log('Medical Record Detail Response:', res.data);
                 // Robust extraction: some APIs wrap in .data, others in .data.data
                 const recordData = res.data?.data?.data || res.data?.data || res.data;
                 setRecord(recordData || null);

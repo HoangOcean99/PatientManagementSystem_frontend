@@ -12,7 +12,6 @@ const DoctorProfileForm = ({ doctor, onSave, isAdmin }) => {
     const [departments, setDepartments] = useState([]);
     const [loadingMeta, setLoadingMeta] = useState(true);
 
-    // ===== Load Rooms & Departments =====
     useEffect(() => {
         const loadMeta = async () => {
             setLoadingMeta(true);
@@ -33,6 +32,7 @@ const DoctorProfileForm = ({ doctor, onSave, isAdmin }) => {
 
 
     useEffect(() => {
+        console.log(doctor);
         if (doctor) {
             reset({
                 full_name: doctor.Users?.full_name || '',

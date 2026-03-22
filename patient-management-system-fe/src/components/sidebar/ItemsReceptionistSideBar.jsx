@@ -16,14 +16,6 @@ export const ItemsReceptionistSideBar = [
         ]
     },
     {
-        icon: "ClipboardList",
-        label: "Hàng chờ bệnh nhân",
-        linkPage: "/receptionist/queue-patient-dashboard",
-        matchPages: [
-            "/receptionist/queue-patient-dashboard"
-        ]
-    },
-    {
         icon: "User",
         label: "Hồ sơ cá nhân",
         linkPage: "/receptionist/profile",

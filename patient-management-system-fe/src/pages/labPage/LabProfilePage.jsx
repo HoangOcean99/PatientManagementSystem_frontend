@@ -18,7 +18,6 @@ const LabProfilePage = () => {
       const idUser = session.user.id;
       setIdDoctor(idUser);
       const res = await getDoctorById(idUser);
-      console.log('res', res)
       const d = res.data?.data || res.data;
 
       setProfile((prev) => ({

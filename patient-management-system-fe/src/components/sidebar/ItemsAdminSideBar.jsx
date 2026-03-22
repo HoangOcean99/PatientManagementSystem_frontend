@@ -16,6 +16,9 @@ export const ItemsAdminSideBar = [
             '/admin/user-management',
             '/admin/user-profile',
             '/admin/user-profile-edit',
+            '/admin/doctors',
+            '/admin/patients',
+            '/admin/staffs'
         ]
     },
     {

@@ -14,14 +14,15 @@ const Header = () => {
             const userId = session.user.id;
             const res = await getUserById(userId);
             setAvatar(res.data.data.avatar_url);
+            if (session?.user) {
+                const tempAvatar = session.user.user_metadata?.picture || '';
+                setAvatar(tempAvatar);
+            }
         } catch (error) {
             toast.error('Tải dữ liệu thất bại')
         }
 
-        if (session?.user) {
-            const tempAvatar = session.user.user_metadata?.picture || '';
-            setAvatar(tempAvatar);
-        }
+
     }
     useEffect(() => {
         fetchData();

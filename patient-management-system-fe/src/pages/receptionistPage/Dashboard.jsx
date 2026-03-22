@@ -77,7 +77,6 @@ const Dashboard = () => {
 
                 const response = await getListAppointments({ date: dateString });
                 const responseData = response.data?.data || response?.data || response || [];
-                console.log(responseData);
                 setAppointments(Array.isArray(responseData) ? responseData : []);
             } catch (error) {
                 console.error("Lỗi fetch:", error);
@@ -119,7 +118,6 @@ const Dashboard = () => {
 
     // 1. Khi nhấn "Chỉnh sửa lịch"
     const startEditing = () => {
-        console.log("Dữ liệu đơn đang chọn:", selectedApt);
         setEditFormData({
             slotId: selectedApt.slot_id,
             date: selectedApt.DoctorSlots?.slot_date
@@ -141,7 +139,6 @@ const Dashboard = () => {
         try {
             // 3. Gọi hàm API lấy tất cả slot của khoa trong ngày
             const response = await getAvailableDoctorSlotsByDate(deptId, newDate);
-            console.log("Response:", response);
             const allSlots = response?.data || [];
             setRawSlots(allSlots);
 

@@ -21,6 +21,7 @@ export const updatePatient = async (userData, avatarFile = null) => {
     }
     return axiosClient.put(url, formData);
 };
+export const updatePatientInfo = async (data) => await axiosClient.put('/patients/update-info', data);
 export const deletePatient = async (id) => await axiosClient.delete(`/patients/${id}`);
 export const getMedicalRecords = async (patientId) => await axiosClient.get(`/medical-record/patient/${patientId}`);
 export const getMedicalRecordDetail = async (recordId) => await axiosClient.get(`/medical-record/detail/${recordId}`);
@@ -29,7 +30,6 @@ export const linkFamilyMember = async (data) => await axiosClient.post('/patient
 export const createPayment = async (data) => await axiosClient.post('/invoices', data);
 export const deleteUser = async (id) => await axiosClient.delete(`/users/${id}`);
 
-// Under My Care - Dependent management
 export const getDependents = async () => await axiosClient.get('/under-my-care');
 export const addDependent = async (data) => await axiosClient.post('/under-my-care', data);
 export const getDependentDetail = async (relationshipId) => await axiosClient.get(`/under-my-care/${relationshipId}`);

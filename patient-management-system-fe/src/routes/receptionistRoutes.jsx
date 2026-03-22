@@ -2,6 +2,7 @@ import ProtectedRoute from "../components/security/ProtectedRoute";
 
 import Dashboard from "../pages/receptionistPage/Dashboard";
 import Coordinator from "../pages/receptionistPage/Coordinator";
+import ReceptionistProfile from "../pages/receptionistPage/ReceptionistProfile";
 
 const receptionistRoutes = [
     {
@@ -20,8 +21,14 @@ const receptionistRoutes = [
             </ProtectedRoute>
         )
     },
-
-
+    {
+        path: "/receptionist/profile",
+        element: (
+            <ProtectedRoute allowedRoles={["receptionist"]}>
+                <ReceptionistProfile />
+            </ProtectedRoute>
+        )
+    },
 ];
 
 export default receptionistRoutes;
