@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import Swal from 'sweetalert2';
 import { supabase } from '../../../supabaseClient';
-import { getMyInvoices, updateInvoiceStatus } from '../../api/patientApi';
+import axiosClient from '../../api/axiosClient';
 import { useSearchParams } from 'react-router-dom';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
@@ -28,7 +27,6 @@ const BillingPage = () => {
     const [invoices, setInvoices] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [isPaying, setIsPaying] = useState(false);
     const [filter, setFilter] = useState('all');
     const [searchParams, setSearchParams] = useSearchParams();
     const [isPaying, setIsPaying] = useState(false);
@@ -45,7 +43,7 @@ const BillingPage = () => {
                 const { data: authData } = await supabase.auth.getUser();
                 const user = authData?.user;
                 if (!user) return;
-                
+
                 const myInfo = {
                     user_id: user.id,
                     full_name: user.user_metadata?.full_name || 'Bản thân'
@@ -56,7 +54,23 @@ const BillingPage = () => {
                     setSelectedPatientId(user.id);
                 }
 
-                const res = await getMyInvoices(targetUserId);
+                const depRes = await getDependents().catch(() => ({ data: [] }));
+                setDependents(depRes.data?.data || depRes.data || []);
+            } catch (err) {
+                console.error('Failed to init data:', err);
+            }
+        };
+        initData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // 2. Fetch invoices whenever selectedPatientId changes
+    useEffect(() => {
+        const loadInvoices = async () => {
+            if (!selectedPatientId) return;
+            setLoading(true);
+            try {
+                const res = await axiosClient.get('/invoices', { params: { patient_id: selectedPatientId } });
                 const fetchedInvoices = res.data?.data || res.data || [];
                 setInvoices(fetchedInvoices);
                 if (fetchedInvoices.length > 0) {
@@ -80,42 +94,6 @@ const BillingPage = () => {
         setSearchParams({ patient_id: newId });
     };
 
-    const handleConfirmPayment = async () => {
-        if (!selectedId) return;
-
-        const result = await Swal.fire({
-            title: 'Xác nhận thanh toán',
-            text: 'Bạn xác nhận đã chuyển khoản thành công chứ? (Vui lòng chờ nhân viên xác nhận sau khi bạn xác nhận).',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#0ea5e9',
-            cancelButtonColor: '#94a3b8',
-            confirmButtonText: 'Đã chuyển khoản',
-            cancelButtonText: 'Hủy'
-        });
-
-        if (!result.isConfirmed) return;
-
-        try {
-            setIsPaying(true);
-            await updateInvoiceStatus(selectedId, 'unpaid', 'transfer');
-            toast.success('Xác nhận thanh toán thành công!');
-
-            // Reload invoices locally or from API
-            const { data: authData } = await supabase.auth.getUser();
-            const targetUserId = dependentId || authData?.user?.id;
-            if (targetUserId) {
-                const res = await getMyInvoices(targetUserId);
-                setInvoices(res.data?.data || res.data || []);
-            }
-        } catch (error) {
-            console.error('Lỗi thanh toán:', error);
-            toast.error(error?.response?.data?.message || 'Có lỗi xảy ra khi thanh toán.');
-        } finally {
-            setIsPaying(false);
-        }
-    };
-
     const filtered = filter === 'all' ? invoices : invoices.filter(i => i.payment_status === filter);
     const selected = invoices.find(i => i.invoice_id === selectedId) || null;
 
@@ -125,7 +103,7 @@ const BillingPage = () => {
             setIsPaying(true);
             await payInvoiceApi(invoiceId);
             toast.success('Thanh toán thành công!');
-            
+
             // Lấy lại danh sách hóa đơn
             const res = await axiosClient.get('/invoices', { params: { patient_id: selectedPatientId } });
             setInvoices(res.data?.data || res.data || []);
@@ -237,7 +215,7 @@ const BillingPage = () => {
                                         >
                                             <div className="flex items-center justify-between mb-1">
                                                 <span className="font-bold text-gray-800 text-sm truncate max-w-[140px]">
-                                                    {inv.Appointments?.ClinicServices?.name || inv.invoice_id.slice(0, 8)}
+                                                    {inv.Appointment?.ClinicService?.name || inv.invoice_id.slice(0, 8)}
                                                 </span>
                                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${st.bg} ${st.color}`}>
                                                     {st.label}
@@ -276,7 +254,7 @@ const BillingPage = () => {
                                         </div>
                                         <div>
                                             <span className="text-gray-500">Bác sĩ: </span>
-                                            <span className="font-bold text-gray-800">{selected.Appointments?.Doctors?.Users?.full_name || '—'}</span>
+                                            <span className="font-bold text-gray-800">{selected.Appointment?.Doctor?.User?.full_name || '—'}</span>
                                         </div>
                                         <div>
                                             <span className="text-gray-500">Phương thức: </span>
@@ -317,49 +295,27 @@ const BillingPage = () => {
                                     </div>
                                 </div>
 
-                                {/* QR Section / Payment Status */}
+                                {/* QR Section */}
                                 <div className="px-6 pb-6">
-                                    {selected.payment_status === 'paid' ? (
-                                        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6 text-center">
-                                            <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
-                                                <i className="fa-solid fa-check text-2xl text-emerald-600"></i>
-                                            </div>
-                                            <p className="font-bold text-emerald-800 text-lg mb-1">Hóa đơn đã được thanh toán</p>
-                                            <p className="text-sm text-emerald-600">Cảm ơn bạn đã tin tưởng dịch vụ của chúng tôi.</p>
+                                    <div className="bg-gray-50 rounded-2xl p-6 text-center">
+                                        <p className="font-bold text-gray-700 mb-4">Quét mã QR để thanh toán</p>
+                                        <div className="w-32 h-32 mx-auto bg-white rounded-xl border border-gray-200 flex items-center justify-center mb-4 shadow-sm">
+                                            <i className="fa-solid fa-qrcode text-5xl text-gray-300"></i>
                                         </div>
-                                    ) : selected.payment_status === 'refunded' ? (
-                                        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center">
-                                            <div className="w-16 h-16 mx-auto bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                                                <i className="fa-solid fa-rotate-left text-2xl text-gray-500"></i>
-                                            </div>
-                                            <p className="font-bold text-gray-700 text-lg mb-1">Hóa đơn đã được hoàn tiền</p>
-                                        </div>
-                                    ) : (
-                                        <div className="bg-sky-50/50 rounded-2xl p-6 text-center border border-sky-100">
-                                            <p className="font-bold text-gray-800 mb-4">Quét mã QR để thanh toán</p>
-                                            <div className="w-32 h-32 mx-auto bg-white rounded-xl border border-gray-200 flex items-center justify-center mb-4 shadow-sm relative">
-                                                <i className="fa-solid fa-qrcode text-5xl text-gray-300"></i>
-                                                <div className="absolute inset-0 bg-[url('/qrBank.jpg')] bg-cover bg-center bg-no-repeat rounded-xl"></div>
-                                            </div>
-                                            <p className="text-xs text-gray-500 my-4 leading-relaxed">
-                                                Sử dụng ứng dụng ngân hàng hoặc ví điện tử của bạn để quét mã. <br /> Nội dung chuyển khoản: <span className="font-semibold text-gray-700">Thanh toan HD {selected.invoice_id.slice(0, 8).toUpperCase()}</span>
-                                            </p>
-                                            <button
-                                                className="w-full max-w-xs mx-auto py-3.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-sky-500/30 hover:shadow-sky-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                                                style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)' }}
-                                                onClick={handleConfirmPayment}
-                                                disabled={isPaying}
-                                            >
-                                                {isPaying ? (
-                                                    <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                                                ) : (
-                                                    <i className="fa-solid fa-wallet"></i>
-                                                )}
-                                                {isPaying ? 'Đang xử lý...' : 'Xác nhận đã thanh toán'}
-                                            </button>
-
-                                        </div>
-                                    )}
+                                        <button
+                                            onClick={() => handlePayment(selected.invoice_id)}
+                                            disabled={isPaying || selected.payment_status === 'paid'}
+                                            className="w-full max-w-xs mx-auto py-3.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-sky-500/30 hover:shadow-sky-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:-translate-y-0 disabled:active:scale-100"
+                                            style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)' }}
+                                        >
+                                            {isPaying ? (
+                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            ) : (
+                                                <><i className="fa-solid fa-wallet"></i> {selected.payment_status === 'paid' ? 'Đã thanh toán' : 'Thanh toán ngay'}</>
+                                            )}
+                                        </button>
+                                        <p className="text-xs text-gray-400 mt-3">Sử dụng ứng dụng ngân hàng hoặc ví điện tử của bạn để quét mã.</p>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
