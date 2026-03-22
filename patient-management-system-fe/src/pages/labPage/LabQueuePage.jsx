@@ -100,7 +100,8 @@ const LabQueuePage = () => {
           return {
             lab_order_id: lo.lab_order_id,
             record_id: lo.record_id,
-            test_name: lo.test_name,
+            lab_service_id: lo.lab_service_id,
+            lab_service_name: lo.LabServices?.name || '',
             status: lo.status,
             result_summary: lo.result_summary || '',
             result_file_url: lo.result_file_url || '',
@@ -133,7 +134,7 @@ const LabQueuePage = () => {
     return labOrders.filter((lo) => {
       const matchSearch =
         lo.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lo.test_name.toLowerCase().includes(searchTerm.toLowerCase());
+        lo.lab_service_name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchStatus = statusFilter === 'all' || lo.status === statusFilter;
       return matchSearch && matchStatus;
     });
@@ -287,7 +288,7 @@ const LabQueuePage = () => {
                           </div>
                         </td>
                         <td data-label="Tên xét nghiệm">
-                          <span className="lq-test-name">{lo.test_name}</span>
+                          <span className="lq-test-name">{lo.lab_service_name}</span>
                         </td>
                         <td data-label="BS chỉ định">
                           <span className="lq-doctor-name">{lo.doctor_name || '—'}</span>
