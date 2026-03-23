@@ -9,6 +9,7 @@ import { createAppointment } from "../../api/appointmentApi";
 import { getDoctorbyDepartmentId } from "../../api/doctorApi";
 import { getAvailableDoctorSlots } from "../../api/appointmentApi";
 import { getServicesbyDepartmentId } from "../../api/serviceApi";
+import { getDependents } from "../../api/patientApi";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 const RELATION_MAP = {
@@ -88,6 +89,8 @@ const BookingAppointmentPage = () => {
 
         if (userId) {
           setForm(prev => ({ ...prev, patient_id: userId, is_dependent: false }));
+          const depsRes = await getDependents();
+          setDependents(depsRes.data?.data || depsRes.data || []);
         }
       } catch (err) {
         console.error("Failed to load data:", err);
@@ -349,11 +352,14 @@ const BookingAppointmentPage = () => {
                       >
                         <option value="">Chọn bệnh nhân</option>
                         <option value={myself?.user_id}>{myself?.full_name} (Bản thân)</option>
-                        {dependents.map((dep) => (
-                          <option key={dep.relationship_id} value={dep.ChildUser?.user_id}>
-                            {dep.ChildUser?.full_name} ({RELATION_MAP[dep.relationship] || dep.relationship})
+                        {dependents.map((dep) => {
+                          const childUser = dep.Users || dep.ChildUser || {};
+                          const childId = childUser.user_id || dep.child_user_id;
+                          return (
+                          <option key={dep.relationship_id} value={childId}>
+                            {childUser.full_name}
                           </option>
-                        ))}
+                        )})}
                       </select>
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                         <i className="fa-solid fa-chevron-down text-xs"></i>
