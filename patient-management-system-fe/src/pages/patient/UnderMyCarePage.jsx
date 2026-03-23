@@ -6,6 +6,7 @@ import { getDependents, addDependent, removeDependent } from '../../api/patientA
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import { getListAppointmentsByStatus, cancelAppointment } from '../../api/appointmentApi';
+import Swal from 'sweetalert2';
 
 const RELATION_MAP = {
     father: 'Con',
@@ -113,7 +114,17 @@ const UnderMyCarePage = () => {
     }, [activeTab, showAppointmentsModal, selectedDependent]);
 
     const handleCancelAppointment = async (appointmentId) => {
-        if (!window.confirm('Bạn có chắc chắn muốn hủy lịch khám này?')) return;
+        const result = await Swal.fire({
+            title: 'Xác nhận hủy lịch',
+            text: 'Bạn có chắc chắn muốn hủy lịch khám này không?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6e7d88',
+            confirmButtonText: 'Đồng ý hủy',
+            cancelButtonText: 'Không'
+        });
+        if (!result.isConfirmed) return;
         try {
             setCancelingId(appointmentId);
             await cancelAppointment(appointmentId);

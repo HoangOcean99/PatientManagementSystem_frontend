@@ -206,7 +206,6 @@ const DepositManagementPage = () => {
               </tbody>
             </table>
 
-            {/* Footer */}
             <div className="dep-table-footer">
               <span>Hiển thị {paginatedDeposits.length} trong số {filteredDeposits.length} kết quả</span>
               <div className="dep-pagination">
@@ -220,7 +219,6 @@ const DepositManagementPage = () => {
           </div>
         </section>
 
-        {/* Copyright Footer */}
         <footer className="dep-copyright">
           © 2026 Quản Lý Tài Chính Phòng Khám. All rights reserved.
         </footer>

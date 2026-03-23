@@ -4,6 +4,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { vi } from "date-fns/locale";
 import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 import { supabase } from "../../../supabaseClient";
 import {
   getListAppointmentsByCurrentUserId,
@@ -287,7 +288,17 @@ const AppointmentDetail = () => {
 
   const handleCancel = async () => {
     if (!appointment?.appointment_id) return;
-    if (!window.confirm("Bạn có chắc muốn hủy lịch hẹn này?")) return;
+    const result = await Swal.fire({
+      title: 'Xác nhận hủy lịch',
+      text: 'Bạn có chắc muốn hủy lịch hẹn này?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6e7d88',
+      confirmButtonText: 'Đồng ý hủy',
+      cancelButtonText: 'Không'
+    });
+    if (!result.isConfirmed) return;
     setCancelLoading(true);
     try {
       await cancelAppointment(appointment.appointment_id);

@@ -13,11 +13,7 @@ const Header = () => {
             const { data: { session } } = await supabase.auth.getSession();
             const userId = session.user.id;
             const res = await getUserById(userId);
-            setAvatar(res.data.data.avatar_url);
-            if (session?.user) {
-                const tempAvatar = session.user.user_metadata?.picture || '';
-                setAvatar(tempAvatar);
-            }
+            setAvatar(res?.data?.data?.avatar_url);
         } catch (error) {
             toast.error('Tải dữ liệu thất bại')
         }
