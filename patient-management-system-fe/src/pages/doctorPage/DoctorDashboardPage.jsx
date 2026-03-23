@@ -218,7 +218,7 @@ const DoctorDashboardPage = () => {
   };
 
   return (
-    <div className="dash-layout" style={{ width: '100vw' }}>
+    <div className="dash-layout" style={{ width: '100%' }}>
 
       <main className="dash-main">
         <motion.div

@@ -188,7 +188,7 @@ const DoctorSchedulePage = () => {
     )
   }
   return (
-    <div className="sched-layout">
+    <div className="sched-layout" style={{ width: '100%' }}>
 
       <main className="sched-main p-8">
         <motion.div
