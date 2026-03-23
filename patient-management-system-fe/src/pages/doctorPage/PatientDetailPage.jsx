@@ -336,7 +336,7 @@ const PatientDetailPage = () => {
   }
 
   return (
-    <div className="pd-layout" style={{ width: '100vw' }}>
+    <div className="pd-layout" style={{ width: '100%' }}>
       {/* ===== SIDEBAR ===== */}
       <DoctorSidebar activePage="schedule" />
 

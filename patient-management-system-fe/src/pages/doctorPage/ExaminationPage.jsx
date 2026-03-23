@@ -747,7 +747,7 @@ const ExaminationPage = () => {
   }
 
   return (
-    <div className="ex-layout" style={{ width: '100vw' }}>
+    <div className="ex-layout" style={{ width: '100%' }}>
       <main className="ex-main p-8">
         <motion.div
           className="ex-content"
