@@ -23,7 +23,7 @@ import {
   FiSend,
   FiDownload,
 } from 'react-icons/fi';
-import { getAppointmentsByDoctorId } from '../../api/doctorApi';
+import { getAppointmentsByDoctorId, getDoctorById } from '../../api/doctorApi';
 import medicalRecordApi from '../../api/medicalRecordApi';
 import labOrderApi from '../../api/labOrderApi';
 import { updateRoomStatusByDoctor } from '../../api/roomApi';
@@ -186,6 +186,7 @@ const ExaminationPage = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
   const [doctorId, setDoctorId] = useState(null);
+  const [doctorInfo, setDoctorInfo] = useState(null);
 
   // ===== APPOINTMENT & PATIENT DATA (from DoctorSchedulePage navigation) =====
   const [appointment, setAppointment] = useState(null);
@@ -291,6 +292,24 @@ const ExaminationPage = () => {
     getSession();
   }, []);
 
+  // ===== Fetch Doctor Info (name, department) =====
+  useEffect(() => {
+    if (!doctorId) return;
+    const fetchDoctorInfo = async () => {
+      try {
+        const res = await getDoctorById(doctorId);
+        const data = res.data?.data || res.data || {};
+        setDoctorInfo({
+          full_name: data.Users?.full_name || data.full_name || '',
+          department_name: data.Departments?.name || data.department_name || '',
+        });
+      } catch (err) {
+        console.warn('[ExaminationPage] Không thể lấy thông tin bác sĩ:', err);
+      }
+    };
+    fetchDoctorInfo();
+  }, [doctorId]);
+
   // ===== FETCH DATA ON MOUNT =====
   useEffect(() => {
     const fetchData = async () => {
@@ -368,6 +387,8 @@ const ExaminationPage = () => {
             const patientId = currentAppt.Patients?.patient_id || currentAppt.patient_id;
             const patientRecordsRes = await medicalRecordApi.getMedicalRecordsByPatientId(patientId);
             const patientRecords = patientRecordsRes.data?.data || patientRecordsRes.data || [];
+
+
             const matchedRecord = (Array.isArray(patientRecords) ? patientRecords : []).find(
               (item) => normalizeId(item.appointment_id) === normalizeId(appointmentId)
             );
@@ -629,6 +650,20 @@ const ExaminationPage = () => {
         console.warn('[Room Status] Không thể cập nhật trạng thái phòng:', roomErr);
       }
 
+      // Gửi email nhắc nhở tái khám nếu có followUpDate
+      if (followUpDate) {
+        try {
+          await medicalRecordApi.sendFollowUpReminder({
+            patient_id: patient.patient_id,
+            doctor_id: appointment.doctor_id,
+            follow_up_date: followUpDate,
+          });
+          console.log('[Email] Đã gọi API gửi email nhắc nhở thành công');
+        } catch (emailErr) {
+          console.warn('[Email] Không thể gửi email nhắc nhở tái khám:', emailErr);
+        }
+      }
+
       alert('Hoàn tất ca khám thành công!');
     } catch (err) {
       console.error('Lỗi khi hoàn tất:', err);
@@ -644,7 +679,6 @@ const ExaminationPage = () => {
     symptoms: symptoms.trim(),
     diagnosis: diagnosis.trim(),
     doctor_notes: doctorNotes.trim(),
-    follow_up_date: followUpDate || null,
     prescriptions: prescriptions
       .filter((p) => p.medication_name.trim())
       .map((p) => ({
@@ -957,21 +991,7 @@ const ExaminationPage = () => {
                               disabled={isCompleted || !recordId}
                             />
                           </div>
-                          <label className="ex-checkbox">
-                            <input
-                              type="checkbox"
-                              checked={p.reminder_schedule === 'daily'}
-                              onChange={(e) =>
-                                updatePrescription(
-                                  p.id,
-                                  'reminder_schedule',
-                                  e.target.checked ? 'daily' : ''
-                                )
-                              }
-                              disabled={isCompleted || !recordId}
-                            />
-                            <span>Nhắc bệnh nhân uống thuốc</span>
-                          </label>
+
                         </div>
                       </motion.div>
                     ))}

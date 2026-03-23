@@ -24,6 +24,11 @@ export const medicalRecordApi = {
     updateMedicalRecord: async (recordId, data) => {
         return await axiosClient.patch(`/medical-record/update/${recordId}`, data);
     },
+
+    // Send follow-up reminder email
+    sendFollowUpReminder: async (data) => {
+        return await axiosClient.post('/medical-record/send-followup-reminder', data);
+    },
 };
 
 export default medicalRecordApi;
