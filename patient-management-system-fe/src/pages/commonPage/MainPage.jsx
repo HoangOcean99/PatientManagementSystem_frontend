@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { useState } from "react";
 import Header from "../../components/common/Header";
 import Sidebar from "../../components/common/Sidebar";
 import { ItemsAdminSideBar } from "../../components/sidebar/ItemsAdminSideBar";
@@ -12,6 +13,7 @@ import { useAuth } from "../../components/security/AuthContext";
 export default function MainPage() {
     const location = useLocation();
     const { user } = useAuth();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     let items = [];
 
     if (location.pathname.startsWith("/admin")) {
@@ -20,7 +22,7 @@ export default function MainPage() {
         items = ItemsDoctorSideBar;
     } else if (location.pathname.startsWith("/patient")) {
         const isChildAccount = user?.email?.endsWith('@app.com');
-        items = isChildAccount 
+        items = isChildAccount
             ? ItemsPatientSideBar.filter(item => item.linkPage !== "/patient/under-my-care")
             : ItemsPatientSideBar;
     } else if (location.pathname.startsWith("/lab")) {
@@ -34,11 +36,15 @@ export default function MainPage() {
     }
 
     return (
-        <div className="flex flex-col h-screen bg-white" style={{ width: '100vw' }}>
-            <Header />
+        <div className="flex flex-col h-screen bg-white overflow-hidden">
+            <Header onMenuClick={() => setSidebarOpen(true)} />
 
             <div className="flex flex-1 min-h-0 overflow-hidden">
-                <Sidebar items={items} />
+                <Sidebar
+                    items={items}
+                    open={sidebarOpen}
+                    onClose={() => setSidebarOpen(false)}
+                />
 
                 <main className="flex-1 min-w-0 overflow-y-auto bg-[#f8f9fa]">
                     <Outlet />

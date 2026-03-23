@@ -10,7 +10,7 @@
   background: var(--ex-bg, #F8FAFC);
   font-family: var(--ex-font, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   color: var(--ex-text-primary, #0F172A);
-  width: 100vw;
+  width: 100%;
 }
 
 .dash-main {
@@ -21,6 +21,7 @@
 
 .dash-content {
   margin: 0 auto;
+  padding: 24px 32px 40px;
   display: flex;
   flex-direction: column;
   gap: 24px;
