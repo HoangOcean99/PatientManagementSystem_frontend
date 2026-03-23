@@ -8,28 +8,13 @@ export const ItemsPatientSideBar = [
         ]
     },
     {
-        icon: 'User',
-        label: "Hồ sơ cá nhân",
-        linkPage: "/patient/profile",
-        matchPages: [
-            "/patient/profile",
-            "/patient/change-password"
-        ]
-    },
-    {
         icon: 'Calendar',
         label: "Đặt lịch khám",
         linkPage: "/patient/booking",
         matchPages: [
-            "/patient/booking"
-        ]
-    },
-    {
-        icon: 'Clock',
-        label: "Lịch hẹn đã lỡ",
-        linkPage: "/patient/missed-appointments",
-        matchPages: [
-            "/patient/missed-appointments"
+            "/patient/booking",
+            "/patient/appointment",
+            "/patient/payment"
         ]
     },
     {
@@ -55,6 +40,15 @@ export const ItemsPatientSideBar = [
         matchPages: [
             "/patient/under-my-care",
             "/patient/under-my-care/key"
+        ]
+    },
+    {
+        icon: 'User',
+        label: "Hồ sơ cá nhân",
+        linkPage: "/patient/profile",
+        matchPages: [
+            "/patient/profile",
+            "/patient/change-password"
         ]
     },
 ];

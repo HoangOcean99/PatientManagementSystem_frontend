@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import * as Icons from "lucide-react";
 import { useNavigate, useParams } from 'react-router-dom';
-import { getDepartmentById } from '../../api/departmentApi';
+import { getById, getDepartmentById } from '../../api/departmentApi';
 import { createClinicService, deleteClinicService, getAllClinicServiceByDepartment, updateClinicService } from '../../api/clinicServiceApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -40,13 +40,13 @@ const ClinicServicesManagement = () => {
         {
             name: "price",
             label: "Giá dịch vụ",
-            type: "text",
+            type: "number",
             required: true,
         },
         {
             name: "duration_minutes",
             label: "Thời gian dịch vụ",
-            type: "textarea",
+            type: "number",
             required: true,
         },
         {
@@ -68,7 +68,7 @@ const ClinicServicesManagement = () => {
     const fetchClinicService = async () => {
         try {
             setIsLoading(true);
-            const resDepartment = await getDepartmentById(department);
+            const resDepartment = await getById(department);
             const clinicServiceData = resDepartment.data.data.ClinicServices;
             setDepartments(resDepartment.data.data);
             setClinicServices(clinicServiceData);

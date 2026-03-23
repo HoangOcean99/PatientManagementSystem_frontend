@@ -5,93 +5,11 @@ import { getAllPatients } from '../../api/patientApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import toast from 'react-hot-toast';
+import { updateUserRoleApi } from '../../api/userApi';
+import Swal from 'sweetalert2';
+import Pagination from '../../components/common/Pagination';
 
-/* ─── Gender Filter Options ─── */
-const FILTER_OPTIONS = [
-    { value: '', label: 'Tất cả giới tính', icon: 'fa-sliders', color: '#2563eb', bg: 'bg-blue-50', text: 'text-blue-600' },
-    { value: 'male', label: 'Nam', icon: 'fa-mars', color: '#2563eb', bg: 'bg-blue-50', text: 'text-blue-600' },
-    { value: 'female', label: 'Nữ', icon: 'fa-venus', color: '#e11d48', bg: 'bg-rose-50', text: 'text-rose-600' },
-    { value: 'other', label: 'Khác', icon: 'fa-genderless', color: '#6366f1', bg: 'bg-indigo-50', text: 'text-indigo-600' },
-];
 
-const GenderFilterDropdown = ({ value, onChange }) => {
-    const [open, setOpen] = useState(false);
-    const ref = useRef(null);
-    const selected = FILTER_OPTIONS.find(o => o.value === value) || FILTER_OPTIONS[0];
-
-    useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    return (
-        <div ref={ref} className="w-full md:w-52 relative">
-            {/* Trigger */}
-            <button
-                type="button"
-                onClick={() => setOpen(prev => !prev)}
-                className={`w-full px-3 py-3 rounded-xl flex items-center gap-2.5 transition-all duration-300 cursor-pointer ${open ? 'bg-white ring-2 ring-blue-200 shadow-sm' : 'bg-transparent hover:bg-white/80'}`}
-            >
-                <div className={`w-7 h-7 rounded-lg ${selected.bg} flex items-center justify-center flex-shrink-0 transition-transform duration-300`}>
-                    <i className={`fa-solid ${selected.icon} text-xs ${selected.text}`}></i>
-                </div>
-                <span className="flex-1 text-left font-semibold text-gray-800 text-sm truncate">
-                    {selected.label}
-                </span>
-                <motion.i
-                    animate={{ rotate: open ? 180 : 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="fa-solid fa-chevron-down text-[10px] text-gray-400"
-                ></motion.i>
-            </button>
-
-            {/* Panel */}
-            <AnimatePresence>
-                {open && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -6, scaleY: 0.96 }}
-                        animate={{ opacity: 1, y: 0, scaleY: 1 }}
-                        exit={{ opacity: 0, y: -6, scaleY: 0.96 }}
-                        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-gray-200 shadow-[0_12px_40px_rgba(37,99,235,0.12)] overflow-hidden origin-top"
-                    >
-                        {FILTER_OPTIONS.map((opt, i) => {
-                            const isActive = value === opt.value;
-                            return (
-                                <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => { onChange(opt.value); setOpen(false); }}
-                                    className={`w-full px-3.5 py-2.5 flex items-center gap-2.5 transition-all duration-200 cursor-pointer ${isActive ? opt.bg : 'hover:bg-gray-50'} ${i < FILTER_OPTIONS.length - 1 ? 'border-b border-gray-100' : ''}`}
-                                >
-                                    <div className={`w-7 h-7 rounded-lg ${opt.bg} flex items-center justify-center ${isActive ? 'scale-110' : ''} transition-transform duration-200`}>
-                                        <i className={`fa-solid ${opt.icon} text-xs ${opt.text}`}></i>
-                                    </div>
-                                    <span className={`flex-1 text-left text-sm font-semibold ${isActive ? 'text-gray-900' : 'text-gray-600'}`}>
-                                        {opt.label}
-                                    </span>
-                                    {isActive && (
-                                        <motion.div
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            className="w-5 h-5 rounded-full flex items-center justify-center"
-                                            style={{ backgroundColor: opt.color }}
-                                        >
-                                            <i className="fa-solid fa-check text-white text-[8px]"></i>
-                                        </motion.div>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
-};
 
 /* ─── Color palette ─── */
 const GENDER_MAP = {
@@ -123,7 +41,7 @@ const calcAge = (dateStr) => {
 };
 
 /* ─── Patient Row Card ─── */
-const PatientRow = ({ patient, index, order, onEdit }) => {
+const PatientRow = ({ patient, index, order, onEdit, onRoleChange }) => {
     const g = GENDER_MAP[patient.Users?.gender] || GENDER_MAP.other;
     const age = calcAge(patient.Users?.dob);
     const name = patient.Users?.full_name || 'Chưa cập nhật';
@@ -209,19 +127,24 @@ const PatientRow = ({ patient, index, order, onEdit }) => {
                     </div>
 
                     {/* Status + Edit */}
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                        <select
+                            value="patient"
+                            onChange={(e) => onRoleChange(patient.Users?.user_id || patient.user_id, e.target.value)}
+                            className="bg-gray-50 hover:bg-white border border-gray-200 text-gray-700 font-medium text-[11px] rounded-lg p-1.5 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-sm transition-all outline-none"
+                        >
+                            <option value="patient">Bệnh nhân</option>
+                            <option value="doctor">Bác sĩ</option>
+                            <option value="admin">Quản trị viên</option>
+                            <option value="receptionist">Lễ tân</option>
+                            <option value="accountant">Kế toán</option>
+                        </select>
                         {patient.Users?.status === 'active' && (
                             <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                 Hoạt động
                             </span>
                         )}
-                        <div
-                            className="w-9 h-9 rounded-xl bg-gray-50/80 group-hover:bg-blue-50 flex items-center justify-center transition-all duration-300 group-hover:translate-x-0.5 cursor-pointer"
-                            title="Chỉnh sửa"
-                        >
-                            <i className="fa-solid fa-pen-to-square text-xs text-gray-300 group-hover:text-blue-600 transition-colors"></i>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -235,7 +158,6 @@ const PatientListPage = () => {
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [genderFilter, setGenderFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
 
@@ -272,19 +194,45 @@ const PatientListPage = () => {
         }
     };
 
+    const handleRoleChange = async (userId, newRole) => {
+        const result = await Swal.fire({
+            title: 'Thay đổi chức danh?',
+            text: "Việc đổi chức danh có thể ảnh hưởng đến quyền truy cập của người dùng này trên hệ thống.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) {
+            refetch(); // force reset default UI select
+            return;
+        }
+
+        try {
+            await updateUserRoleApi(userId, newRole);
+            toast.success('Cập nhật chức danh thành công');
+            refetch();
+        } catch (err) {
+            console.error(err);
+            toast.error('Lỗi khi cập nhật chức danh');
+        }
+    };
+
     const filtered = useMemo(() => {
         return patients.filter((p) => {
             const combined = `${p.patient_id} ${p.Users?.full_name || ''} ${p.Users?.phone_number || ''}`.toLowerCase();
             const matchSearch = searchTerm ? combined.includes(searchTerm.toLowerCase()) : true;
-            const matchGender = genderFilter ? p.Users?.gender === genderFilter : true;
-            return matchSearch && matchGender;
+            return matchSearch;
         });
-    }, [patients, searchTerm, genderFilter]);
+    }, [patients, searchTerm]);
 
     const totalPages = Math.ceil(filtered.length / pageSize);
     const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-    useEffect(() => setCurrentPage(1), [searchTerm, genderFilter]);
+    useEffect(() => setCurrentPage(1), [searchTerm]);
 
     const stats = useMemo(() => ({
         total: patients.length,
@@ -293,27 +241,18 @@ const PatientListPage = () => {
     }), [patients]);
 
     return (
-        <div className="min-h-screen font-sans relative" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+        <div className="min-h-screen font-sans relative overflow-y-auto" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
             {scrollbarStyles}
 
             {/* ─── Header ─── */}
-            <div className="sticky top-0 z-30 border-b border-blue-100/40" style={{ background: 'linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.9) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-6">
-                    {/* Title area */}
+            <div className="top-0 z-30 border-b border-blue-100/40" style={{ background: 'linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.9) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
+                <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-6">
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 mb-4">
-                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                            <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">Hệ thống Y tế</span>
-                        </div>
                         <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
                             Quản lý Hồ sơ Bệnh nhân
                         </h1>
-                        <p className="text-sm md:text-base text-gray-500 max-w-lg mx-auto">
-                            Tra cứu, theo dõi và quản lý thông tin sức khoẻ toàn diện
-                        </p>
                     </div>
 
-                    {/* Search */}
                     <div className="relative p-1.5 rounded-2xl bg-white/60 border border-gray-200/60 shadow-lg shadow-blue-500/[0.04] flex flex-col md:flex-row gap-2">
                         <div className="flex-1 relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -328,11 +267,6 @@ const PatientListPage = () => {
                             />
                         </div>
 
-                        <GenderFilterDropdown
-                            value={genderFilter}
-                            onChange={(val) => setGenderFilter(val)}
-                        />
-
                         <button
                             onClick={() => setCurrentPage(1)}
                             className="px-7 py-3 rounded-xl font-bold transition-all active:scale-95 whitespace-nowrap cursor-pointer text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40"
@@ -341,20 +275,12 @@ const PatientListPage = () => {
                             <i className="fa-solid fa-magnifying-glass mr-2 text-blue-200"></i>
                             Tìm kiếm
                         </button>
-                        <button
-                            onClick={() => navigate('/admin/patients/create')}
-                            className="px-7 py-3 rounded-xl font-bold transition-all active:scale-95 whitespace-nowrap cursor-pointer text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 hover:-translate-y-0.5"
-                            style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)' }}
-                        >
-                            <i className="fa-solid fa-user-plus mr-2"></i>
-                            Thêm bệnh nhân
-                        </button>
                     </div>
                 </div>
             </div>
 
             {/* ─── Content ─── */}
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
                 {/* Stats bar */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div>
@@ -399,7 +325,7 @@ const PatientListPage = () => {
                         <h3 className="text-xl font-bold text-gray-800">Không tìm thấy bệnh nhân nào</h3>
                         <p className="text-gray-400 mt-2 text-sm">Vui lòng thử lại với từ khóa hoặc bộ lọc khác</p>
                         <button
-                            onClick={() => { setSearchTerm(''); setGenderFilter(''); refetch(); }}
+                            onClick={() => { setSearchTerm(''); refetch(); }}
                             className="mt-6 font-bold text-blue-600 hover:text-blue-700 px-5 py-2 bg-blue-50 hover:bg-blue-100 rounded-xl cursor-pointer transition-colors"
                         >
                             <i className="fa-solid fa-rotate-left mr-2 text-sm"></i>
@@ -408,7 +334,7 @@ const PatientListPage = () => {
                     </motion.div>
                 ) : (
                     <>
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-3 pb-12">
                             <AnimatePresence>
                                 {paginated.map((patient, idx) => (
                                     <PatientRow
@@ -417,6 +343,7 @@ const PatientListPage = () => {
                                         index={idx}
                                         order={(currentPage - 1) * pageSize + idx + 1}
                                         onEdit={(p) => navigate(`/admin/patients/${p.patient_id}/edit`, { state: { patient: p } })}
+                                        onRoleChange={handleRoleChange}
                                     />
                                 ))}
                             </AnimatePresence>
@@ -424,51 +351,12 @@ const PatientListPage = () => {
 
                         {/* Pagination */}
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-1.5 mt-10">
-                                <button
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1}
-                                    className="w-10 h-10 rounded-xl hover:bg-white/80 flex items-center justify-center text-gray-400 transition-all disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
-                                >
-                                    <i className="fa-solid fa-chevron-left text-sm"></i>
-                                </button>
-
-                                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                    .filter(page => {
-                                        if (totalPages <= 7) return true;
-                                        if (page === 1 || page === totalPages) return true;
-                                        return Math.abs(page - currentPage) <= 1;
-                                    })
-                                    .reduce((acc, page, i, arr) => {
-                                        if (i > 0 && page - arr[i - 1] > 1) acc.push('...');
-                                        acc.push(page);
-                                        return acc;
-                                    }, [])
-                                    .map((item, i) =>
-                                        item === '...' ? (
-                                            <span key={`d-${i}`} className="px-2 text-gray-300 text-sm">...</span>
-                                        ) : (
-                                            <button
-                                                key={item}
-                                                onClick={() => setCurrentPage(item)}
-                                                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all cursor-pointer ${currentPage === item
-                                                    ? 'text-white shadow-lg shadow-blue-500/25'
-                                                    : 'text-gray-500 hover:bg-white/80'
-                                                    }`}
-                                                style={currentPage === item ? { background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' } : {}}
-                                            >
-                                                {item}
-                                            </button>
-                                        )
-                                    )}
-
-                                <button
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage === totalPages}
-                                    className="w-10 h-10 rounded-xl hover:bg-white/80 flex items-center justify-center text-gray-400 transition-all disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer"
-                                >
-                                    <i className="fa-solid fa-chevron-right text-sm"></i>
-                                </button>
+                            <div className="flex items-center justify-center mt-10">
+                                <Pagination 
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
                             </div>
                         )}
                     </>

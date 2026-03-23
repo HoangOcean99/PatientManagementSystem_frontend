@@ -19,7 +19,6 @@ const DoctorProfileSettingsPage = () => {
       const idUser = session.user.id;
       setIdDoctor(idUser);
       const res = await getDoctorById(idUser);
-      console.log('res', res)
       const d = res.data?.data || res.data;
 
       setProfile((prev) => ({
@@ -37,7 +36,7 @@ const DoctorProfileSettingsPage = () => {
         dob: d.Users.dob || '',
         gender: d.Users.gender || '',
         address: d.Users.address || '',
-        roomName: d.Rooms.room_number || ''
+        roomName: d.Rooms?.room_number || ''
       }));
     } catch (err) {
       toast.error("Không thể tải dữ liệu")

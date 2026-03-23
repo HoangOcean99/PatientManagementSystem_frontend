@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiArrowLeft,
@@ -176,7 +176,7 @@ function LabTable({ labOrders }) {
       {labOrders.map((l, i) => (
         <div key={l.lab_order_id || i} className="pd-lab-item">
           <div className="pd-lab-item__header">
-            <span className="pd-lab-item__name">{l.test_name}</span>
+            <span className="pd-lab-item__name">{l.lab_service_name}</span>
           </div>
 
           {l.result_summary && (
@@ -208,6 +208,7 @@ function LabTable({ labOrders }) {
 const PatientDetailPage = () => {
   const navigate = useNavigate();
   const { patientId } = useParams();
+  const location = useLocation();
 
   // ===== API STATE =====
   const [patient, setPatient] = useState(null);
@@ -258,7 +259,7 @@ const PatientDetailPage = () => {
           })),
           lab_orders: (rec.LabOrders || []).map((l) => ({
             lab_order_id: l.lab_order_id,
-            test_name: l.test_name || '',
+            lab_service_name: l.LabServices?.name || '',
             result_summary: l.result_summary || '',
             result_file_url: l.result_file_url || '',
             status: l.status || 'ordered',
@@ -286,7 +287,6 @@ const PatientDetailPage = () => {
           setError('Không tìm thấy thông tin bệnh nhân.');
         }
       } catch (err) {
-        console.error('Failed to load patient data:', err);
         setError('Không thể tải dữ liệu bệnh nhân. Vui lòng thử lại.');
       } finally {
         setLoading(false);
@@ -336,7 +336,7 @@ const PatientDetailPage = () => {
   }
 
   return (
-    <div className="pd-layout" style={{ width: '100vw' }}>
+    <div className="pd-layout" style={{ width: '100%' }}>
       {/* ===== SIDEBAR ===== */}
       <DoctorSidebar activePage="schedule" />
 
@@ -360,7 +360,14 @@ const PatientDetailPage = () => {
               </button>
               <button
                 className="pd-btn-exam"
-                onClick={() => navigate(`/doctor/examine/${records[0]?.appointment_id || ''}`)}
+                onClick={() => {
+                  const targetId = location.state?.appointment_id || records[0]?.appointment_id;
+                  if (targetId) {
+                    navigate(`/doctor/examine/${targetId}`);
+                  } else {
+                    alert('Không tìm thấy mã lịch hẹn. Vui lòng quay lại màn hình Chọn lịch khám.');
+                  }
+                }}
               >
                 <FiPlay size={16} />
                 Bắt đầu khám

@@ -37,10 +37,12 @@ export default function MainPage() {
         <div className="flex flex-col h-screen bg-white" style={{ width: '100vw' }}>
             <Header />
 
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 min-h-0 overflow-hidden">
                 <Sidebar items={items} />
 
-                <Outlet />
+                <main className="flex-1 min-w-0 overflow-y-auto bg-[#f8f9fa]">
+                    <Outlet />
+                </main>
             </div>
         </div>
     );

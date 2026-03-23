@@ -139,6 +139,7 @@ const DepartmentManagement = () => {
         try {
             setIsLoadingCreate(true);
             await createDepartment(data);
+            
             fetchDepartment();
             setIsShowServiceCreatePopUp(false);
             toast.success('Thêm chuyên ngành thành công');

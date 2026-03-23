@@ -2,14 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { createPayment } from '../../api/patientApi';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
-const PAY_METHODS = [
-    { value: 'cash', label: 'Tiền mặt', icon: 'fa-money-bill-wave', color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-    { value: 'transfer', label: 'Chuyển khoản', icon: 'fa-building-columns', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
-    { value: 'credit_card', label: 'Thẻ tín dụng', icon: 'fa-credit-card', color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-200' },
-];
+
 
 const PaymentPage = () => {
     const { id: appointmentId } = useParams();
@@ -18,26 +13,13 @@ const PaymentPage = () => {
     const appointment = location.state?.appointment;
     const service = location.state?.service;
 
-    const [method, setMethod] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     const handlePay = async () => {
-        if (!method) {
-            toast.error('Vui lòng chọn phương thức thanh toán');
-            return;
-        }
-
         try {
             setSubmitting(true);
-            await createPayment({
-                appointment_id: appointmentId,
-                patient_id: appointment?.patient_id,
-                total_amount: service?.price || 0,
-                payment_method: method,
-                payment_status: method === 'cash' ? 'unpaid' : 'paid',
-            });
-            toast.success('Thanh toán thành công!');
-            navigate('/patient/dashboard');
+            toast.success('Xác nhận đặt cọc thành công!');
+            navigate('/patient/booking');
         } catch (err) {
             console.error('Payment failed:', err);
             toast.error(err.response?.data?.message || 'Thanh toán thất bại');
@@ -92,53 +74,39 @@ const PaymentPage = () => {
                                 <span className="text-sm text-gray-500">Dịch vụ</span>
                                 <span className="text-sm font-bold text-gray-800">{service?.name || '—'}</span>
                             </div>
-                            <div className="flex justify-between items-center py-2 border-t border-gray-50">
-                                <span className="text-sm text-gray-500">Ngày khám</span>
-                                <span className="text-sm font-bold text-gray-800">{formatDate(appointment?.appointment_date)}</span>
-                            </div>
-                            <div className="flex justify-between items-center py-2 border-t border-gray-50">
-                                <span className="text-sm text-gray-500">Thời gian</span>
-                                <span className="text-sm font-bold text-gray-800">{appointment?.start_time || '—'} — {appointment?.end_time || '—'}</span>
-                            </div>
                             <div className="flex justify-between items-center py-3 border-t-2 border-gray-100 mt-2">
                                 <span className="text-base font-bold text-gray-800">Tổng tiền</span>
-                                <span className="text-xl font-extrabold text-blue-600">{Number(service?.price || 0).toLocaleString('vi-VN')}₫</span>
+                                <span className="text-xl font-extrabold text-blue-600">{Number(service?.price * 0.3 || 0).toLocaleString('vi-VN')}₫</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Payment method */}
+                    {/* QR Section */}
                     <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden mb-5">
                         <div className="px-6 py-4 border-b border-gray-100">
                             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2.5">
                                 <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm shadow-lg shadow-emerald-500/25">
-                                    <i className="fa-solid fa-wallet"></i>
+                                    <i className="fa-solid fa-qrcode"></i>
                                 </span>
-                                Phương thức thanh toán
+                                Quét mã QR để đặt cọc
                             </h3>
                         </div>
-                        <div className="p-6 space-y-3">
-                            {PAY_METHODS.map((pm) => (
-                                <button
-                                    key={pm.value}
-                                    type="button"
-                                    onClick={() => setMethod(pm.value)}
-                                    className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${method === pm.value
-                                        ? `${pm.border} ${pm.bg} shadow-sm`
-                                        : 'border-gray-100 hover:border-gray-200 bg-white'
-                                        }`}
-                                >
-                                    <div className={`w-10 h-10 rounded-lg ${method === pm.value ? pm.bg : 'bg-gray-50'} flex items-center justify-center`}>
-                                        <i className={`fa-solid ${pm.icon} ${method === pm.value ? pm.color : 'text-gray-400'}`}></i>
-                                    </div>
-                                    <span className={`font-bold text-sm ${method === pm.value ? 'text-gray-900' : 'text-gray-600'}`}>{pm.label}</span>
-                                    <div className="ml-auto">
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${method === pm.value ? `${pm.border}` : 'border-gray-300'}`}>
-                                            {method === pm.value && <div className={`w-2.5 h-2.5 rounded-full ${pm.color.replace('text-', 'bg-')}`}></div>}
-                                        </div>
-                                    </div>
-                                </button>
-                            ))}
+                        <div className="p-6 text-center">
+                            <div className="w-48 h-48 mx-auto bg-white rounded-xl border border-gray-200 flex items-center justify-center mb-6 shadow-sm relative">
+                                <i className="fa-solid fa-qrcode text-7xl text-gray-300"></i>
+                                <div className="absolute inset-0 bg-[url('/qrBank.jpg')] bg-cover bg-center bg-no-repeat rounded-xl"></div>
+                            </div>
+                            <div className="w-full max-w-sm mx-auto text-left bg-rose-50 border border-rose-100 rounded-xl p-4">
+                                <p className="text-xs font-semibold text-rose-600 mb-1.5 flex items-center gap-1.5">
+                                    <i className="fa-solid fa-circle-info"></i> Lưu ý quan trọng
+                                </p>
+                                <p className="text-sm text-rose-800 leading-relaxed">
+                                    Vui lòng ghi rõ nội dung chuyển khoản: <br />
+                                    <span className="font-bold text-rose-900 bg-rose-100/50 px-2 py-1 rounded uppercase mt-2 inline-block text-base tracking-widest">
+                                        DAT COC {appointmentId.slice(0, 8)}
+                                    </span>
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -149,14 +117,14 @@ const PaymentPage = () => {
                         </button>
                         <button
                             onClick={handlePay}
-                            disabled={submitting || !method}
+                            disabled={submitting}
                             className="px-8 py-3 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
                             style={{ background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' }}
                         >
                             {submitting ? (
                                 <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> Đang xử lý...</>
                             ) : (
-                                <><i className="fa-solid fa-lock"></i> Xác nhận thanh toán</>
+                                <><i className="fa-solid fa-lock"></i> Xác nhận đã đặt cọc</>
                             )}
                         </button>
                     </div>

@@ -14,8 +14,8 @@ export const searchDoctors = async (name, specialization) => {
     return axiosClient.get(url, { params });
 };
 
-export const getDoctorById = async (id, params = {}) => {
-    const url = `/doctor/detail/${id}`;
+export const getDoctorById = async (doctorId, params = {}) => {
+    const url = `/doctor/detail/${doctorId}`;
     return axiosClient.get(url, { params });
 };
 
@@ -29,7 +29,6 @@ export const updateDoctor = async (userData, avatarFile = null) => {
     const url = "/doctor/update";
 
     const formData = new FormData();
-    console.log('temp', userData)
 
     Object.keys(userData).forEach((key) => {
         if (userData[key] !== null && userData[key] !== undefined) {
@@ -41,6 +40,11 @@ export const updateDoctor = async (userData, avatarFile = null) => {
         formData.append("avatar", avatarFile);
     }
     return axiosClient.put(url, formData);
+};
+
+export const updateDoctorInfo = async (data) => {
+    const url = "/doctor/update-info";
+    return axiosClient.put(url, data);
 };
 
 export const getAppointmentsByDoctorId = async (id, date) => {

@@ -81,7 +81,7 @@ const MedicalRecordsPage = () => {
                             const st = LAB_STATUS[lab.status] || LAB_STATUS.ordered;
                             return (
                                 <tr key={lab.lab_order_id} className="border-b border-gray-50 hover:bg-sky-50/30 transition-colors">
-                                    <td className="px-6 py-4 font-semibold text-gray-800">{lab.test_name}</td>
+                                    <td className="px-6 py-4 font-semibold text-gray-800">{lab.LabServices?.name || '—'}</td>
                                     <td className="px-4 py-4 text-gray-600">{formatDate(lab.created_at)}</td>
                                     <td className="px-4 py-4">
                                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${st.bg} ${st.color}`}>

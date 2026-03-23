@@ -1,7 +1,9 @@
+import React, { lazy } from 'react';
 import ProtectedRoute from "../components/security/ProtectedRoute";
 
-import Dashboard from "../pages/receptionistPage/Dashboard";
-import Coordinator from "../pages/receptionistPage/Coordinator";
+const Dashboard = lazy(() => import('../pages/receptionistPage/Dashboard'));
+const Coordinator = lazy(() => import('../pages/receptionistPage/Coordinator'));
+const ReceptionistProfile = lazy(() => import('../pages/receptionistPage/ReceptionistProfile'));
 
 const receptionistRoutes = [
     {
@@ -20,8 +22,14 @@ const receptionistRoutes = [
             </ProtectedRoute>
         )
     },
-
-
+    {
+        path: "/receptionist/profile",
+        element: (
+            <ProtectedRoute allowedRoles={["receptionist"]}>
+                <ReceptionistProfile />
+            </ProtectedRoute>
+        )
+    },
 ];
 
 export default receptionistRoutes;

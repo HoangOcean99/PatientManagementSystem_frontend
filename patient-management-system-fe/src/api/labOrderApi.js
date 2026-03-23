@@ -20,6 +20,11 @@ export const labOrderApi = {
     updateLabOrder: async (labOrderId, data) => {
         return await axiosClient.patch(`/lab-orders/${labOrderId}`, data);
     },
+
+    // Lab Services
+    getLabServices: async (params = {}) => {
+        return await axiosClient.get('/lab-services', { params });
+    },
 };
 
 export default labOrderApi;

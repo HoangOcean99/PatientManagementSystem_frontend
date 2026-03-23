@@ -198,7 +198,7 @@ const AppointmentDetailPage = () => {
                                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0 border border-gray-200">
                                                 <i className="fa-solid fa-flask text-gray-400 text-xs"></i>
                                             </div>
-                                            <span className="flex-1 text-sm font-semibold text-gray-700">{lab.test_name}</span>
+                                            <span className="flex-1 text-sm font-semibold text-gray-700">{lab.LabServices?.name || '—'}</span>
                                             <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${st.bg} ${st.color}`}>
                                                 {st.label}
                                             </span>

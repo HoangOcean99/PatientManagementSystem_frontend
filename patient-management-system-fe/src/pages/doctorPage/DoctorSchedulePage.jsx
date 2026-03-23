@@ -111,12 +111,10 @@ const DoctorSchedulePage = () => {
         if (uid) {
           setDoctorId(uid);
         } else {
-          console.error('[DoctorSchedule] Không tìm thấy session');
           setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
           setLoading(false);
         }
       } catch (err) {
-        console.error('[DoctorSchedule] Session error:', err);
         setError('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
         setLoading(false);
       }
@@ -166,7 +164,6 @@ const DoctorSchedulePage = () => {
 
         setAppointments(mapped);
       } catch (err) {
-        console.error('Failed to fetch appointments:', err);
         setError('Không thể tải danh sách lịch khám. Vui lòng thử lại.');
       } finally {
         setLoading(false);
@@ -191,7 +188,7 @@ const DoctorSchedulePage = () => {
     )
   }
   return (
-    <div className="sched-layout">
+    <div className="sched-layout" style={{ width: '100%' }}>
 
       <main className="sched-main p-8">
         <motion.div
@@ -352,7 +349,7 @@ const DoctorSchedulePage = () => {
                             )}
                             <button
                               className="sched-action-btn sched-action-btn--view"
-                              onClick={() => navigate(`/doctor/patient/${appt.patient_id}`)}
+                              onClick={() => navigate(`/doctor/patient/${appt.patient_id}`, { state: { appointment_id: appt.appointment_id } })}
                             >
                               <FiEye size={14} />
                               Xem hồ sơ

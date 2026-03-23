@@ -1,12 +1,11 @@
-import DoctorProfileForm from "../components/admin/DoctorProfileForm";
+import React, { lazy } from 'react';
 import PublicRoute from "../components/security/PublicRoute";
-import AuthCallback from "../pages/commonPage/AuthCallback";
-import ForgotPasswordPage from "../pages/commonPage/ForgotPasswordPage";
-import LandingPage from "../pages/commonPage/LandingPage";
-import LoginPage from "../pages/commonPage/LoginPage";
-import RegisterKidPage from "../pages/commonPage/RegisterKidPage";
-import DoctorListingPage from "../pages/doctor/DoctorListingPage";
-import DoctorProfilePage from "../pages/doctor/DoctorProfilePage";
+const DoctorListingPage = lazy(() => import('../pages/adminPage/DoctorListingPage'));
+const AuthCallback = lazy(() => import('../pages/commonPage/AuthCallback'));
+const ForgotPasswordPage = lazy(() => import('../pages/commonPage/ForgotPasswordPage'));
+const LandingPage = lazy(() => import('../pages/commonPage/LandingPage'));
+const LoginPage = lazy(() => import('../pages/commonPage/LoginPage'));
+const RegisterKidPage = lazy(() => import('../pages/commonPage/RegisterKidPage'));
 
 const commonRoutes = [
     {
@@ -45,11 +44,6 @@ const commonRoutes = [
                 <ForgotPasswordPage />
             </PublicRoute>
     },
-    {
-        path: '/doctors',
-        element: <DoctorListingPage />
-    },
-
 ];
 
 export default commonRoutes;

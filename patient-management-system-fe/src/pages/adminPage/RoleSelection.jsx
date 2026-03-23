@@ -9,6 +9,7 @@ const roles = [
         desc: 'Quản lý toàn bộ hệ thống, người dùng và dịch vụ.',
         icon: 'ShieldCheck',
         color: 'bg-purple-100 text-purple-600',
+        link: '/admin/staffs/admin'
     },
     {
         id: 'doctor',
@@ -16,20 +17,7 @@ const roles = [
         desc: 'Xem lịch khám, quản lý bệnh nhân và hồ sơ y tế.',
         icon: 'Stethoscope',
         color: 'bg-blue-100 text-blue-600',
-    },
-    {
-        id: 'receptionist',
-        title: 'Lễ tân',
-        desc: 'Tiếp đón khách, sắp xếp lịch hẹn và điều phối.',
-        icon: 'UserPlus',
-        color: 'bg-green-100 text-green-600',
-    },
-    {
-        id: 'accountant',
-        title: 'Kế toán',
-        desc: 'Quản lý hóa đơn, doanh thu và báo cáo tài chính.',
-        icon: 'Wallet',
-        color: 'bg-orange-100 text-orange-600',
+        link: '/admin/doctors'
     },
     {
         id: 'patient',
@@ -37,6 +25,23 @@ const roles = [
         desc: 'Đặt lịch khám, xem kết quả và lịch sử điều trị.',
         icon: 'User',
         color: 'bg-red-100 text-red-600',
+        link: '/admin/patients'
+    },
+    {
+        id: 'receptionist',
+        title: 'Lễ tân',
+        desc: 'Tiếp đón khách, sắp xếp lịch hẹn và điều phối.',
+        icon: 'UserPlus',
+        color: 'bg-green-100 text-green-600',
+        link: '/admin/staffs/receptionist'
+    },
+    {
+        id: 'accountant',
+        title: 'Kế toán',
+        desc: 'Quản lý hóa đơn, doanh thu và báo cáo tài chính.',
+        icon: 'Wallet',
+        color: 'bg-orange-100 text-orange-600',
+        link: '/admin/staffs/accountant'
     },
 ];
 
@@ -66,7 +71,7 @@ const RoleSelection = () => {
                         return (
                             <div
                                 key={role.id}
-                                onClick={() => navigate(`/admin/user-management/${role.id}`)}
+                                onClick={() => navigate(role.link || '')}
                                 className="bg-white w-full max-w-[320px] p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:border-blue-300 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col items-center text-center"
                             >
                                 <div className={`p-5 rounded-2xl mb-5 transition-transform group-hover:scale-110 shadow-inner ${role.color}`}>

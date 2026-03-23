@@ -16,16 +16,19 @@ export const ItemsAdminSideBar = [
             '/admin/user-management',
             '/admin/user-profile',
             '/admin/user-profile-edit',
+            '/admin/doctors',
+            '/admin/patients',
+            '/admin/staffs'
         ]
     },
-    {
-        icon: "Calendar",
-        label: "Thiết lập lịch trình",
-        linkPage: '/admin/schedule-management',
-        matchPages: [
-            '/admin/schedule-management'
-        ]
-    },
+    // {
+    //     icon: "Calendar",
+    //     label: "Thiết lập lịch trình",
+    //     linkPage: '/admin/schedule-management',
+    //     matchPages: [
+    //         '/admin/schedule-management'
+    //     ]
+    // },
     {
         icon: "Briefcase",
         label: "Quản lý dịch vụ",

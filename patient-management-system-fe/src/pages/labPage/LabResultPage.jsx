@@ -92,7 +92,7 @@ const LabResultPage = () => {
         const mapped = {
           lab_order_id: data.lab_order_id,
           record_id: data.record_id,
-          test_name: data.test_name,
+          test_name: data.LabServices?.name || '',
           result_summary: data.result_summary || '',
           result_file_url: data.result_file_url || '',
           status: data.status,

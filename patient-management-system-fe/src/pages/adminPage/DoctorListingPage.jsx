@@ -6,6 +6,9 @@ import { getAllDoctors, searchDoctors } from '../../api/doctorApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import DoctorDetailsAdminPage from './DoctorDetailsAdminPage';
+import { updateUserRoleApi } from '../../api/userApi';
+import Swal from 'sweetalert2';
+import Pagination from '../../components/common/Pagination';
 
 // ===== HELPERS =====
 const SORT_OPTIONS = [
@@ -26,6 +29,10 @@ const DoctorListingPage = () => {
     const [sortKey, setSortKey] = useState('name_asc');
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 8;
 
     // ===== FETCH =====
     useEffect(() => {
@@ -61,6 +68,7 @@ const DoctorListingPage = () => {
                 data = data.filter((d) => d.Users?.status === 'active');
             }
             setDoctors(data);
+            setCurrentPage(1); // Reset page on new search
         } catch (error) {
             console.error('Search error:', error);
             toast.error('Tìm kiếm thất bại.');
@@ -76,7 +84,35 @@ const DoctorListingPage = () => {
         setDepartmentFilter('');
         setStatusFilter('');
         setSortKey('name_asc');
+        setCurrentPage(1);
         fetchDoctors();
+    };
+
+    const handleRoleChange = async (userId, newRole) => {
+        const result = await Swal.fire({
+            title: 'Thay đổi chức danh?',
+            text: "Việc đổi chức danh có thể làm xóa quyền bác sĩ và dữ liệu phòng khám liên kết hiện tại.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Đồng ý',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) {
+            fetchDoctors();
+            return;
+        }
+
+        try {
+            await updateUserRoleApi(userId, newRole);
+            toast.success('Cập nhật chức danh thành công');
+            fetchDoctors();
+        } catch (err) {
+            console.error(err);
+            toast.error('Lỗi khi cập nhật chức danh');
+        }
     };
 
     // ===== DERIVED DATA =====
@@ -127,6 +163,20 @@ const DoctorListingPage = () => {
         return list;
     }, [doctors, searchTerm, specialtyFilter, departmentFilter, statusFilter, sortKey]);
 
+    // Apply pagination slice
+    const totalPages = Math.ceil(filteredDoctors.length / ITEMS_PER_PAGE);
+    const currentItems = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredDoctors.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredDoctors, currentPage]);
+
+    // Auto-reset if filters drop length below current page
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(1);
+        }
+    }, [totalPages, currentPage]);
+
     const activeCount = doctors.filter((d) => d.Users?.status === 'active').length;
     const hasActiveFilters = searchTerm || specialtyFilter || departmentFilter || statusFilter;
 
@@ -137,29 +187,19 @@ const DoctorListingPage = () => {
             {scrollbarStyles}
 
             {/* ===== HEADER ===== */}
-            <div className={`border-b border-gray-100 sticky top-0 z-30 shadow-sm ${isAdminView ? 'bg-white' : 'bg-white/90 backdrop-blur-md'}`}>
-                <div className="max-w-6xl mx-auto px-4 py-6">
+            <div className={`border-b border-gray-100 top-0 z-30 shadow-sm ${isAdminView ? 'bg-white' : 'bg-white/90 backdrop-blur-md'}`}>
+                <div className="mx-auto px-4 py-6">
                     {/* Title */}
                     <div className="text-center mb-6">
-                        <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full mb-3 ${isAdminView ? 'bg-gray-100 text-gray-700' : 'bg-blue-100 text-blue-700'
-                            }`}>
-                            <i className={`fa-solid ${isAdminView ? 'fa-user-tie' : 'fa-stethoscope'} mr-2`}></i>
-                            {isAdminView ? 'Hệ thống Quản trị' : 'Đội ngũ chuyên gia'}
-                        </span>
                         <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-1">
                             {isAdminView ? 'Quản lý Hồ sơ Bác sĩ' : 'Tìm bác sĩ của bạn'}
                         </h1>
-                        <p className="text-gray-500 text-sm">
-                            {isAdminView
-                                ? `${doctors.length} bác sĩ — ${activeCount} đang hoạt động`
-                                : 'Đặt lịch khám với các chuyên gia y tế hàng đầu'}
-                        </p>
                     </div>
 
                     {/* Search Row */}
                     <div className={`rounded-2xl p-2 flex flex-col md:flex-row gap-2 ${isAdminView
-                            ? 'bg-gray-50 border border-gray-200'
-                            : 'bg-white border border-gray-100 shadow-lg shadow-blue-500/5'
+                        ? 'bg-gray-50 border border-gray-200'
+                        : 'bg-white border border-gray-100 shadow-lg shadow-blue-500/5'
                         }`}>
                         {/* Search Input */}
                         <div className="flex-1 relative group">
@@ -197,8 +237,8 @@ const DoctorListingPage = () => {
                         <button
                             onClick={handleSearch}
                             className={`px-8 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 whitespace-nowrap text-sm ${isAdminView
-                                    ? 'bg-gray-900 hover:bg-black text-white'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
+                                ? 'bg-gray-900 hover:bg-black text-white'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30'
                                 }`}
                         >
                             Tìm kiếm
@@ -264,21 +304,36 @@ const DoctorListingPage = () => {
             </div>
 
             {/* ===== LIST ===== */}
-            <div className="max-w-6xl mx-auto px-4 py-8">
+            <div className="mx-auto px-4 py-8">
                 {loading ? (
                     <div className="flex justify-center items-center h-52 opacity-50">
                         <LoadingSpinner />
                     </div>
                 ) : filteredDoctors.length > 0 ? (
-                    <div className="flex flex-col gap-4">
-                        {filteredDoctors.map((doctor) => (
-                            <DoctorCard
-                                key={doctor.doctor_id}
-                                doctor={doctor}
-                                isAdminView={isAdminView}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="flex flex-col gap-4">
+                            {currentItems.map((doctor) => (
+                                <DoctorCard
+                                    key={doctor.doctor_id}
+                                    doctor={doctor}
+                                    isAdminView={isAdminView}
+                                    onRoleChange={handleRoleChange}
+                                />
+                            ))}
+                        </div>
+                        {totalPages > 1 && (
+                            <div className="mt-8 flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm gap-4">
+                                <span className="text-sm text-gray-500 font-medium">
+                                    Hiển thị {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredDoctors.length)} trong tổng số {filteredDoctors.length} bác sĩ
+                                </span>
+                                <Pagination 
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="text-center py-24 bg-white rounded-3xl border border-gray-100 shadow-sm">
                         <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
@@ -294,17 +349,6 @@ const DoctorListingPage = () => {
                         </button>
                     </div>
                 )}
-
-                {/* Pagination Footer */}
-                <div className="mt-12 flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                    <span className="text-sm text-gray-400">Hiển thị {filteredDoctors.length} kết quả</span>
-                    <div className="flex gap-2">
-                        <button className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50"><i className="fa-solid fa-chevron-left text-xs"></i></button>
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-md shadow-blue-100">1</button>
-                        <button className="px-4 py-2 hover:bg-gray-50 rounded-lg text-sm font-bold">2</button>
-                        <button className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50"><i className="fa-solid fa-chevron-right text-xs"></i></button>
-                    </div>
-                </div>
             </div>
         </div>
     );

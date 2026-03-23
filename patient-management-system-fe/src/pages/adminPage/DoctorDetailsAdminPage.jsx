@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { getDoctorById, updateDoctor } from '../../api/doctorApi';
+import { getDoctorById, updateDoctorInfo } from '../../api/doctorApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import DoctorProfileForm from '../../components/admin/DoctorProfileForm';
 import DoctorScheduleManager from '../../components/admin/DoctorScheduleManager';
@@ -20,6 +20,7 @@ const DoctorDetailsAdminPage = () => {
             try {
                 setLoading(true);
                 const res = await getDoctorById(id);
+                console.log(res)
                 setDoctor(res.data?.data || res.data);
             } catch (error) {
                 console.error("Error fetching doctor:", error);
@@ -32,14 +33,12 @@ const DoctorDetailsAdminPage = () => {
         if (id) {
             fetchDoctor();
         }
-    }, [id]);
+    }, []);
 
     const handleSaveProfile = async (formData) => {
-        // Gửi lên API — formData có: full_name, phone_number, avatar_url,
-        // specialization, department_id, room_id, bio, status
-        await updateDoctor(id, formData);
+        const payload = { ...formData, doctor_id: id };
+        await updateDoctorInfo(payload);
 
-        // Cập nhật local state theo đúng schema Doctors
         setDoctor(prev => ({
             ...prev,
             specialization: formData.specialization,
@@ -83,12 +82,11 @@ const DoctorDetailsAdminPage = () => {
     const doctorAvatar = doctor.Users?.avatar_url || 'https://i.pravatar.cc/150?img=11';
 
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-12" style={{ width: '100vw' }}>
+        <div className="min-h-screen bg-gray-50/50 pb-12 overflow-y-auto" style={{ width: '100%' }}>
             {scrollbarStyles}
 
-            {/* Header Thống kê/Breadcrumb */}
-            <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="bg-white border-b border-gray-200 top-0 z-30 shadow-sm">
+                <div className="mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <button
@@ -112,8 +110,8 @@ const DoctorDetailsAdminPage = () => {
 
                         <div className="flex gap-2">
                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${doctor.Users?.status === 'active'
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-gray-100 text-gray-600'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600'
                                 }`}>
                                 <i className={`fa-solid fa-circle text-[8px] mr-1 ${doctor.Users?.status === 'active' ? 'text-green-500' : 'text-gray-400'}`}></i>
                                 {doctor.Users?.status === 'active' ? 'Đang hoạt động' : 'Tạm ngưng'}
@@ -121,13 +119,12 @@ const DoctorDetailsAdminPage = () => {
                         </div>
                     </div>
 
-                    {/* Tabs Navigation */}
                     <div className="flex gap-8 mt-6 overflow-x-auto custom-scrollbar border-b border-gray-100">
                         <button
                             onClick={() => setActiveTab('profile')}
                             className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === 'profile'
-                                    ? 'text-blue-600'
-                                    : 'text-gray-500 hover:text-gray-900'
+                                ? 'text-blue-600'
+                                : 'text-gray-500 hover:text-gray-900'
                                 }`}
                         >
                             <i className="fa-regular fa-id-card mr-2"></i>
@@ -140,8 +137,8 @@ const DoctorDetailsAdminPage = () => {
                         <button
                             onClick={() => setActiveTab('schedule')}
                             className={`pb-4 text-sm font-bold transition-all relative whitespace-nowrap ${activeTab === 'schedule'
-                                    ? 'text-blue-600'
-                                    : 'text-gray-500 hover:text-gray-900'
+                                ? 'text-blue-600'
+                                : 'text-gray-500 hover:text-gray-900'
                                 }`}
                         >
                             <i className="fa-regular fa-calendar-check mr-2"></i>
@@ -154,8 +151,7 @@ const DoctorDetailsAdminPage = () => {
                 </div>
             </div>
 
-            {/* Tab Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in relative z-20">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in relative z-20">
                 {activeTab === 'profile' && (
                     <DoctorProfileForm
                         doctor={doctor}

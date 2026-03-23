@@ -64,6 +64,69 @@
   margin: 0;
 }
 
+/* ===== DATE NAVIGATION ===== */
+.lq-header__date-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lq-date-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid var(--ex-border, #E2E8F0);
+  background: var(--ex-surface, #fff);
+  color: var(--ex-text-secondary, #475569);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  padding: 0;
+}
+
+.lq-date-btn:hover {
+  border-color: var(--ex-primary, #2563EB);
+  color: var(--ex-primary, #2563EB);
+  background: var(--ex-primary-subtle, #EFF6FF);
+}
+
+.lq-date-btn--today {
+  width: auto;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ex-primary, #2563EB);
+  border-color: var(--ex-primary, #2563EB);
+  background: var(--ex-primary-subtle, #EFF6FF);
+}
+
+.lq-date-btn--today:hover {
+  background: var(--ex-primary, #2563EB);
+  color: #fff;
+}
+
+.lq-date-picker {
+  padding: 7px 12px;
+  border: 1.5px solid var(--ex-border, #E2E8F0);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--ex-text-primary, #0F172A);
+  background: var(--ex-surface, #fff);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.lq-date-picker:focus {
+  border-color: var(--ex-primary, #2563EB);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 /* ===== STATS CARDS ===== */
 .lq-stats {
   display: grid;

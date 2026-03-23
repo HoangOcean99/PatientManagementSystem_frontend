@@ -89,17 +89,29 @@ const Coordinator = () => {
         fetchData();
     }, []);
 
+    // Lấy department_id từ appointment (API không flatten field này lên root)
+    const getAppointmentDepartmentId = (appt) =>
+        appt?.department_id ??
+        appt?.ClinicServices?.department_id ??
+        appt?.ClinicServices?.Departments?.department_id;
+
+    const matchesAppliedDepartment = (entityDeptId) => {
+        if (appliedDept === "all") return true;
+        if (entityDeptId === undefined || entityDeptId === null) return false;
+        return String(entityDeptId) === String(appliedDept);
+    };
+
     // CÁC BIẾN LỌC ĐỂ RENDER
-    const filteredAppointments = appointments.filter(appt =>
-        appliedDept === "all" || appt.department_id === appliedDept
+    const filteredAppointments = appointments.filter((appt) =>
+        matchesAppliedDepartment(getAppointmentDepartmentId(appt))
     );
 
-    const filteredAssignedHistory = assignedHistory.filter(appt =>
-        appliedDept === "all" || appt.department_id === appliedDept
+    const filteredAssignedHistory = assignedHistory.filter((appt) =>
+        matchesAppliedDepartment(getAppointmentDepartmentId(appt))
     );
 
-    const filteredRooms = activeRooms.filter(room =>
-        appliedDept === "all" || room.department_id === appliedDept
+    const filteredRooms = activeRooms.filter((room) =>
+        matchesAppliedDepartment(room.department_id)
     );
 
     const normalizeStatus = (status) => {
@@ -187,7 +199,7 @@ const Coordinator = () => {
     }
 
     return (
-        <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8">
+        <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8" style={{ width: '100%' }} >
             {/* THANH CÔNG CỤ BỘ LỌC */}
             <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                 <div className="flex gap-4">
@@ -226,7 +238,7 @@ const Coordinator = () => {
                 </div>
             </div>
 
-            <div className="flex gap-6">
+            <div className="flex gap-6" style={{ width: '100%' }}>
 
                 {/* ================= CỘT TRÁI ================= */}
                 <div className="flex-[8] flex flex-col gap-6">
@@ -399,7 +411,7 @@ const Coordinator = () => {
                         </div>
                     )}
                 </div>
-                
+
                 {/* ================= CỘT PHẢI ================= */}
                 <div className="flex-[4] bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col">
                     <div className="p-6 pb-4 flex justify-between items-start border-b border-gray-100 mb-4">

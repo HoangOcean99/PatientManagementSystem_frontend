@@ -21,16 +21,18 @@ export const updatePatient = async (userData, avatarFile = null) => {
     }
     return axiosClient.put(url, formData);
 };
+export const updatePatientInfo = async (data) => await axiosClient.put('/patients/update-info', data);
 export const deletePatient = async (id) => await axiosClient.delete(`/patients/${id}`);
 export const getMedicalRecords = async (patientId) => await axiosClient.get(`/medical-record/patient/${patientId}`);
 export const getMedicalRecordDetail = async (recordId) => await axiosClient.get(`/medical-record/detail/${recordId}`);
 export const generateKeyCode = async (data) => await axiosClient.post('/patients/family-relationships/key-code', data);
 export const linkFamilyMember = async (data) => await axiosClient.post('/patients/family-relationships/link', data);
+export const updateInvoiceStatus = async (invoiceId, status = 'paid', payment_method = 'transfer') => await axiosClient.put(`/invoices/${invoiceId}/status`, { status, payment_method });
 export const createPayment = async (data) => await axiosClient.post('/invoices', data);
+export const getMyInvoices = async (patientId) => await axiosClient.get('/invoices', { params: { patient_id: patientId } });
 export const payInvoiceApi = async (invoiceId) => await axiosClient.post(`/invoices/${invoiceId}/pay`);
 export const deleteUser = async (id) => await axiosClient.delete(`/users/${id}`);
 
-// Under My Care - Dependent management
 export const getDependents = async () => await axiosClient.get('/under-my-care');
 export const addDependent = async (data) => await axiosClient.post('/under-my-care', data);
 export const getDependentDetail = async (relationshipId) => await axiosClient.get(`/under-my-care/${relationshipId}`);
