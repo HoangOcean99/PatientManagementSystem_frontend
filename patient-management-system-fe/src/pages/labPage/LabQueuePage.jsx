@@ -11,6 +11,9 @@ import {
   FiClock,
   FiLoader,
   FiAlertCircle,
+  FiCalendar,
+  FiChevronLeft,
+  FiChevronRight,
 } from 'react-icons/fi';
 import labOrderApi from '../../api/labOrderApi';
 import './LabQueuePage.css';
@@ -41,9 +44,28 @@ const formatTime = (iso) => {
   return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 };
 
-const getTodayFormatted = () => {
+const getToday = () => {
   const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`; // 'YYYY-MM-DD' local time
+};
+
+const formatDateDisplay = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+};
+
+const shiftDate = (dateStr, days) => {
+  if (!dateStr) return getToday();
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`; // 'YYYY-MM-DD' local time
 };
 
 const calculateAge = (dob) => {
@@ -71,6 +93,9 @@ const LabQueuePage = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedDate, setSelectedDate] = useState(getToday());
+
+  const isToday = selectedDate === getToday();
 
   // API states
   const [labOrders, setLabOrders] = useState([]);
@@ -87,39 +112,36 @@ const LabQueuePage = () => {
         const response = await labOrderApi.getAllLabOrders();
         const data = response.data?.data || response.data || [];
 
-        // Map data từ API — backend join MedicalRecords → Patients → Users
-        const mapped = (Array.isArray(data) ? data : []).map((lo) => ({
-          lab_order_id: lo.lab_order_id,
-          record_id: lo.record_id,
-          test_name: lo.test_name,
-          status: lo.status,
-          result_summary: lo.result_summary || '',
-          result_file_url: lo.result_file_url || '',
-          created_at: lo.created_at,
-          // Joined patient info (nested from backend)
-          patient_name: lo.MedicalRecord?.Patient?.User?.full_name
-            || lo.MedicalRecords?.Patients?.Users?.full_name
-            || lo.patient_name
-            || 'N/A',
-          patient_id: lo.MedicalRecord?.Patient?.patient_id
-            || lo.MedicalRecords?.Patients?.patient_id
-            || lo.patient_id
-            || '',
-          gender: lo.MedicalRecord?.Patient?.gender
-            || lo.MedicalRecords?.Patients?.gender
-            || lo.gender
-            || '',
-          age: calculateAge(
-            lo.MedicalRecord?.Patient?.dob
-            || lo.MedicalRecords?.Patients?.dob
-            || lo.dob
-          ),
-          // Joined doctor info
-          doctor_name: lo.MedicalRecord?.Doctor?.User?.full_name
-            || lo.MedicalRecords?.Doctors?.Users?.full_name
-            || lo.doctor_name
-            || '',
-        }));
+        // Map data từ API — backend join: LabOrders → MedicalRecords → Appointments → Patients/Doctors/DoctorSlots
+        const rawLabOrders = Array.isArray(data) ? data
+          : data?.lab_orders ? data.lab_orders
+          : [];
+
+        const mapped = rawLabOrders.map((lo) => {
+          const appt = lo.MedicalRecords?.Appointments;
+          const patientUser = appt?.Patients?.Users;
+          const doctorUser = appt?.Doctors?.Users;
+
+          return {
+            lab_order_id: lo.lab_order_id,
+            record_id: lo.record_id,
+            lab_service_id: lo.lab_service_id,
+            lab_service_name: lo.LabServices?.name || '',
+            status: lo.status,
+            result_summary: lo.result_summary || '',
+            result_file_url: lo.result_file_url || '',
+            created_at: lo.created_at,
+            appointment_date: appt?.DoctorSlots?.slot_date || '',
+            // Patient info
+            patient_name: patientUser?.full_name || 'N/A',
+            patient_id: appt?.patient_id || '',
+            gender: patientUser?.gender || '',
+            phone: patientUser?.phone_number || '',
+            age: calculateAge(patientUser?.dob),
+            // Doctor info
+            doctor_name: doctorUser?.full_name || '',
+          };
+        });
 
         setLabOrders(mapped);
       } catch (err) {
@@ -133,20 +155,39 @@ const LabQueuePage = () => {
     fetchLabOrders();
   }, []);
 
-  const filtered = useMemo(() => {
+  const dateFilteredOrders = useMemo(() => {
     return labOrders.filter((lo) => {
+      let dateMatch = false;
+      if (lo.appointment_date) {
+         dateMatch = lo.appointment_date === selectedDate;
+      } else if (lo.created_at) {
+         const createdDate = new Date(lo.created_at);
+         const year = createdDate.getFullYear();
+         const month = String(createdDate.getMonth() + 1).padStart(2, '0');
+         const day = String(createdDate.getDate()).padStart(2, '0');
+         const createdDateStr = `${year}-${month}-${day}`;
+         dateMatch = createdDateStr === selectedDate;
+      } else {
+         dateMatch = true; 
+      }
+      return dateMatch;
+    });
+  }, [labOrders, selectedDate]);
+
+  const filtered = useMemo(() => {
+    return dateFilteredOrders.filter((lo) => {
       const matchSearch =
         lo.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lo.test_name.toLowerCase().includes(searchTerm.toLowerCase());
+        lo.lab_service_name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchStatus = statusFilter === 'all' || lo.status === statusFilter;
       return matchSearch && matchStatus;
     });
-  }, [labOrders, searchTerm, statusFilter]);
+  }, [dateFilteredOrders, searchTerm, statusFilter]);
 
   // Stats
-  const orderedCount = labOrders.filter((l) => l.status === 'ordered').length;
-  const processingCount = labOrders.filter((l) => l.status === 'processing').length;
-  const completedCount = labOrders.filter((l) => l.status === 'completed').length;
+  const orderedCount = dateFilteredOrders.filter((l) => l.status === 'ordered').length;
+  const processingCount = dateFilteredOrders.filter((l) => l.status === 'processing').length;
+  const completedCount = dateFilteredOrders.filter((l) => l.status === 'completed').length;
 
   if (loading) {
     return (
@@ -169,9 +210,39 @@ const LabQueuePage = () => {
           <div className="lq-header__left">
             <h1 className="lq-header__title">
               <FiActivity size={22} />
-              Danh sách chờ xét nghiệm
+              {isToday ? 'Xét nghiệm hôm nay' : 'Xét nghiệm'}
             </h1>
-            <p className="lq-header__date">{getTodayFormatted()}</p>
+            <p className="lq-header__date">{formatDateDisplay(selectedDate)}</p>
+          </div>
+          <div className="lq-header__date-nav">
+            <button
+              className="lq-date-btn"
+              onClick={() => setSelectedDate(prev => shiftDate(prev, -1))}
+              title="Ngày trước"
+            >
+              <FiChevronLeft size={18} />
+            </button>
+            <input
+              type="date"
+              className="lq-date-picker"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
+            <button
+              className="lq-date-btn"
+              onClick={() => setSelectedDate(prev => shiftDate(prev, 1))}
+              title="Ngày sau"
+            >
+              <FiChevronRight size={18} />
+            </button>
+            {!isToday && (
+              <button
+                className="lq-date-btn lq-date-btn--today"
+                onClick={() => setSelectedDate(getToday())}
+              >
+                Hôm nay
+              </button>
+            )}
           </div>
         </motion.div>
 
@@ -201,7 +272,7 @@ const LabQueuePage = () => {
             </div>
             <div className="lq-stat-card__info">
               <span className="lq-stat-card__value">{completedCount}</span>
-              <span className="lq-stat-card__label">Hoàn tất hôm nay</span>
+              <span className="lq-stat-card__label">{isToday ? 'Hoàn tất hôm nay' : 'Hoàn tất'}</span>
             </div>
           </div>
         </motion.div>
@@ -291,7 +362,7 @@ const LabQueuePage = () => {
                           </div>
                         </td>
                         <td data-label="Tên xét nghiệm">
-                          <span className="lq-test-name">{lo.test_name}</span>
+                          <span className="lq-test-name">{lo.lab_service_name}</span>
                         </td>
                         <td data-label="BS chỉ định">
                           <span className="lq-doctor-name">{lo.doctor_name || '—'}</span>
@@ -342,7 +413,7 @@ const LabQueuePage = () => {
                 </tbody>
               </table>
               <div className="lq-result-count">
-                Hiển thị {filtered.length} / {labOrders.length} xét nghiệm
+                Hiển thị {filtered.length} / {dateFilteredOrders.length} xét nghiệm
               </div>
             </>
           )}

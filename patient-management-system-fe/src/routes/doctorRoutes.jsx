@@ -1,8 +1,9 @@
-import DoctorDashboardPage from "../pages/doctorPage/DoctorDashboardPage";
-import DoctorSchedulePage from "../pages/doctorPage/DoctorSchedulePage";
-import DoctorProfileSettingsPage from "../pages/doctorPage/DoctorProfileSettingsPage";
-import PatientDetailPage from "../pages/doctorPage/PatientDetailPage";
-import ExaminationPage from "../pages/doctorPage/ExaminationPage";
+import React, { lazy } from 'react';
+const DoctorDashboardPage = lazy(() => import('../pages/doctorPage/DoctorDashboardPage'));
+const DoctorSchedulePage = lazy(() => import('../pages/doctorPage/DoctorSchedulePage'));
+const DoctorProfileSettingsPage = lazy(() => import('../pages/doctorPage/DoctorProfileSettingsPage'));
+const PatientDetailPage = lazy(() => import('../pages/doctorPage/PatientDetailPage'));
+const ExaminationPage = lazy(() => import('../pages/doctorPage/ExaminationPage'));
 import ProtectedRoute from "../components/security/ProtectedRoute";
 
 const doctorRoutes = [

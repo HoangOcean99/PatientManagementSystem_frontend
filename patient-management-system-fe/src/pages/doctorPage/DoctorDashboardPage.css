@@ -34,6 +34,10 @@
   color: #fff;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .dash-welcome::before {
@@ -72,6 +76,79 @@
   font-weight: 500;
   position: relative;
   z-index: 1;
+}
+
+/* ===== ROOM STATUS BUTTONS ===== */
+.dash-welcome__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.dash-room-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.dash-room-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.dash-room-btn--ready {
+  background: rgba(255, 255, 255, 0.95);
+  color: #059669;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dash-room-btn--ready:hover:not(:disabled) {
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.dash-room-btn--end {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+}
+
+.dash-room-btn--end:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.dash-room-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dash-room-badge--ready {
+  background: rgba(16, 185, 129, 0.2);
+  color: #A7F3D0;
+}
+
+.dash-room-badge--examining {
+  background: rgba(239, 68, 68, 0.2);
+  color: #FCA5A5;
 }
 
 /* ===== STAT CARDS ===== */

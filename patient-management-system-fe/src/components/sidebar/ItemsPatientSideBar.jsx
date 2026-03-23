@@ -1,7 +1,7 @@
 export const ItemsPatientSideBar = [
     {
         icon: 'LayoutDashboard',
-        label: "Dashboard",
+        label: "Tổng quan",
         linkPage: "/patient/dashboard",
         matchPages: [
             "/patient/dashboard"
@@ -12,21 +12,30 @@ export const ItemsPatientSideBar = [
         label: "Đặt lịch khám",
         linkPage: "/patient/booking",
         matchPages: [
-            "/patient/booking"
+            "/patient/booking",
+            "/patient/appointment",
+            "/patient/payment"
+        ]
+    },
+    {
+        icon: 'CreditCard',
+        label: "Thanh toán",
+        linkPage: "/patient/billing",
+        matchPages: [
+            "/patient/billing"
         ]
     },
     {
         icon: 'FileText',
-        label: "Lịch sử khám",
-        linkPage: "/patient/exam-history",
+        label: "Kết quả bệnh án",
+        linkPage: "/patient/medical-records",
         matchPages: [
-            "/patient/exam-history",
-            "/patient/exam"
+            "/patient/medical-records"
         ]
     },
     {
         icon: 'Users',
-        label: "Người được tôi quản lý",
+        label: "Chăm sóc người thân",
         linkPage: "/patient/under-my-care",
         matchPages: [
             "/patient/under-my-care",
@@ -41,5 +50,5 @@ export const ItemsPatientSideBar = [
             "/patient/profile",
             "/patient/change-password"
         ]
-    }
+    },
 ];

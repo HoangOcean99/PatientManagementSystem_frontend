@@ -1,0 +1,291 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
+import { supabase } from '../../../supabaseClient';
+import { getMedicalRecords } from '../../api/patientApi';
+import { useAuth } from '../../components/security/AuthContext';
+import { useSearchParams } from 'react-router-dom';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
+
+const TABS = [
+    { key: 'lab', label: 'Xét nghiệm' },
+    { key: 'diagnosis', label: 'Chẩn đoán' },
+];
+
+const LAB_STATUS = {
+    ordered: { label: 'Đã yêu cầu', color: 'text-amber-700', bg: 'bg-amber-50' },
+    processing: { label: 'Đang xử lý', color: 'text-blue-700', bg: 'bg-blue-50' },
+    completed: { label: 'Hoàn thành', color: 'text-emerald-700', bg: 'bg-emerald-50' },
+};
+
+const MedicalRecordsPage = () => {
+    const navigate = useNavigate();
+    const { userId } = useAuth();
+    const [activeTab, setActiveTab] = useState('lab');
+    const [loading, setLoading] = useState(true);
+    const [records, setRecords] = useState([]);
+    const [searchParams] = useSearchParams();
+    const dependentId = searchParams.get('patient_id');
+    const dependentName = searchParams.get('name');
+    const targetUserId = dependentId || userId;
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                if (targetUserId) {
+                    const res = await getMedicalRecords(targetUserId);
+                    setRecords(res.data?.data || res.data || []);
+                }
+            } catch (err) {
+                console.error('Failed to load medical records:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
+    }, [targetUserId]);
+
+    const formatDate = (d) => {
+        if (!d) return '—';
+        return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    const labReports = records.flatMap(r => r.LabOrders || []);
+    const diagnoses = records;
+
+    const renderLabReports = () => (
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="text-base font-bold text-gray-800">Danh sách xét nghiệm</h3>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50/50">
+                            <th className="text-left px-6 py-3.5 font-semibold text-gray-500">Tên xét nghiệm</th>
+                            <th className="text-left px-4 py-3.5 font-semibold text-gray-500">Ngày tạo</th>
+                            <th className="text-left px-4 py-3.5 font-semibold text-gray-500">Trạng thái</th>
+                            <th className="text-left px-4 py-3.5 font-semibold text-gray-500">Kết quả</th>
+                            <th className="text-right px-6 py-3.5 font-semibold text-gray-500">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {labReports.length === 0 && (
+                            <tr>
+                                <td colSpan="5" className="px-6 py-8 text-center text-gray-500 font-medium">Bạn chưa có xét nghiệm nào.</td>
+                            </tr>
+                        )}
+                        {labReports.map((lab) => {
+                            const st = LAB_STATUS[lab.status] || LAB_STATUS.ordered;
+                            return (
+                                <tr key={lab.lab_order_id} className="border-b border-gray-50 hover:bg-sky-50/30 transition-colors">
+                                    <td className="px-6 py-4 font-semibold text-gray-800">{lab.LabServices?.name || '—'}</td>
+                                    <td className="px-4 py-4 text-gray-600">{formatDate(lab.created_at)}</td>
+                                    <td className="px-4 py-4">
+                                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${st.bg} ${st.color}`}>
+                                            {st.label}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-4 text-gray-600">{lab.result_summary || '—'}</td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            {lab.result_file_url ? (
+                                                <a href={lab.result_file_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-600 hover:text-sky-700">
+                                                    <i className="fa-solid fa-file-arrow-down text-[10px]"></i>
+                                                    Tải kết quả
+                                                </a>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">—</span>
+                                            )}
+                                            {lab.record_id && (
+                                                <>
+                                                    <span className="w-1 h-1 rounded-full bg-gray-200"></span>
+                                                    <button onClick={() => navigate(`/patient/exam/${lab.record_id}`)} className="text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-1 group/btn border-none bg-transparent p-0">
+                                                        Hồ sơ
+                                                        <i className="fa-solid fa-chevron-right text-[10px] transition-transform group-hover/btn:translate-x-0.5"></i>
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+
+    const renderDiagnoses = () => (
+        <div className="space-y-4">
+            {diagnoses.length === 0 && (
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 p-12 text-center shadow-sm">
+                    <i className="fa-solid fa-file-medical text-4xl text-gray-300 mb-4"></i>
+                    <p className="text-gray-500 font-medium">Bạn chưa có hồ sơ bệnh án nào.</p>
+                </div>
+            )}
+            {diagnoses.map((diag) => (
+                <div key={diag.record_id} className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden p-6">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
+                                <i className="fa-solid fa-stethoscope text-violet-500 text-sm"></i>
+                            </div>
+                            <div>
+                                <p className="font-bold text-gray-800 text-sm">
+                                    {diag.Doctors?.Users?.full_name || diag.Appointments?.Doctors?.Users?.full_name || 'Bác sĩ chuyên khoa'}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                    {diag.Doctors?.specialization || diag.Appointments?.Doctors?.specialization || 'Khoa Nội'}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                             <span className="text-xs text-gray-400">
+                                 <i className="fa-regular fa-calendar mr-1"></i>
+                                 {formatDate(diag.created_at)}
+                             </span>
+                             <button
+                                 onClick={() => navigate(`/patient/exam/${diag.record_id}`)}
+                                 className="text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 transition-all cursor-pointer flex items-center gap-1 group/btn shadow-sm"
+                             >
+                                 Chi tiết
+                                 <i className="fa-solid fa-chevron-right text-[9px] group-hover/btn:translate-x-0.5 transition-transform"></i>
+                             </button>
+                        </div>
+                    </div>
+                    {/* Service & Reason for Visit */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        <div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100/50">
+                            <p className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-0.5">Dịch vụ</p>
+                            <p className="text-gray-700 text-sm font-semibold">{diag.Appointments?.ClinicServices?.name || 'Khám tổng quát'}</p>
+                        </div>
+                        {diag.Appointments?.notes && (
+                            <div className="bg-indigo-50/50 rounded-xl p-3 border border-indigo-100/50">
+                                <p className="text-xs text-indigo-600 font-medium uppercase tracking-wide mb-0.5">Lý do khám</p>
+                                <p className="text-gray-700 text-sm">{diag.Appointments.notes}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {diag.symptoms && (
+                        <div className="bg-amber-50/50 rounded-xl p-3 mb-3 border border-amber-100/50">
+                            <p className="text-xs text-amber-600 font-medium uppercase tracking-wide mb-0.5">Triệu chứng</p>
+                            <p className="text-gray-700 text-sm">{diag.symptoms}</p>
+                        </div>
+                    )}
+                    <div className="bg-gray-50 rounded-xl p-4 mb-3">
+                        <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Chẩn đoán</p>
+                        <p className="text-gray-800 font-semibold text-sm">{diag.diagnosis}</p>
+                    </div>
+                    {diag.doctor_notes && (
+                        <div className="bg-gray-50/80 rounded-xl p-3 mb-3 border border-gray-100">
+                            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-1">Ghi chú bác sĩ</p>
+                            <p className="text-gray-600 text-sm italic">{diag.doctor_notes}</p>
+                        </div>
+                    )}
+
+                    {/* Prescriptions Summary */}
+                    {diag.Prescriptions && diag.Prescriptions.length > 0 && (
+                        <div className="border border-green-100 rounded-xl p-3 bg-green-50/30 mb-3">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                    <i className="fa-solid fa-pills text-[10px]"></i>
+                                </div>
+                                <span className="text-xs font-bold text-green-700 uppercase tracking-wider">Đơn thuốc ({diag.Prescriptions.length})</span>
+                            </div>
+                            <div className="space-y-1.5 pl-8">
+                                {diag.Prescriptions.slice(0, 3).map((p, idx) => (
+                                    <div key={idx} className="flex justify-between items-start text-xs border-b border-green-100/50 pb-1 last:border-0">
+                                        <span className="text-gray-700 font-medium">{p.medication_name}</span>
+                                        <span className="text-gray-500 font-mono scale-90">{p.dosage}</span>
+                                    </div>
+                                ))}
+                                {diag.Prescriptions.length > 3 && (
+                                    <p className="text-[10px] text-green-600 font-medium italic">...và các loại thuốc khác</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Follow-up & Lab Overview */}
+                    <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
+                        {diag.follow_up_date && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-50 border border-orange-100 text-orange-700 text-[11px] font-bold">
+                                <i className="fa-regular fa-calendar-check"></i>
+                                <span>Hẹn tái khám: {new Date(diag.follow_up_date).toLocaleDateString('vi-VN')}</span>
+                            </div>
+                        )}
+                        {diag.LabOrders && diag.LabOrders.length > 0 && (
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-100 text-blue-700 text-[11px] font-bold">
+                                <i className="fa-solid fa-microscope"></i>
+                                <span>Xét nghiệm ({diag.LabOrders.length})</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+
+    return (
+        <div className="flex-1 h-full overflow-y-auto w-full font-sans" style={{ background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+            {scrollbarStyles}
+
+            {/* Header */}
+            <div className="sticky top-0 z-30 border-b border-blue-100/40" style={{ background: 'linear-gradient(180deg, rgba(239,246,255,0.95) 0%, rgba(255,255,255,0.9) 100%)', backdropFilter: 'blur(20px) saturate(180%)' }}>
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    <div className="mb-5">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 mb-1">
+                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                            <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Hồ sơ y tế</span>
+                        </div>
+                        <h1 className="text-2xl font-extrabold text-gray-900">
+                            Kết quả bệnh án {dependentId && <span className="text-blue-600 text-lg font-bold ml-2">({dependentName || 'Người phụ thuộc'})</span>}
+                        </h1>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="flex bg-gray-100 rounded-xl p-1">
+                        {TABS.map((tab) => (
+                            <button
+                                key={tab.key}
+                                onClick={() => setActiveTab(tab.key)}
+                                className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${activeTab === tab.key
+                                    ? 'bg-white text-gray-800 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700'
+                                    }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Content */}
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {loading ? (
+                    <div className="flex flex-col justify-center items-center h-48 gap-3">
+                        <LoadingSpinner />
+                    </div>
+                ) : (
+                    <motion.div
+                        key={activeTab}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        {activeTab === 'lab' && renderLabReports()}
+                        {activeTab === 'diagnosis' && renderDiagnoses()}
+                    </motion.div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default MedicalRecordsPage;

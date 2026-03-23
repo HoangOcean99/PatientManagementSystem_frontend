@@ -104,7 +104,7 @@ const OtpPopUp = ({
                             : "bg-blue-600 hover:bg-blue-700 text-white"}`}
                 >
                     {isLoadingOtp ? <div className="relative flex-1">
-                        {loading && <LoadingSpinner />}
+                        {isLoadingOtp && <LoadingSpinner />}
                     </div> :
                         <span>Xác nhận</span>
                     }

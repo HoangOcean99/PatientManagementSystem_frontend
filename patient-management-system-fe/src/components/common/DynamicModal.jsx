@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import LoadingButton from "./LoadingButton";
 
-const DynamicModal = ({ title, fields, initialData = {}, onSubmit, onClose }) => {
+const DynamicModal = ({ title, fields, initialData = {}, onSubmit, onClose, isLoading = false }) => {
     const [formData, setFormData] = useState(initialData);
+
+    useEffect(() => {
+        if (initialData) {
+            setFormData(initialData);
+        }
+    }, [initialData?.department_id]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -11,17 +18,19 @@ const DynamicModal = ({ title, fields, initialData = {}, onSubmit, onClose }) =>
         }));
     };
 
-    const renderInput = (field) => {
-        const baseInputClass = "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all";
+    const baseInputClass =
+        "w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition";
 
+    const renderInput = (field) => {
         switch (field.type) {
             case "select":
                 return (
                     <select
                         className={baseInputClass}
                         name={field.name}
-                        value={formData[field.name] || ""}
+                        value={formData[field.name] ?? ""}
                         onChange={handleChange}
+                        disabled={isLoading}
                     >
                         <option value="">-- Chọn --</option>
                         {field.options?.map(opt => (
@@ -32,6 +41,19 @@ const DynamicModal = ({ title, fields, initialData = {}, onSubmit, onClose }) =>
                     </select>
                 );
 
+            case "textarea":
+                return (
+                    <textarea
+                        className={`${baseInputClass} resize-none`}
+                        name={field.name}
+                        value={formData[field.name] || ""}
+                        onChange={handleChange}
+                        rows={field.rows || 4}
+                        placeholder={`Nhập ${field.label.toLowerCase()}...`}
+                        disabled={isLoading}
+                    />
+                );
+
             default:
                 return (
                     <input
@@ -40,60 +62,76 @@ const DynamicModal = ({ title, fields, initialData = {}, onSubmit, onClose }) =>
                         name={field.name}
                         value={formData[field.name] || ""}
                         onChange={handleChange}
-                        required={field.required}
                         placeholder={`Nhập ${field.label.toLowerCase()}...`}
+                        disabled={isLoading}
                     />
                 );
         }
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none">
-            <div className="fixed inset-0 bg-black opacity-50" onClick={onClose}></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
 
-            <div className="relative w-full max-w-md mx-auto my-6 z-50">
-                <div className="relative flex flex-col w-full bg-white border-0 rounded-xl shadow-2xl outline-none focus:outline-none">
+            {/* Overlay */}
+            <div
+                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                onClick={onClose}
+            />
 
-                    <div className="flex items-start justify-between p-5 border-b border-solid border-gray-200 rounded-t">
-                        <h3 className="text-xl font-semibold text-gray-800">
-                            {title}
-                        </h3>
-                        <button
-                            className="p-1 ml-auto bg-transparent border-0 text-gray-400 hover:text-gray-600 float-right text-2xl leading-none font-semibold outline-none focus:outline-none"
-                            onClick={onClose}
-                        >
-                            ×
-                        </button>
-                    </div>
+            {/* Modal */}
+            <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl animate-[fadeIn_.2s_ease]">
 
-                    <div className="relative p-6 flex-auto">
-                        {fields.map(field => (
-                            <div className="mb-4" key={field.name}>
-                                <label className="block text-gray-700 text-sm font-bold mb-2">
-                                    {field.label}
-                                    {field.required && <span className="text-red-500 ml-1">*</span>}
-                                </label>
-                                {renderInput(field)}
-                            </div>
-                        ))}
-                    </div>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                        {title}
+                    </h3>
 
-                    <div className="flex items-center justify-end p-6 border-t border-solid border-gray-200 rounded-b gap-2">
-                        <button
-                            className="text-gray-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none hover:text-gray-700 transition-all"
-                            type="button"
-                            onClick={onClose}
-                        >
-                            Hủy
-                        </button>
-                        <button
-                            className="bg-blue-600 hover:bg-blue-700 text-white active:bg-blue-800 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none transition-all"
-                            type="button"
-                            onClick={() => onSubmit(formData)}
-                        >
-                            Lưu thay đổi
-                        </button>
-                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500 transition"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="px-6 py-5 max-h-[60vh] overflow-y-auto space-y-4">
+
+                    {fields.map(field => (
+                        <div key={field.name}>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {field.label}
+                                {field.required && (
+                                    <span className="text-red-500 ml-1">*</span>
+                                )}
+                            </label>
+
+                            {renderInput(field)}
+                        </div>
+                    ))}
+
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 rounded-b-2xl">
+
+                    <button
+                        onClick={onClose}
+                        className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                    >
+                        Hủy
+                    </button>
+
+
+                    <LoadingButton
+                        isLoading={isLoading}
+                        onClick={() => onSubmit(formData)}
+                        loadingText="Đang lưu..."
+                    >
+                        Lưu thay đổi
+                    </LoadingButton>
+
                 </div>
             </div>
         </div>

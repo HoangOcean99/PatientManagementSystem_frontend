@@ -1,24 +1,29 @@
 import axiosClient from "./axiosClient";
 
 export const labOrderApi = {
-    // Lấy tất cả lab orders
-    getAllLabOrders: async () => {
-        return await axiosClient.get('/lab-orders');
+
+    getAllLabOrders: async (params = {}) => {
+        return await axiosClient.get('/lab-orders', { params });
     },
 
-    // Tạo lab orders (BS khám gửi yêu cầu xét nghiệm)
     createLabOrders: async (data) => {
         return await axiosClient.post('/lab-orders', data);
     },
 
-    // Lấy chi tiết 1 lab order theo ID
     getLabOrderById: async (labOrderId) => {
         return await axiosClient.get(`/lab-orders/${labOrderId}`);
     },
 
-    // Cập nhật lab order (status, result_summary, result_file_url)
+    getLabOrdersByRecordId: async (recordId) => {
+        return await axiosClient.get(`/lab-orders/record/${recordId}`);
+    },
     updateLabOrder: async (labOrderId, data) => {
         return await axiosClient.patch(`/lab-orders/${labOrderId}`, data);
+    },
+
+    // Lab Services
+    getLabServices: async (params = {}) => {
+        return await axiosClient.get('/lab-services', { params });
     },
 };
 

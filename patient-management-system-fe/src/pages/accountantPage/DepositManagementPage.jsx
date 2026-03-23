@@ -1,211 +1,203 @@
-import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FiDollarSign,
   FiSearch,
-  FiFilter,
-  FiPlus,
-  FiEye,
-  FiRotateCcw,
-  FiCheck,
-  FiX,
   FiLoader,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsLeft,
+  FiChevronsRight,
+  FiMoreVertical,
 } from 'react-icons/fi';
 import AccountantSidebar from '../../components/accountant/AccountantSidebar';
+import {
+  getPendingDeposits,
+  confirmDeposit,
+  searchApptsForDeposit
+} from '../../api/accountantApi';
+import { toast, Toaster } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 import './DepositManagementPage.css';
 
 const formatCurrency = (amount) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.06, delayChildren: 0.1 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } },
-};
-
-const MOCK_DEPOSITS = [
-  { id: 'DEP001', patient_name: 'Nguyễn Văn An', patient_code: 'BN001', amount: 500000, date: '2026-03-02', status: 'pending', note: 'Đặt cọc khám tổng quát' },
-  { id: 'DEP002', patient_name: 'Trần Thị Bình', patient_code: 'BN002', amount: 1000000, date: '2026-03-02', status: 'confirmed', note: 'Đặt cọc xét nghiệm' },
-  { id: 'DEP003', patient_name: 'Lê Hoàng Cường', patient_code: 'BN003', amount: 300000, date: '2026-03-01', status: 'applied', note: 'Đã chuyển sang hoá đơn' },
-  { id: 'DEP004', patient_name: 'Phạm Minh Đức', patient_code: 'BN004', amount: 750000, date: '2026-03-01', status: 'confirmed', note: 'Đặt cọc phẫu thuật nhỏ' },
-  { id: 'DEP005', patient_name: 'Hoàng Thị Em', patient_code: 'BN005', amount: 200000, date: '2026-02-28', status: 'refunded', note: 'Hoàn cọc - BN huỷ lịch' },
-  { id: 'DEP006', patient_name: 'Vũ Quang Phú', patient_code: 'BN006', amount: 600000, date: '2026-02-28', status: 'pending', note: 'Đặt cọc khám chuyên khoa' },
-  { id: 'DEP007', patient_name: 'Đỗ Thị Giang', patient_code: 'BN007', amount: 450000, date: '2026-02-27', status: 'confirmed', note: 'Đặt cọc xét nghiệm máu' },
-  { id: 'DEP008', patient_name: 'Bùi Văn Hùng', patient_code: 'BN008', amount: 1500000, date: '2026-02-27', status: 'applied', note: 'Đã chuyển sang hoá đơn' },
-  { id: 'DEP009', patient_name: 'Ngô Thị Lan', patient_code: 'BN009', amount: 350000, date: '2026-02-26', status: 'pending', note: 'Đặt cọc tái khám' },
-  { id: 'DEP010', patient_name: 'Lý Minh Khôi', patient_code: 'BN010', amount: 800000, date: '2026-02-26', status: 'refunded', note: 'Hoàn cọc - chuyển viện' },
-];
+  new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
 
 const STATUS_MAP = {
-  pending: { label: 'Chờ xử lý', color: 'pending' },
-  confirmed: { label: 'Đã xác nhận', color: 'confirmed' },
-  applied: { label: 'Đã áp dụng HĐ', color: 'applied' },
-  refunded: { label: 'Đã hoàn cọc', color: 'refunded' },
+  pending: { label: 'Chưa cọc', cls: 'unpaid' },
+  confirmed: { label: 'Đã cọc', cls: 'paid' },
+  refunded: { label: 'Hoàn trả', cls: 'refunded' },
 };
 
+const ITEMS_PER_PAGE = 10;
+
 const DepositManagementPage = () => {
-  const [deposits, setDeposits] = useState(MOCK_DEPOSITS);
+  const [deposits, setDeposits] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedDeposit, setSelectedDeposit] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => { fetchDeposits(); }, []);
+
+  const fetchDeposits = async () => {
+    try {
+      setLoading(true);
+      const res = await getPendingDeposits();
+      console.log(res.data);
+      const mapped = (res.data || []).map((d, idx) => ({
+        id: d.appointment_id,
+        code: `DP${String(idx + 1).padStart(3, '0')}`,
+        patient_name: d.Patients?.Users?.full_name || 'N/A',
+        phone: d.Patients?.Users?.phone_number || '',
+        service: d.ClinicServices?.name || 'Khám tổng quát',
+        amount: d.deposit_required - (d.deposit_paid || 0),
+        date: new Date(d.created_at).toISOString().split('T')[0],
+        status: (d.deposit_paid || 0) >= d.deposit_required ? 'confirmed' : 'pending',
+      }));
+      setDeposits(mapped);
+    } catch {
+      toast.error('Lỗi khi tải danh sách!');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredDeposits = useMemo(() => {
     return deposits.filter((dep) => {
-      const matchSearch =
-        dep.patient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        dep.patient_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        dep.id.toLowerCase().includes(searchTerm.toLowerCase());
+      const q = searchTerm.toLowerCase();
+      const matchSearch = dep.patient_name.toLowerCase().includes(q) ||
+        dep.code.toLowerCase().includes(q) ||
+        dep.id.toLowerCase().includes(q);
       const matchStatus = statusFilter === 'all' || dep.status === statusFilter;
       return matchSearch && matchStatus;
     });
   }, [deposits, searchTerm, statusFilter]);
 
-  const handleConfirm = (id) => {
-    setDeposits((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, status: 'confirmed' } : d))
-    );
-    setSelectedDeposit(null);
-  };
+  const totalPages = Math.max(1, Math.ceil(filteredDeposits.length / ITEMS_PER_PAGE));
+  const paginatedDeposits = filteredDeposits.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
-  const handleRefund = (id) => {
-    setDeposits((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, status: 'refunded' } : d))
-    );
-    setSelectedDeposit(null);
-  };
+  const handleConfirm = async (id, amount) => {
+    const result = await Swal.fire({
+      title: 'Xác nhận thu cọc?',
+      text: "Hệ thống sẽ cập nhật trạng thái và tự động gửi email thông báo xác nhận lịch hẹn.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0284c7',
+      cancelButtonColor: '#ef4444',
+      confirmButtonText: 'Đồng ý',
+      cancelButtonText: 'Hủy'
+    });
 
-  const handleApply = (id) => {
-    setDeposits((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, status: 'applied' } : d))
-    );
-    setSelectedDeposit(null);
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsProcessing(true);
+      await confirmDeposit(id, amount);
+      toast.success('Xác nhận thành công!');
+      fetchDeposits();
+    } catch {
+      toast.error('Có lỗi xảy ra!');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
-    <div className="acc-dep-layout" style={{ width: '100vw' }}>
-      <main className="acc-dep-main p-8">
-        <motion.div
-          className="acc-dep-content"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Page Header */}
-          <motion.div className="acc-dep-header" variants={itemVariants}>
-            <div>
-              <h1 className="acc-dep-header__title">
-                <FiDollarSign size={24} />
-                Quản lý tiền đặt cọc
-              </h1>
-              <p className="acc-dep-header__subtitle">Theo dõi và quản lý tiền đặt cọc bệnh nhân</p>
-            </div>
-            <button className="acc-dep-header__add-btn" onClick={() => setShowAddModal(true)}>
-              <FiPlus size={18} />
-              Thêm đặt cọc
-            </button>
-          </motion.div>
+    <div className="dep-layout" style={{ width: '100%' }}>
+      {/* <AccountantSidebar activePage="deposits" /> */}
+      <Toaster position="top-right" />
 
-          {/* Filters */}
-          <motion.div className="acc-dep-filters" variants={itemVariants}>
-            <div className="acc-dep-filters__search">
-              <FiSearch size={18} />
+      <div className="dep-main">
+        {/* Top Bar */}
+        <header className="dep-topbar">
+          <span className="dep-topbar__title">Quản Lý Tài Chính Phòng Khám</span>
+          <div className="dep-topbar__avatar">
+            <img src="https://ui-avatars.com/api/?name=KT&background=0ea5e9&color=fff&size=36" alt="avatar" />
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <section className="dep-page">
+          <div className="dep-page__header">
+            <h1>Quản lý cọc đặt lịch</h1>
+            <p>Màn hình quản lý cọc đặt lịch cho phép bạn theo dõi và quản lý các khoản cọc của bệnh nhân.</p>
+          </div>
+
+          {/* Filter Row */}
+          <div className="dep-filter-row">
+            <div className="dep-search">
+              <FiSearch className="dep-search__icon" />
               <input
                 type="text"
-                placeholder="Tìm theo tên BN, mã BN, mã đặt cọc..."
+                placeholder="Tìm kiếm theo bệnh nhân, mã đặt lịch..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
               />
             </div>
-            <div className="acc-dep-filters__status">
-              <FiFilter size={16} />
+            <div className="dep-filter-right">
               <select
+                className="dep-select"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
               >
                 <option value="all">Tất cả trạng thái</option>
-                <option value="pending">Chờ xử lý</option>
-                <option value="confirmed">Đã xác nhận</option>
-                <option value="applied">Đã áp dụng HĐ</option>
-                <option value="refunded">Đã hoàn cọc</option>
+                <option value="pending">Chưa cọc</option>
+                <option value="confirmed">Đã cọc</option>
+                <option value="refunded">Hoàn trả</option>
               </select>
             </div>
-          </motion.div>
+          </div>
 
           {/* Table */}
-          <motion.div className="acc-dep-table-wrap" variants={itemVariants}>
-            <table className="acc-dep-table">
+          <div className="dep-table-card">
+            <table className="dep-table">
               <thead>
                 <tr>
-                  <th>Mã</th>
+                  <th>Mã đặt lịch</th>
                   <th>Bệnh nhân</th>
-                  <th>Mã BN</th>
-                  <th>Số tiền</th>
-                  <th>Ngày</th>
+                  <th>Dịch vụ</th>
+                  <th>Số tiền cọc</th>
+                  <th>Ngày đặt</th>
                   <th>Trạng thái</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredDeposits.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="acc-dep-table__empty">
-                      Không tìm thấy kết quả
-                    </td>
-                  </tr>
+                {loading ? (
+                  <tr><td colSpan="7" className="dep-empty"><FiLoader className="dep-spin" /> Đang tải...</td></tr>
+                ) : paginatedDeposits.length === 0 ? (
+                  <tr><td colSpan="7" className="dep-empty">Không có dữ liệu</td></tr>
                 ) : (
-                  filteredDeposits.map((dep) => (
+                  paginatedDeposits.map((dep) => (
                     <tr key={dep.id}>
-                      <td className="acc-dep-table__code">{dep.id}</td>
-                      <td className="acc-dep-table__name">{dep.patient_name}</td>
-                      <td>{dep.patient_code}</td>
-                      <td className="acc-dep-table__amount">{formatCurrency(dep.amount)}</td>
+                      <td className="dep-td-code">{dep.code}</td>
+                      <td>
+                        <div className="dep-patient">
+                          <span className="dep-patient__name">{dep.patient_name}</span>
+                          <span className="dep-patient__phone">{dep.phone}</span>
+                        </div>
+                      </td>
+                      <td>{dep.service}</td>
+                      <td className="dep-td-amount">{formatCurrency(dep.amount)}</td>
                       <td>{dep.date}</td>
                       <td>
-                        <span className={`acc-dep-badge acc-dep-badge--${STATUS_MAP[dep.status]?.color}`}>
+                        <span className={`dep-badge dep-badge--${STATUS_MAP[dep.status]?.cls}`}>
                           {STATUS_MAP[dep.status]?.label}
                         </span>
                       </td>
                       <td>
-                        <div className="acc-dep-table__actions">
+                        <div className="dep-actions">
                           <button
-                            className="acc-dep-action-btn acc-dep-action-btn--view"
-                            onClick={() => setSelectedDeposit(dep)}
-                            title="Xem chi tiết"
+                            className="dep-act dep-act--confirm"
+                            disabled={dep.status !== 'pending' || isProcessing}
+                            onClick={() => handleConfirm(dep.id, dep.amount)}
                           >
-                            <FiEye size={15} />
+                            Xác nhận
                           </button>
-                          {dep.status === 'pending' && (
-                            <button
-                              className="acc-dep-action-btn acc-dep-action-btn--confirm"
-                              onClick={() => handleConfirm(dep.id)}
-                              title="Xác nhận"
-                            >
-                              <FiCheck size={15} />
-                            </button>
-                          )}
-                          {dep.status === 'confirmed' && (
-                            <>
-                              <button
-                                className="acc-dep-action-btn acc-dep-action-btn--apply"
-                                onClick={() => handleApply(dep.id)}
-                                title="Áp dụng vào HĐ"
-                              >
-                                <FiDollarSign size={15} />
-                              </button>
-                              <button
-                                className="acc-dep-action-btn acc-dep-action-btn--refund"
-                                onClick={() => handleRefund(dep.id)}
-                                title="Hoàn cọc"
-                              >
-                                <FiRotateCcw size={15} />
-                              </button>
-                            </>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -213,145 +205,24 @@ const DepositManagementPage = () => {
                 )}
               </tbody>
             </table>
-          </motion.div>
 
-          {/* Footer */}
-          <motion.footer className="acc-dep-footer" variants={itemVariants}>
-            <p>Tổng: {filteredDeposits.length} đặt cọc</p>
-          </motion.footer>
-        </motion.div>
-      </main>
+            <div className="dep-table-footer">
+              <span>Hiển thị {paginatedDeposits.length} trong số {filteredDeposits.length} kết quả</span>
+              <div className="dep-pagination">
+                <button className="dep-pg" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}><FiChevronsLeft size={14} /></button>
+                <button className="dep-pg" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}><FiChevronLeft size={14} /></button>
+                <span className="dep-pg dep-pg--active">{currentPage}</span>
+                <button className="dep-pg" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}><FiChevronRight size={14} /></button>
+                <button className="dep-pg" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}><FiChevronsRight size={14} /></button>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      {/* Detail Modal */}
-      {selectedDeposit && (
-        <div className="acc-dep-modal-overlay" onClick={() => setSelectedDeposit(null)}>
-          <motion.div
-            className="acc-dep-modal"
-            onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="acc-dep-modal__header">
-              <h3>Chi tiết đặt cọc — {selectedDeposit.id}</h3>
-              <button className="acc-dep-modal__close" onClick={() => setSelectedDeposit(null)}>
-                <FiX size={20} />
-              </button>
-            </div>
-            <div className="acc-dep-modal__body">
-              <div className="acc-dep-modal__row">
-                <span className="acc-dep-modal__label">Bệnh nhân:</span>
-                <span className="acc-dep-modal__value">{selectedDeposit.patient_name}</span>
-              </div>
-              <div className="acc-dep-modal__row">
-                <span className="acc-dep-modal__label">Mã BN:</span>
-                <span className="acc-dep-modal__value">{selectedDeposit.patient_code}</span>
-              </div>
-              <div className="acc-dep-modal__row">
-                <span className="acc-dep-modal__label">Số tiền:</span>
-                <span className="acc-dep-modal__value acc-dep-modal__value--strong">
-                  {formatCurrency(selectedDeposit.amount)}
-                </span>
-              </div>
-              <div className="acc-dep-modal__row">
-                <span className="acc-dep-modal__label">Ngày đặt cọc:</span>
-                <span className="acc-dep-modal__value">{selectedDeposit.date}</span>
-              </div>
-              <div className="acc-dep-modal__row">
-                <span className="acc-dep-modal__label">Trạng thái:</span>
-                <span className={`acc-dep-badge acc-dep-badge--${STATUS_MAP[selectedDeposit.status]?.color}`}>
-                  {STATUS_MAP[selectedDeposit.status]?.label}
-                </span>
-              </div>
-              <div className="acc-dep-modal__row">
-                <span className="acc-dep-modal__label">Ghi chú:</span>
-                <span className="acc-dep-modal__value">{selectedDeposit.note}</span>
-              </div>
-            </div>
-            <div className="acc-dep-modal__footer">
-              {selectedDeposit.status === 'pending' && (
-                <button
-                  className="acc-dep-modal__btn acc-dep-modal__btn--confirm"
-                  onClick={() => handleConfirm(selectedDeposit.id)}
-                >
-                  <FiCheck size={16} /> Xác nhận
-                </button>
-              )}
-              {selectedDeposit.status === 'confirmed' && (
-                <>
-                  <button
-                    className="acc-dep-modal__btn acc-dep-modal__btn--apply"
-                    onClick={() => handleApply(selectedDeposit.id)}
-                  >
-                    <FiDollarSign size={16} /> Áp dụng vào HĐ
-                  </button>
-                  <button
-                    className="acc-dep-modal__btn acc-dep-modal__btn--refund"
-                    onClick={() => handleRefund(selectedDeposit.id)}
-                  >
-                    <FiRotateCcw size={16} /> Hoàn cọc
-                  </button>
-                </>
-              )}
-              <button
-                className="acc-dep-modal__btn acc-dep-modal__btn--close"
-                onClick={() => setSelectedDeposit(null)}
-              >
-                Đóng
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Add New Deposit Modal */}
-      {showAddModal && (
-        <div className="acc-dep-modal-overlay" onClick={() => setShowAddModal(false)}>
-          <motion.div
-            className="acc-dep-modal"
-            onClick={(e) => e.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            <div className="acc-dep-modal__header">
-              <h3>Thêm đặt cọc mới</h3>
-              <button className="acc-dep-modal__close" onClick={() => setShowAddModal(false)}>
-                <FiX size={20} />
-              </button>
-            </div>
-            <div className="acc-dep-modal__body">
-              <div className="acc-dep-form-group">
-                <label>Tên bệnh nhân</label>
-                <input type="text" placeholder="Nhập tên bệnh nhân..." />
-              </div>
-              <div className="acc-dep-form-group">
-                <label>Mã bệnh nhân</label>
-                <input type="text" placeholder="VD: BN011" />
-              </div>
-              <div className="acc-dep-form-group">
-                <label>Số tiền đặt cọc (VNĐ)</label>
-                <input type="number" placeholder="500000" />
-              </div>
-              <div className="acc-dep-form-group">
-                <label>Ghi chú</label>
-                <textarea placeholder="Nhập ghi chú..." rows={3}></textarea>
-              </div>
-            </div>
-            <div className="acc-dep-modal__footer">
-              <button className="acc-dep-modal__btn acc-dep-modal__btn--confirm">
-                <FiPlus size={16} /> Tạo đặt cọc
-              </button>
-              <button
-                className="acc-dep-modal__btn acc-dep-modal__btn--close"
-                onClick={() => setShowAddModal(false)}
-              >
-                Huỷ
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+        <footer className="dep-copyright">
+          © 2026 Quản Lý Tài Chính Phòng Khám. All rights reserved.
+        </footer>
+      </div>
     </div>
   );
 };

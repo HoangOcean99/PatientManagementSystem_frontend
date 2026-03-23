@@ -1,8 +1,9 @@
+import React, { lazy } from 'react';
 import ProtectedRoute from '../components/security/ProtectedRoute';
 
-import LabQueuePage from "../pages/labPage/LabQueuePage";
-import LabResultPage from "../pages/labPage/LabResultPage";
-import LabProfilePage from "../pages/labPage/LabProfilePage";
+const LabQueuePage = lazy(() => import('../pages/labPage/LabQueuePage'));
+const LabResultPage = lazy(() => import('../pages/labPage/LabResultPage'));
+const LabProfilePage = lazy(() => import('../pages/labPage/LabProfilePage'));
 
 const labRoutes = [
     {

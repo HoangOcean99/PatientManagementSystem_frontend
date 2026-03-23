@@ -6,6 +6,7 @@ import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import { getAllDoctors, searchDoctors } from '../../api/doctorApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
+import Pagination from '../../components/common/Pagination';
 
 const UserManagement = () => {
     const location = useLocation();
@@ -16,6 +17,9 @@ const UserManagement = () => {
     const [specialtyFilter, setSpecialtyFilter] = useState('');
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 8;
 
     useEffect(() => {
         fetchInitialDoctors();
@@ -55,6 +59,7 @@ const UserManagement = () => {
             toast.error("Tìm kiếm thất bại.");
         } finally {
             setLoading(false);
+            setCurrentPage(1);
         }
     };
 
@@ -71,6 +76,14 @@ const UserManagement = () => {
 
         return (matchesName || matchesSpecialtyText) && matchesSpecialty;
     });
+
+    const totalPages = Math.ceil(filteredDoctors.length / ITEMS_PER_PAGE);
+    const currentItems = React.useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        return filteredDoctors.slice(start, start + ITEMS_PER_PAGE);
+    }, [filteredDoctors, currentPage]);
+
+    useEffect(() => setCurrentPage(1), [searchTerm, specialtyFilter]);
 
     const specialties = [...new Set(doctors.map(d => d.specialization).filter(Boolean))];
 
@@ -163,11 +176,26 @@ const UserManagement = () => {
                         {loading && <LoadingSpinner />}
                     </div>
                 ) : filteredDoctors.length > 0 ? (
-                    <div className="flex flex-col gap-4 mx-auto">
-                        {filteredDoctors.map(doctor => (
-                            <DoctorCard key={doctor.doctor_id} doctor={doctor} isAdminView={isAdminView} role={role} />
-                        ))}
-                    </div>
+                    <>
+                        <div className="flex flex-col gap-4 mx-auto">
+                            {currentItems.map(doctor => (
+                                <DoctorCard key={doctor.doctor_id} doctor={doctor} isAdminView={isAdminView} role={role} />
+                            ))}
+                        </div>
+
+                        {totalPages > 1 && (
+                            <div className="mt-8 flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl border border-gray-100 shadow-sm gap-4">
+                                <span className="text-sm text-gray-500 font-medium">
+                                    Hiển thị {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredDoctors.length)} trong tổng số {filteredDoctors.length} bác sĩ
+                                </span>
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 max-w-5xl mx-auto shadow-sm">
                         <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
