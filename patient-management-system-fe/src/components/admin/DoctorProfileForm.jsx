@@ -33,7 +33,6 @@ const DoctorProfileForm = ({ doctor, onSave, isAdmin }) => {
 
 
     useEffect(() => {
-        console.log(doctor);
         if (doctor) {
             reset({
                 full_name: doctor.Users?.full_name || '',

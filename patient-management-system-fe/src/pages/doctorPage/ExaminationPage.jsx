@@ -453,9 +453,6 @@ const ExaminationPage = () => {
         patient_id: appointment.patient_id,
       };
 
-      console.log('[DEBUG] appointmentId from URL params:', appointmentId);
-      console.log('[DEBUG] appointment state:', appointment);
-      console.log('[DEBUG] payload gửi lên startExamination:', payload);
 
       const res = await medicalRecordApi.startExamination(payload);
       const record = res.data?.data || res.data;

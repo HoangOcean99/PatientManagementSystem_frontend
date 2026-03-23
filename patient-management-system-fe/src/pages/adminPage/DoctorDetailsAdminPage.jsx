@@ -20,7 +20,6 @@ const DoctorDetailsAdminPage = () => {
             try {
                 setLoading(true);
                 const res = await getDoctorById(id);
-                console.log(res)
                 setDoctor(res.data?.data || res.data);
             } catch (error) {
                 console.error("Error fetching doctor:", error);
