@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../supabaseClient';
 import { getPatients, getMedicalRecords, getDependents } from '../../api/patientApi';
-import { getListAppointments } from '../../api/scheduleApi';
+import { getListAppointmentsByCurrentUserId } from '../../api/appointmentApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import {
@@ -71,7 +71,7 @@ const PatientDashboard = () => {
                     const userId = data.user.id;
 
                     const [appointRes, recordRes, familyRes, profileRes] = await Promise.allSettled([
-                        getListAppointments({ patient_id: userId }),
+                        getListAppointmentsByCurrentUserId(undefined, userId),
                         getMedicalRecords(userId),
                         getDependents(),
                         supabase.from('Users').select('full_name').eq('user_id', userId).single()
