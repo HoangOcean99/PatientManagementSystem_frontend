@@ -82,7 +82,7 @@ const DoctorDetailsAdminPage = () => {
     const doctorAvatar = doctor.Users?.avatar_url || 'https://i.pravatar.cc/150?img=11';
 
     return (
-        <div className="min-h-screen bg-gray-50/50 pb-12 overflow-y-auto" style={{ width: '100vw' }}>
+        <div className="min-h-screen bg-gray-50/50 pb-12 overflow-y-auto" style={{ width: '100%' }}>
             {scrollbarStyles}
 
             <div className="bg-white border-b border-gray-200 top-0 z-30 shadow-sm">

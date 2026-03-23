@@ -199,7 +199,7 @@ const Coordinator = () => {
     }
 
     return (
-        <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8">
+        <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8" style={{ width: '100%' }} >
             {/* THANH CÔNG CỤ BỘ LỌC */}
             <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                 <div className="flex gap-4">
@@ -238,7 +238,7 @@ const Coordinator = () => {
                 </div>
             </div>
 
-            <div className="flex gap-6">
+            <div className="flex gap-6" style={{ width: '100%' }}>
 
                 {/* ================= CỘT TRÁI ================= */}
                 <div className="flex-[8] flex flex-col gap-6">
