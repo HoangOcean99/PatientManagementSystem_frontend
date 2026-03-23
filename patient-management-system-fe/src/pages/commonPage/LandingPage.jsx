@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     HeartPulse, Play, CheckCircle2, ArrowRight,
@@ -8,9 +8,24 @@ import {
 
 // === CSS TÙY CHỈNH: IMPORT FONTS, SÓNG NƯỚC & LẬT THẺ 3D ===
 const customStyles = `
-  /* IMPORT FONT NHẸ NHÀNG MỀM MẠI */
   @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Quicksand:wght@400;500;600;700&display=swap');
-
+  @keyframes cardWave {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .wave-card-bg {
+    background-image: linear-gradient(
+      -45deg,
+      #76c2f5ff 0%, 
+      #9f8de9ff 25%, 
+      #F3F4F6 50%, 
+      #2f9ce5ff 75%, 
+      #C4B5FD 100% 
+    );
+    background-size: 300% 300%;
+    animation: cardWave 8s ease infinite;
+  }
   @keyframes wave {
     0% { background-position: -800px; }
     100% { background-position: 800px; }
@@ -18,10 +33,10 @@ const customStyles = `
   .wave-text {
     background-image: linear-gradient(
       -45deg,
-      #E0F2FE 0%, 
-      #C4B5FD 25%, 
+      #76c2f5ff 0%, 
+      #9f8de9ff 25%, 
       #F3F4F6 50%, 
-      #E0F2FE 75%, 
+      #2f9ce5ff 75%, 
       #C4B5FD 100% 
     );
     background-size: 1600px 100%;
@@ -43,61 +58,67 @@ const customStyles = `
   .rotate-y-180 { transform: rotateY(180deg); }
 `;
 
-// === COMPONENT: THẺ CHUYÊN KHOA LẬT ===
-const DepartmentCard = ({ icon: Icon, name, shortDesc, professor, professorImage, services }) => {
+const DepartmentCard = ({ icon: Icon, name, shortDesc, description, services }) => {
     const [isFlipped, setIsFlipped] = useState(false);
+    const flipTimerRef = useRef(null);
+
+    const handleMouseEnter = () => {
+        setIsFlipped(true);
+        if (flipTimerRef.current) {
+            clearTimeout(flipTimerRef.current);
+        }
+        flipTimerRef.current = setTimeout(() => {
+            setIsFlipped(false);
+        }, 15000);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (flipTimerRef.current) clearTimeout(flipTimerRef.current);
+        };
+    }, []);
 
     return (
         <div
             className="relative h-96 group cursor-pointer perspective-1000"
+            onMouseEnter={handleMouseEnter}
             onClick={() => setIsFlipped(!isFlipped)}
         >
             <div className={`absolute inset-0 transition-transform duration-700 transform-style-3d shadow-sm hover:shadow-xl rounded-[1.5rem] ${isFlipped ? 'rotate-y-180' : ''}`}>
 
-                {/* MẶT TRƯỚC */}
-                <div className="absolute inset-0 p-8 flex flex-col items-center justify-center bg-white border border-slate-100 rounded-[1.5rem] backface-hidden">
-                    <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-6">
-                        <Icon size={32} className="text-blue-500" strokeWidth={1.5} />
+                {/* MẶT TRƯỚC: Wave-text Gradient */}
+                <div className="absolute inset-0 p-8 flex flex-col items-center justify-center wave-card-bg border border-slate-100 rounded-[1.5rem] backface-hidden">
+                    <div className="w-16 h-16 rounded-2xl bg-white/60 backdrop-blur-sm flex items-center justify-center mb-6 shadow-sm">
+                        <Icon size={32} className="text-blue-700" strokeWidth={1.5} />
                     </div>
                     <h4 className="text-2xl font-bold text-slate-900 mb-3 text-center" style={{ fontFamily: '"Quicksand", sans-serif' }}>
                         {name}
                     </h4>
-                    <p className="text-slate-500 font-medium text-center leading-relaxed">
+                    <p className="text-slate-800 font-medium text-center leading-relaxed">
                         {shortDesc}
                     </p>
-                    <button className="absolute bottom-6 flex items-center gap-1.5 text-sm font-bold text-blue-600 hover:text-blue-700">
-                        Xem chi tiết <PlusSquare size={16} />
-                    </button>
                 </div>
 
-                {/* MẶT SAU */}
-                <div className="absolute inset-0 p-8 flex flex-col justify-start bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.5rem] backface-hidden rotate-y-180 text-white overflow-y-auto">
-                    <button
-                        className="absolute top-6 right-6 flex items-center gap-1 text-xs font-bold text-blue-100 hover:text-white bg-white/10 px-3 py-1.5 rounded-full"
-                        onClick={(e) => { e.stopPropagation(); setIsFlipped(false); }}
-                    >
-                        Đóng <ArrowRight size={14} />
-                    </button>
+                {/* MẶT SAU: Xanh pastel, Giới thiệu về Khoa */}
+                <div className="absolute inset-0 p-8 flex flex-col justify-start bg-blue-50 border border-blue-100 rounded-[1.5rem] backface-hidden rotate-y-180 text-slate-800 overflow-y-auto">
 
-                    <h4 className="text-xl font-bold mb-8 text-center mt-2 border-b border-white/20 pb-4" style={{ fontFamily: '"Quicksand", sans-serif' }}>
+                    <h4 className="text-xl font-bold mb-6 text-center mt-2 border-b border-blue-200 pb-4 text-blue-900" style={{ fontFamily: '"Quicksand", sans-serif' }}>
                         {name}
                     </h4>
 
-                    {/* Giáo sư */}
-                    <div className="flex items-center gap-4 mb-6">
-                        <img src={professorImage} alt={professor} className="w-14 h-14 rounded-full border-2 border-white/40 object-cover" />
-                        <div>
-                            <p className="text-[10px] uppercase font-bold text-blue-200 tracking-wider">Trưởng khoa</p>
-                            <p className="text-lg font-bold" style={{ fontFamily: '"Quicksand", sans-serif' }}>{professor}</p>
-                        </div>
+                    {/* GIỚI THIỆU KHOA (Thay thế phần Bác sĩ) */}
+                    <div className="mb-6">
+                        <p className="text-sm text-slate-700 leading-relaxed text-justify">
+                            {description}
+                        </p>
                     </div>
 
-                    {/* Dịch vụ */}
+                    {/* Dịch vụ tiêu biểu */}
                     <div className="flex-1">
-                        <h5 className="text-sm font-bold mb-3 flex items-center gap-2 text-blue-100">
+                        <h5 className="text-sm font-bold mb-3 flex items-center gap-2 text-blue-700">
                             <Stethoscope size={16} /> Dịch vụ tiêu biểu:
                         </h5>
-                        <ul className="space-y-2 text-sm font-medium text-white/90 list-disc pl-5">
+                        <ul className="space-y-2 text-sm font-medium text-slate-700 list-disc pl-5">
                             {services.map((service, idx) => <li key={idx}>{service}</li>)}
                         </ul>
                     </div>
@@ -108,7 +129,6 @@ const DepartmentCard = ({ icon: Icon, name, shortDesc, professor, professorImage
     );
 };
 
-// === COMPONENT CHÍNH ===
 const LandingPage = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const navigate = useNavigate();
@@ -121,40 +141,46 @@ const LandingPage = () => {
 
     const departmentsData = [
         {
-            icon: HeartPulse, name: "Khoa Cấp cứu",
-            shortDesc: "Chăm sóc cấp cứu 24/7 với hệ thống xe cứu thương hiện đại.",
-            professor: "GS. Trần Văn A", professorImage: "https://i.pravatar.cc/150?u=a042581f4e29026024d",
-            services: ["Cấp cứu chấn thương", "Đột quỵ & Tim mạch", "Hồi sức tích cực"]
+            icon: HeartPulse,
+            name: "Khoa Da liễu",
+            shortDesc: "Chuyên chẩn đoán, điều trị các bệnh lý về da, lông, tóc, móng.",
+            description: "Khoa Da liễu cung cấp các dịch vụ khám, chữa bệnh chuyên sâu về da, ứng dụng công nghệ laser hiện đại trong điều trị thẩm mỹ và phục hồi da tổn thương.",
+            services: ["Khám và điều trị mụn, nám", "Điều trị sẹo rỗ, sẹo lồi", "Trẻ hóa da công nghệ cao"]
         },
         {
-            icon: Baby, name: "Khoa Nhi",
-            shortDesc: "Chăm sóc toàn diện cho trẻ em từ sơ sinh đến vị thành niên.",
-            professor: "GS. Lê Thị B", professorImage: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
-            services: ["Khám tổng quát", "Tiêm chủng", "Tư vấn dinh dưỡng"]
+            icon: Baby,
+            name: "Khoa Răng Hàm Mặt",
+            shortDesc: "Cung cấp dịch vụ chăm sóc răng miệng toàn diện và thẩm mỹ nụ cười.",
+            description: "Trang bị hệ thống ghế nha khoa và máy chụp X-quang hiện đại, khoa mang đến các giải pháp chỉnh nha, phục hình và điều trị bệnh lý răng miệng không đau.",
+            services: ["Nhổ răng khôn không đau", "Niềng răng thẩm mỹ", "Cấy ghép Implant"]
         },
         {
-            icon: Heart, name: "Khoa Tim mạch",
-            shortDesc: "Chẩn đoán và điều trị chuyên sâu các bệnh lý về tim mạch.",
-            professor: "GS. Hoàng Văn D", professorImage: "https://i.pravatar.cc/150?u=a048581f4e29026701d",
-            services: ["Điện tâm đồ", "Siêu âm tim 4D", "Can thiệp mạch vành"]
+            icon: Heart,
+            name: "Khoa Ngoại Tổng Quát",
+            shortDesc: "Thực hiện các phẫu thuật điều trị bệnh lý tiêu hóa, gan mật, ổ bụng.",
+            description: "Áp dụng các phương pháp phẫu thuật nội soi tiên tiến, ít xâm lấn, giúp bệnh nhân rút ngắn thời gian hồi phục và hạn chế tối đa sẹo mổ.",
+            services: ["Phẫu thuật nội soi ruột thừa", "Cắt túi mật nội soi", "Phẫu thuật thoát vị bẹn"]
         },
         {
-            icon: Dna, name: "Khoa Thần kinh",
-            shortDesc: "Tầm soát và điều trị các bệnh lý hệ thần kinh trung ương.",
-            professor: "GS. Đặng Văn E", professorImage: "https://i.pravatar.cc/150?u=a04258114e29026702d",
-            services: ["Chụp MRI 3.0 Tesla", "Đo điện não đồ", "Vật lý trị liệu"]
+            icon: Dna,
+            name: "Khoa Nhi",
+            shortDesc: "Chăm sóc toàn diện cho trẻ em từ sơ sinh đến tuổi vị thành niên.",
+            description: "Môi trường thăm khám thân thiện, đội ngũ bác sĩ tâm lý giúp trẻ không sợ hãi. Cung cấp các gói khám tổng quát và tư vấn dinh dưỡng chuyên sâu.",
+            services: ["Khám tổng quát định kỳ", "Tư vấn dinh dưỡng, phát triển", "Tiêm chủng trọn gói"]
         },
         {
-            icon: BrainCircuit, name: "Khoa Tâm thần",
-            shortDesc: "Hỗ trợ chăm sóc sức khỏe tinh thần và tư vấn tâm lý.",
-            professor: "GS. Bùi Văn F", professorImage: "https://i.pravatar.cc/150?u=a04258a2462d826712d",
-            services: ["Tư vấn tâm lý", "Trị liệu trầm cảm", "Rối loạn giấc ngủ"]
+            icon: BrainCircuit,
+            name: "Khoa Nội Tổng Quát",
+            shortDesc: "Tầm soát, chẩn đoán và điều trị nội khoa các bệnh lý toàn thân.",
+            description: "Nơi tiếp nhận đầu tiên để phân loại bệnh lý. Đội ngũ bác sĩ giàu kinh nghiệm giúp chẩn đoán chính xác và đưa ra phác đồ điều trị nội khoa hiệu quả.",
+            services: ["Khám sức khỏe tổng quát", "Tầm soát tiểu đường, huyết áp", "Điều trị bệnh lý hô hấp, tiêu hóa"]
         },
         {
-            icon: PlusSquare, name: "Sản & Phụ khoa",
+            icon: PlusSquare,
+            name: "Sản & Phụ Khoa",
             shortDesc: "Chăm sóc thai kỳ và tầm soát sức khỏe sinh sản phụ nữ.",
-            professor: "GS. Phạm Văn C", professorImage: "https://i.pravatar.cc/150?u=a042581f4e29026024c",
-            services: ["Khám thai định kỳ", "Tầm soát ung thư cổ tử cung", "Sinh mổ trọn gói"]
+            description: "Cung cấp các gói thai sản trọn gói, tầm soát ung thư phụ khoa và chăm sóc sức khỏe phụ nữ các độ tuổi với sự tận tâm, an toàn và kín đáo.",
+            services: ["Khám thai và siêu âm 4D", "Tầm soát ung thư cổ tử cung", "Gói thai sản trọn gói"]
         }
     ];
 
@@ -170,7 +196,6 @@ const LandingPage = () => {
     return (
         <div
             className="min-h-screen text-slate-800 selection:bg-blue-100 selection:text-blue-900"
-            // Áp dụng font Nunito cho toàn bộ Body và giữ Nền Caro lưới tinh tế
             style={{
                 backgroundColor: '#f8fafc',
                 backgroundImage: `linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px)`,
@@ -180,31 +205,49 @@ const LandingPage = () => {
         >
             <style>{customStyles}</style>
 
-            {/* Navbar */}
-            <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-4' : 'bg-transparent py-6'}`}>
+            <nav className={`fixed w-full z-50 transition-all duration-300 bg-gradient-to-r from-[#76c2f5] to-[#9f8de9] text-white ${isScrolled ? 'shadow-md py-4' : 'py-6'}`}>
                 <div className="max-w-7xl mx-auto px-6 lg:px-12 flex justify-between items-center">
+                    {/* Logo & Tên */}
                     <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
-                        <HeartPulse size={28} className="text-blue-600" />
-                        <span className="text-2xl font-bold tracking-tight text-slate-900" style={{ fontFamily: '"Quicksand", sans-serif' }}>MedCare.</span>
+                        <HeartPulse size={28} className="text-white" />
+                        <span className="text-2xl font-bold tracking-tight text-white" style={{ fontFamily: '"Quicksand", sans-serif' }}>MedSchedule</span>
                     </div>
 
+                    {/* Menu Items */}
                     <div className="hidden lg:flex items-center gap-10">
-                        {['Giải pháp', 'Cơ sở', 'Bảng giá', 'Dành cho Bác sĩ'].map((item) => (
-                            <a key={item} href="#" className="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors">{item}</a>
+                        {[
+                            { name: 'Trang chủ', id: 'home' },
+                            { name: 'Chuyên khoa', id: 'chuyen-khoa' },
+                            { name: 'Giải pháp', id: 'giai-phap' },
+                            { name: 'Cơ sở', id: 'co-so' },
+                        ].map((item) => (
+                            <a
+                                key={item.id}
+                                href={`#${item.id}`}
+                                className="text-sm font-bold text-white/90 hover:text-white transition-colors"
+                                onClick={(e) => {
+                                    e.preventDefault(); // Ngăn chặn hành vi nhảy trang mặc định
+                                    const targetSection = document.getElementById(item.id);
+                                    if (targetSection) {
+                                        targetSection.scrollIntoView({ behavior: 'smooth' }); // Cuộn mượt mà
+                                    }
+                                }}
+                            >
+                                {item.name}
+                            </a>
                         ))}
                     </div>
 
+                    {/* Nút Đăng nhập */}
                     <div className="flex items-center gap-4">
-                        <button onClick={() => navigate('/login')} className="hidden md:block text-sm font-bold text-slate-900 hover:text-blue-600">Đăng nhập</button>
-                        <button className="bg-slate-900 text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-blue-600 transition-all">
-                            Bắt đầu
+                        <button onClick={() => navigate('/login')} className="hidden md:block text-sm font-bold text-white hover:text-blue-100 transition-colors">
+                            Đăng nhập
                         </button>
                     </div>
                 </div>
             </nav>
 
-            {/* Hero Section */}
-            <section className="pt-40 pb-20 lg:pt-52 lg:pb-32 text-center">
+            <section className="pt-40 pb-20 lg:pt-52 lg:pb-32 text-center" id='home'>
                 <div className="max-w-4xl mx-auto px-6 relative z-10">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-blue-100 text-blue-600 text-xs font-bold uppercase tracking-wider mb-8 shadow-sm">
                         <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
@@ -220,23 +263,19 @@ const LandingPage = () => {
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-                        <button onClick={() => navigate('/register')} className="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-xl text-base font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                        <button onClick={() => navigate('/login')} className="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-xl text-base font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
                             Tạo tài khoản miễn phí
                         </button>
-                        <button className="w-full sm:w-auto bg-white text-slate-800 border-2 border-slate-200 px-8 py-4 rounded-xl text-base font-bold hover:border-slate-300 transition-all flex items-center justify-center gap-2">
-                            Xem cách hoạt động <ArrowRight size={18} />
-                        </button>
+
                     </div>
 
                     <div className="flex items-center justify-center gap-6 text-sm font-bold text-slate-500">
-                        <div className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-blue-600" /> Không cần thẻ tín dụng</div>
-                        <div className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-blue-600" /> Bảo mật dữ liệu HIPAA</div>
+                        <div className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-blue-600" />Hãy để chúng tôi chăm sóc các bạn</div>
                     </div>
                 </div>
             </section>
 
-            {/* Departments Section (Flip Cards) */}
-            <section className="py-24 bg-white/60 backdrop-blur-md border-y border-slate-200">
+            <section className="py-24 bg-white/60 backdrop-blur-md border-y border-slate-200" id="chuyen-khoa">
                 <div className="max-w-7xl mx-auto px-6 lg:px-12">
                     <div className="text-center mb-16 max-w-2xl mx-auto">
                         <h2 className="text-4xl font-bold text-slate-900 mb-4" style={{ fontFamily: '"Quicksand", sans-serif' }}>
@@ -255,8 +294,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Benefits Section */}
-            <section className="py-24 bg-transparent">
+            <section className="py-24 bg-transparent" id="giai-phap">
                 <div className="max-w-7xl mx-auto px-6 lg:px-12">
                     <div className="text-center mb-16">
                         <h2 className="text-4xl font-bold text-slate-900 mb-4" style={{ fontFamily: '"Quicksand", sans-serif' }}>
@@ -281,29 +319,29 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Google Map & Final CTA */}
-            <section className="py-24 bg-slate-900 text-white relative overflow-hidden">
-                {/* Decorative blur */}
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600 rounded-full blur-[120px] opacity-30 pointer-events-none"></div>
+            <section className="py-24 relative overflow-hidden bg-gradient-to-r from-[#76c2f5] to-[#9f8de9] text-white" id="co-so">
+                {/* Decorative blur - Đổi màu sang trắng để tạo hiệu ứng sáng lấp lánh nhẹ nhàng trên nền sáng */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white rounded-full blur-[120px] opacity-20 pointer-events-none"></div>
 
                 <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                     <div>
                         <h2 className="text-4xl lg:text-5xl font-bold mb-6 leading-tight" style={{ fontFamily: '"Quicksand", sans-serif' }}>
                             Bắt đầu hành trình <br />sống khỏe ngay hôm nay.
                         </h2>
-                        <p className="text-slate-300 text-lg font-medium mb-10">
+                        <p className="text-white/90 text-lg font-medium mb-10">
                             Tạo tài khoản để kết nối với các cơ sở y tế tư nhân cao cấp nhất. Mạng lưới MedCare luôn mở cửa chào đón bạn.
                         </p>
-                        <button onClick={() => navigate('/register')} className="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-bold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/30">
+                        {/* Đổi màu nút để tương phản tốt hơn trên nền gradient sáng (Dùng nền trắng, chữ xanh/tím) */}
+                        <button onClick={() => navigate('/login')} className="w-full sm:w-auto bg-[#2f9ce5] text-white px-8 py-4 rounded-xl text-base font-bold shadow-lg shadow-[#2f9ce5]/30 hover:bg-[#2680bc] transition-all flex items-center justify-center gap-2">
                             Tạo tài khoản miễn phí
                         </button>
                     </div>
 
                     <div className="relative">
-                        <div className="rounded-[2rem] overflow-hidden shadow-2xl border-4 border-slate-700 h-[400px] w-full bg-slate-800">
-                            {/* Google Map Iframe thực tế - Đang trỏ về khu vực BV Vinmec HN làm ví dụ */}
+                        {/* Đổi viền bản đồ sang trắng mờ thay vì đen (slate-700) như trước */}
+                        <div className="rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white/40 h-[400px] w-full bg-white/20">
                             <iframe
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.8143924376517!2d105.8647047116747!3d20.985542088827725!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ac05eb82e569%3A0xc6226da93c2bf962!2sVinmec%20International%20Hospital!5e0!3m2!1sen!2s!4v1700000000000!5m2!1sen!2s"
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.5713876762425!2d105.78160337471394!3d21.009811488430206!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135acab11ec72b9%3A0x4a34e18cc7b3b035!2zUC4gxJDhu5cgxJDhu6ljIEThu6VjLCBN4buFIFRyw6wsIFThu6sgTGnDqm0sIEjDoCBO4buZaSwgVmlldG5hbQ!5e0!3m2!1sen!2s!4v1774257793020!5m2!1sen!2s"
                                 width="100%"
                                 height="100%"
                                 style={{ border: 0 }}
@@ -330,14 +368,14 @@ const LandingPage = () => {
                 <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="flex items-center gap-2">
                         <HeartPulse size={24} className="text-blue-600" />
-                        <span className="text-xl font-bold text-slate-900" style={{ fontFamily: '"Quicksand", sans-serif' }}>MedCare.</span>
+                        <span className="text-xl font-bold text-slate-900" style={{ fontFamily: '"Quicksand", sans-serif' }}>MedSchedule</span>
                     </div>
                     <div className="flex gap-8 text-sm font-bold text-slate-600">
-                        <a href="#" className="hover:text-blue-600">Về chúng tôi</a>
+                        <a href="#home" className="hover:text-blue-600">Trang chủ</a>
                         <a href="#" className="hover:text-blue-600">Điều khoản</a>
                         <a href="#" className="hover:text-blue-600">Bảo mật</a>
                     </div>
-                    <p className="text-slate-400 text-sm font-medium">© 2026 MedCare Team.</p>
+                    <p className="text-slate-400 text-sm font-medium">medschedule2026@gmail.com</p>
                 </div>
             </footer>
         </div>
