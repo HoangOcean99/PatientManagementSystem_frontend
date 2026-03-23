@@ -1,11 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { vi } from 'date-fns/locale';
-import { getListAppointments } from '../../api/appointmentApi';
-import { getAvailableDoctorSlotsByDate } from '../../api/doctorApi';
-import { rescheduleAppointment } from '../../api/appointmentApi';
-import { updateAppointmentStatus } from '../../api/appointmentApi';
+import {
+    getListAppointments,
+    getAvailableDoctorSlots,
+    rescheduleAppointment,
+    updateAppointmentStatus,
+} from '../../api/appointmentApi';
+
+const toYMD = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+};
+
+const parseYMD = (s) => {
+    if (!s) return null;
+    const parts = String(s).split('-').map(Number);
+    const [y, m, d] = parts;
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
+};
+
+const slotTimeKey = (t) => (t != null ? String(t).slice(0, 5) : '');
 
 const Dashboard = () => {
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -13,12 +32,14 @@ const Dashboard = () => {
     const [selectedApt, setSelectedApt] = useState(null); // Lưu dữ liệu của đơn đang chọn
     const [showModal, setShowModal] = useState(false);    // Trạng thái hiển thị modal
     const [isEditing, setIsEditing] = useState(false);       // Trạng thái Xem hay Sửa
-    const [rawSlots, setRawSlots] = useState([]);      // Kho lưu toàn bộ slot của khoa đó trong ngày
-    const [availableDoctors, setAvailableDoctors] = useState([]); // Danh sách BS duy nhất lọc từ rawSlots; // Danh sách slot trống khi sửa
-    const [availableSlots, setAvailableSlots] = useState([]);
-    const [editFormData, setEditFormData] = useState({        // Dữ liệu tạm khi đang sửa
+    /** Toàn bộ slot trống theo khoa (getAvailableDoctorSlots) — đổi lịch: Ngày → Giờ → Bác sĩ */
+    const [rescheduleSlots, setRescheduleSlots] = useState([]);
+    const [rescheduleSlotsLoading, setRescheduleSlotsLoading] = useState(false);
+    const [editFormData, setEditFormData] = useState({
+        date: '',
+        startTime: '',
         slotId: '',
-        date: ''
+        doctorId: '',
     });
 
     // State lưu danh sách metadata để hiển thị trong menu lọc
@@ -115,75 +136,132 @@ const Dashboard = () => {
         }
     };
 
-    // 1. Khi nhấn "Chỉnh sửa lịch"
-    const startEditing = () => {
-        console.log("Dữ liệu đơn đang chọn:", selectedApt);
-        setEditFormData({
-            slotId: selectedApt.slot_id,
-            date: selectedApt.DoctorSlots?.slot_date
-        });
+    const rescheduleIncludeDates = useMemo(() => {
+        const keys = [...new Set(rescheduleSlots.map((s) => s.slot_date).filter(Boolean))].sort();
+        return keys.map((k) => parseYMD(k)).filter(Boolean);
+    }, [rescheduleSlots]);
 
-        setIsEditing(true);
-    };
+    const slotsTheoNgay = useMemo(
+        () => rescheduleSlots.filter((s) => s.slot_date === editFormData.date),
+        [rescheduleSlots, editFormData.date]
+    );
 
-    const handleDateChange = async (newDate) => {
-        // 1. Reset các tầng dưới
-        setEditFormData(prev => ({ ...prev, date: newDate, doctorId: '', slotId: '' }));
-        setAvailableDoctors([]);
-        setAvailableSlots([]);
+    const uniqueStartTimes = useMemo(() => {
+        const set = new Set(slotsTheoNgay.map((s) => slotTimeKey(s.start_time)));
+        return [...set].sort();
+    }, [slotsTheoNgay]);
 
-        // 2. Lấy ID chuyên khoa từ đơn hiện tại
-        const deptId = selectedApt.ClinicServices?.Departments?.department_id;
-        if (!deptId) return;
+    const doctorsForSelectedTime = useMemo(() => {
+        if (!editFormData.startTime) return [];
+        return slotsTheoNgay.filter((s) => slotTimeKey(s.start_time) === editFormData.startTime);
+    }, [slotsTheoNgay, editFormData.startTime]);
 
+    const loadRescheduleSlots = async () => {
+        const deptId = selectedApt?.ClinicServices?.Departments?.department_id;
+        if (deptId == null || deptId === '') {
+            alert('Không xác định được chuyên khoa của lịch hẹn.');
+            return;
+        }
+        setRescheduleSlotsLoading(true);
+        setRescheduleSlots([]);
         try {
-            // 3. Gọi hàm API lấy tất cả slot của khoa trong ngày
-            const response = await getAvailableDoctorSlotsByDate(deptId, newDate);
-            console.log("Response:", response);
-            const allSlots = response?.data || [];
-            setRawSlots(allSlots);
-
-            // 4. Lọc ra danh sách Bác sĩ duy nhất (Unique) từ dữ liệu slot trả về
-            const uniqueDocs = [];
-            const seenIds = new Set();
-            allSlots.forEach(slot => {
-                if (!seenIds.has(slot.doctor_id)) {
-                    seenIds.add(slot.doctor_id);
-                    uniqueDocs.push({
-                        id: slot.doctor_id,
-                        name: slot.Doctors?.Users?.full_name || "Bác sĩ chưa tên"
-                    });
-                }
-            });
-            setAvailableDoctors(uniqueDocs);
+            const response = await getAvailableDoctorSlots(deptId);
+            const allSlots = Array.isArray(response?.data) ? response.data : [];
+            setRescheduleSlots(allSlots);
+            const dates = [...new Set(allSlots.map((s) => s.slot_date).filter(Boolean))].sort();
+            if (dates.length > 0) {
+                setEditFormData({
+                    date: dates[0],
+                    startTime: '',
+                    slotId: '',
+                    doctorId: '',
+                });
+            } else {
+                setEditFormData({ date: '', startTime: '', slotId: '', doctorId: '' });
+            }
         } catch (error) {
-            console.error("Lỗi lấy danh sách bác sĩ:", error);
+            console.error('Lỗi tải slot trống:', error);
+            setRescheduleSlots([]);
+            setEditFormData({ date: '', startTime: '', slotId: '', doctorId: '' });
+            alert(error.response?.data?.message || 'Không tải được lịch trống của khoa.');
+        } finally {
+            setRescheduleSlotsLoading(false);
         }
     };
 
-    const handleDoctorChange = (drId) => {
-        // 1. Cập nhật ID bác sĩ và reset slot cũ
-        setEditFormData(prev => ({ ...prev, doctorId: drId, slotId: '' }));
+    const startEditing = () => {
+        setIsEditing(true);
+        setEditFormData({ date: '', startTime: '', slotId: '', doctorId: '' });
+        setRescheduleSlots([]);
+        loadRescheduleSlots();
+    };
 
-        // 2. Lọc trong kho rawSlots lấy ra các slot của ông bác sĩ này
-        const filteredSlots = rawSlots.filter(slot => String(slot.doctor_id) === String(drId));
-        setAvailableSlots(filteredSlots);
+    const resetReschedulePickerState = () => {
+        setRescheduleSlots([]);
+        setRescheduleSlotsLoading(false);
+        setEditFormData({ date: '', startTime: '', slotId: '', doctorId: '' });
+    };
+
+    const handleRescheduleCalendarChange = (date) => {
+        if (!date) return;
+        const ymd = toYMD(date);
+        setEditFormData((prev) => ({
+            ...prev,
+            date: ymd,
+            startTime: '',
+            slotId: '',
+            doctorId: '',
+        }));
+    };
+
+    const handlePickStartTime = (timeKey) => {
+        setEditFormData((prev) => ({
+            ...prev,
+            startTime: timeKey,
+            slotId: '',
+            doctorId: '',
+        }));
+    };
+
+    const handlePickDoctorSlot = (slot) => {
+        setEditFormData((prev) => ({
+            ...prev,
+            slotId: String(slot.slot_id),
+            doctorId: slot.doctor_id != null ? String(slot.doctor_id) : '',
+        }));
     };
 
     // 3. Khi nhấn "Lưu lịch mới" (Sử dụng API rescheduleAppointment mới)
+    const refreshAppointmentsForDate = async () => {
+        const yyyy = selectedDate.getFullYear();
+        const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(selectedDate.getDate()).padStart(2, '0');
+        const dateString = `${yyyy}-${mm}-${dd}`;
+        try {
+            const response = await getListAppointments({ date: dateString });
+            const responseData = response.data?.data || response?.data || response || [];
+            setAppointments(Array.isArray(responseData) ? responseData : []);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const handleSaveReschedule = async () => {
-        if (!editFormData.slotId) return alert("Vui lòng chọn khung giờ!");
+        if (!editFormData.slotId) {
+            return alert('Vui lòng chọn ngày, khung giờ và bác sĩ.');
+        }
 
         try {
             await rescheduleAppointment(selectedApt.appointment_id, {
-                slot_id: editFormData.slotId,
-                doctor_id: editFormData.doctorId // Cập nhật cả bác sĩ mới
+                new_slot_id: editFormData.slotId,
+                doctor_id: editFormData.doctorId || undefined,
             });
 
             alert("Đổi lịch và bác sĩ thành công!");
             setIsEditing(false);
+            resetReschedulePickerState();
             setShowModal(false);
-            // fetchAppointments(); // Gọi lại hàm load danh sách chính nếu cần
+            await refreshAppointmentsForDate();
         } catch (error) {
             alert(error.response?.data?.message || "Lỗi khi đổi lịch");
         }
@@ -364,8 +442,10 @@ const Dashboard = () => {
                                         className="hover:text-blue-600 mr-4 transition-all active:scale-90"
                                         title="Xem chi tiết đơn"
                                         onClick={() => {
-                                            setSelectedApt(apt); // Bước 1: Bỏ dữ liệu hàng này vào "túi"
-                                            setShowModal(true);   // Bước 2: Bật cái Box hiện lên
+                                            setSelectedApt(apt);
+                                            setIsEditing(false);
+                                            resetReschedulePickerState();
+                                            setShowModal(true);
                                         }}
                                     >
                                         <i className="fa-regular fa-eye text-lg"></i>
@@ -382,80 +462,124 @@ const Dashboard = () => {
 
             {showModal && selectedApt && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                    <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
                         {/* Header: Đổi tiêu đề dựa theo trạng thái */}
                         <div className={`p-6 border-b flex justify-between items-center ${isEditing ? 'bg-indigo-50' : 'bg-gray-50'}`}>
                             <h3 className="text-xl font-bold text-gray-800">
                                 {isEditing ? "Chỉnh sửa Lịch hẹn" : "Chi tiết Bệnh nhân"}
                             </h3>
-                            <button onClick={() => { setShowModal(false); setIsEditing(false); }} className="text-gray-400 hover:text-red-500 transition-colors">
+                            <button onClick={() => {
+                                setShowModal(false);
+                                setIsEditing(false);
+                                resetReschedulePickerState();
+                            }} className="text-gray-400 hover:text-red-500 transition-colors">
                                 <i className="fa-solid fa-xmark text-xl"></i>
                             </button>
                         </div>
 
                         {/* Body */}
-                        <div className="p-8 space-y-5 text-sm">
+                        <div className="p-8 space-y-5 text-sm overflow-y-auto flex-1">
                             <div className="flex justify-between items-center border-b pb-2">
                                 <span className="text-gray-500 font-medium">Tên Bệnh nhân:</span>
                                 <span className="font-bold text-gray-800 text-lg">{selectedApt.Patients?.Users?.full_name || "Chưa cập nhật"}</span>
                             </div>
 
                             {isEditing ? (
-                                /* --- GIAO DIỆN CHỈNH SỬA 3 TẦNG: NGÀY -> BÁC SĨ -> GIỜ --- */
-                                <div className="space-y-4 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 animate-in slide-in-from-bottom-2">
+                                <div className="space-y-5 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 animate-in slide-in-from-bottom-2">
+                                    <p className="text-xs text-indigo-800/80">
+                                        Ưu tiên theo thời gian: chọn ngày có lịch trống → chọn khung giờ → chọn bác sĩ.
+                                    </p>
 
-                                    {/* TẦNG 1: CHỌN NGÀY */}
+                                    {/* Bước 1–2: Calendar — chỉ bật các ngày có trong availableSlots */}
                                     <div>
-                                        <label className="text-[10px] font-bold text-indigo-600 uppercase italic">1. Chọn ngày khám mới:</label>
-                                        <input
-                                            type="date"
-                                            min={new Date().toISOString().split('T')[0]}
-                                            className="w-full border p-2 rounded-lg mt-1 outline-none focus:ring-2 focus:ring-indigo-400"
-                                            value={editFormData.date}
-                                            onChange={(e) => handleDateChange(e.target.value)}
-                                        />
+                                        <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">
+                                            1. Chọn ngày
+                                        </label>
+                                        {rescheduleSlotsLoading ? (
+                                            <p className="mt-2 text-gray-500 text-sm">Đang tải lịch trống…</p>
+                                        ) : rescheduleIncludeDates.length === 0 ? (
+                                            <p className="mt-2 text-amber-800 text-sm">
+                                                Không còn khung giờ trống trong khoa này.
+                                            </p>
+                                        ) : (
+                                            <div className="mt-2 flex justify-center">
+                                                <DatePicker
+                                                    selected={parseYMD(editFormData.date)}
+                                                    onChange={handleRescheduleCalendarChange}
+                                                    includeDates={rescheduleIncludeDates}
+                                                    locale={vi}
+                                                    dateFormat="dd/MM/yyyy"
+                                                    popperPlacement="bottom"
+                                                    portalId="root-portal"
+                                                    inline
+                                                    calendarClassName="!border-0 !shadow-none"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {/* TẦNG 2: CHỌN BÁC SĨ (Chỉ mở khi đã chọn ngày) */}
+                                    {/* Bước 3: Khung giờ trong ngày đã chọn */}
                                     <div>
-                                        <label className="text-[10px] font-bold text-indigo-600 uppercase italic">2. Bác sĩ chuyên khoa có lịch:</label>
-                                        <select
-                                            className="w-full border p-2 rounded-lg mt-1 outline-none disabled:bg-gray-100 disabled:text-gray-400"
-                                            value={editFormData.doctorId}
-                                            disabled={!editFormData.date || availableDoctors.length === 0}
-                                            onChange={(e) => handleDoctorChange(e.target.value)}
-                                        >
-                                            <option value="">
-                                                {editFormData.date
-                                                    ? (availableDoctors.length > 0 ? "-- Chọn bác sĩ --" : "Không có bác sĩ nào trực")
-                                                    : "Vui lòng chọn ngày trước"}
-                                            </option>
-                                            {availableDoctors.map(dr => (
-                                                <option key={dr.id} value={dr.id}>BS. {dr.name}</option>
-                                            ))}
-                                        </select>
+                                        <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">
+                                            2. Chọn khung giờ
+                                        </label>
+                                        {!editFormData.date ? (
+                                            <p className="mt-2 text-gray-400 text-sm">Chọn ngày ở bước 1.</p>
+                                        ) : uniqueStartTimes.length === 0 ? (
+                                            <p className="mt-2 text-gray-500 text-sm">Không có giờ trống trong ngày này.</p>
+                                        ) : (
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {uniqueStartTimes.map((t) => (
+                                                    <button
+                                                        key={t}
+                                                        type="button"
+                                                        onClick={() => handlePickStartTime(t)}
+                                                        className={`px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${editFormData.startTime === t
+                                                            ? 'bg-indigo-600 text-white border-indigo-600'
+                                                            : 'bg-white border-gray-200 text-gray-800 hover:bg-indigo-50 hover:border-indigo-200'
+                                                            }`}
+                                                    >
+                                                        {t}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {/* TẦNG 3: CHỌN GIỜ (Chỉ mở khi đã chọn bác sĩ) */}
+                                    {/* Bước 4: Bác sĩ có slot trùng giờ T trong ngày D */}
                                     <div>
-                                        <label className="text-[10px] font-bold text-indigo-600 uppercase italic">3. Khung giờ còn trống:</label>
-                                        <select
-                                            className="w-full border p-2 rounded-lg mt-1 outline-none disabled:bg-gray-100 disabled:text-gray-400"
-                                            value={editFormData.slotId}
-                                            disabled={!editFormData.doctorId || availableSlots.length === 0}
-                                            onChange={(e) => setEditFormData({ ...editFormData, slotId: e.target.value })}
-                                        >
-                                            <option value="">
-                                                {editFormData.doctorId
-                                                    ? (availableSlots.length > 0 ? "-- Chọn giờ khám --" : "Hết giờ trống")
-                                                    : "Vui lòng chọn bác sĩ trước"}
-                                            </option>
-                                            {availableSlots.map(slot => (
-                                                <option key={slot.slot_id} value={slot.slot_id}>
-                                                    {slot.start_time} - {slot.end_time}
-                                                </option>
-                                            ))}
-                                        </select>
+                                        <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">
+                                            3. Chọn bác sĩ
+                                        </label>
+                                        {!editFormData.startTime ? (
+                                            <p className="mt-2 text-gray-400 text-sm">Chọn khung giờ ở bước 2.</p>
+                                        ) : doctorsForSelectedTime.length === 0 ? (
+                                            <p className="mt-2 text-gray-500 text-sm">Không có bác sĩ cho khung giờ này.</p>
+                                        ) : (
+                                            <ul className="mt-2 space-y-2">
+                                                {doctorsForSelectedTime.map((slot) => {
+                                                    const picked = String(editFormData.slotId) === String(slot.slot_id);
+                                                    const name = slot.Doctors?.Users?.full_name || 'Bác sĩ';
+                                                    return (
+                                                        <li key={slot.slot_id}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handlePickDoctorSlot(slot)}
+                                                                className={`w-full text-left rounded-xl border px-4 py-3 transition-all ${picked
+                                                                    ? 'border-indigo-600 bg-indigo-100 ring-2 ring-indigo-400'
+                                                                    : 'border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/50'
+                                                                    }`}
+                                                            >
+                                                                <span className="font-semibold text-gray-900">BS. {name}</span>
+                                                                <span className="block text-xs text-gray-500 mt-0.5">
+                                                                    {slot.start_time} – {slot.end_time}
+                                                                </span>
+                                                            </button>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
@@ -490,7 +614,11 @@ const Dashboard = () => {
                             {isEditing ? (
                                 <>
                                     <button
-                                        onClick={() => setIsEditing(false)}
+                                        type="button"
+                                        onClick={() => {
+                                            setIsEditing(false);
+                                            resetReschedulePickerState();
+                                        }}
                                         className="flex-1 bg-white border py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100"
                                     >
                                         Hủy bỏ
