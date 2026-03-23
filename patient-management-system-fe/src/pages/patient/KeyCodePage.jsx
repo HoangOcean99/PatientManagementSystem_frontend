@@ -6,10 +6,10 @@ import { acceptEmailInvitationApi, inviteByEmailApi } from '../../api/patientApi
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 
 const RELATIONSHIP_OPTIONS = [
-    { value: 'father', label: 'Cha' },
-    { value: 'mother', label: 'Mẹ' },
-    { value: 'guardian', label: 'Người giám hộ' },
-    { value: 'other', label: 'Khác' },
+    { value: 'father', label: 'Tôi là Cha' },
+    { value: 'mother', label: 'Tôi là Mẹ' },
+    { value: 'guardian', label: 'Tôi là Người giám hộ' },
+    { value: 'other', label: 'Tôi là Người thân khác' },
 ];
 
 const KeyCodePage = () => {
@@ -51,8 +51,9 @@ const KeyCodePage = () => {
         try {
             setInviting(true);
             const res = await inviteByEmailApi(email.trim(), relationship);
-            toast.success(res.data?.message || 'Đã gửi lời mời qua email thành công!');
+            toast.success(res.data?.message || 'Đã gửi lời mời! Vui lòng xin lại mã từ email để nhập.');
             setEmail('');
+            setActiveTab('enter');
         } catch (err) {
             console.error('Send invite error:', err);
             toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi gửi lời mời');
@@ -185,7 +186,7 @@ const KeyCodePage = () => {
                                         </div>
 
                                         <div className="space-y-1.5">
-                                            <label className="text-sm font-bold text-gray-600 block">Mối quan hệ đối với bạn</label>
+                                            <label className="text-sm font-bold text-gray-600 block">Vai trò của bạn đối với người này</label>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                                     <i className="fa-solid fa-users text-gray-400"></i>
