@@ -90,8 +90,8 @@ const SelectSpecialtyPage = () => {
   }, [activeTab]);
 
   const filteredDepartments = departments.filter(d =>
-    d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.description.toLowerCase().includes(searchTerm.toLowerCase())
+    d.name?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+    d.description?.toLowerCase().includes(searchTerm?.toLowerCase())
   );
 
   const MotionDiv = motion.div;
