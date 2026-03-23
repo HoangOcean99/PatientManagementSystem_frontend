@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { vi } from "date-fns/locale";
 import toast from "react-hot-toast";
 import { supabase } from "../../../supabaseClient";
 import {
@@ -55,6 +58,23 @@ const formatSlotTime = (start, end) => {
   return b ? `${a} – ${b}` : a;
 };
 
+const toYMD = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+const parseYMD = (s) => {
+  if (!s) return null;
+  const parts = String(s).split("-").map(Number);
+  const [y, m, d] = parts;
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d);
+};
+
+const slotTimeKey = (t) => (t != null ? String(t).slice(0, 5) : "");
+
 const SectionBlock = ({ iconClass, title, children }) => (
   <section className="flex flex-col gap-4">
     <div className="flex items-center gap-2.5">
@@ -79,7 +99,12 @@ const AppointmentDetail = () => {
   const [rescheduleSlots, setRescheduleSlots] = useState([]);
   const [rescheduleSlotsLoading, setRescheduleSlotsLoading] = useState(false);
   const [rescheduleSubmitting, setRescheduleSubmitting] = useState(false);
-  const [selectedRescheduleSlot, setSelectedRescheduleSlot] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    date: "",
+    startTime: "",
+    slotId: "",
+    doctorId: "",
+  });
 
   const refreshAppointment = async () => {
     const {
@@ -198,17 +223,30 @@ const AppointmentDetail = () => {
     let cancelled = false;
     const loadSlots = async () => {
       setRescheduleSlotsLoading(true);
-      setSelectedRescheduleSlot(null);
+      setRescheduleSlots([]);
       try {
-        const res = await getAvailableDoctorSlots(departmentId);
-        const raw = res.data?.data ?? res.data ?? [];
-        const arr = Array.isArray(raw) ? raw : [];
-        if (!cancelled) setRescheduleSlots(arr);
+        const response = await getAvailableDoctorSlots(departmentId);
+        const raw = response?.data?.data ?? response?.data ?? [];
+        const allSlots = Array.isArray(raw) ? raw : [];
+        if (cancelled) return;
+        setRescheduleSlots(allSlots);
+        const dates = [...new Set(allSlots.map((s) => s.slot_date).filter(Boolean))].sort();
+        if (dates.length > 0) {
+          setEditFormData({
+            date: dates[0],
+            startTime: "",
+            slotId: "",
+            doctorId: "",
+          });
+        } else {
+          setEditFormData({ date: "", startTime: "", slotId: "", doctorId: "" });
+        }
       } catch (e) {
         console.error(e);
         if (!cancelled) {
           setRescheduleSlots([]);
-          toast.error("Không thể tải khung giờ trống");
+          setEditFormData({ date: "", startTime: "", slotId: "", doctorId: "" });
+          toast.error(e?.response?.data?.message || "Không thể tải khung giờ trống");
         }
       } finally {
         if (!cancelled) setRescheduleSlotsLoading(false);
@@ -220,6 +258,26 @@ const AppointmentDetail = () => {
       cancelled = true;
     };
   }, [rescheduleOpen, departmentId]);
+
+  const rescheduleIncludeDates = useMemo(() => {
+    const keys = [...new Set(rescheduleSlots.map((s) => s.slot_date).filter(Boolean))].sort();
+    return keys.map((k) => parseYMD(k)).filter(Boolean);
+  }, [rescheduleSlots]);
+
+  const slotsTheoNgay = useMemo(
+    () => rescheduleSlots.filter((s) => s.slot_date === editFormData.date),
+    [rescheduleSlots, editFormData.date]
+  );
+
+  const uniqueStartTimes = useMemo(() => {
+    const set = new Set(slotsTheoNgay.map((s) => slotTimeKey(s.start_time)));
+    return [...set].sort();
+  }, [slotsTheoNgay]);
+
+  const doctorsForSelectedTime = useMemo(() => {
+    if (!editFormData.startTime) return [];
+    return slotsTheoNgay.filter((s) => slotTimeKey(s.start_time) === editFormData.startTime);
+  }, [slotsTheoNgay, editFormData.startTime]);
 
   const statusLower = (appointment?.status || "").toLowerCase();
   const canCancelAppointment =
@@ -243,17 +301,62 @@ const AppointmentDetail = () => {
     }
   };
 
+  const resetReschedulePickerState = () => {
+    setRescheduleSlots([]);
+    setRescheduleSlotsLoading(false);
+    setEditFormData({ date: "", startTime: "", slotId: "", doctorId: "" });
+  };
+
   const openRescheduleModal = () => {
     if (!departmentId) {
       toast.error("Không xác định được khoa — không thể đổi lịch");
       return;
     }
+    setEditFormData({ date: "", startTime: "", slotId: "", doctorId: "" });
+    setRescheduleSlots([]);
+    setRescheduleSlotsLoading(true);
     setRescheduleOpen(true);
   };
 
+  const handleRescheduleCalendarChange = (date) => {
+    if (!date) return;
+    const ymd = toYMD(date);
+    setEditFormData((prev) => ({
+      ...prev,
+      date: ymd,
+      startTime: "",
+      slotId: "",
+      doctorId: "",
+    }));
+  };
+
+  const handlePickStartTime = (timeKey) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      startTime: timeKey,
+      slotId: "",
+      doctorId: "",
+    }));
+  };
+
+  const handlePickDoctorSlot = (slot) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      slotId: String(slot.slot_id),
+      doctorId: slot.doctor_id != null ? String(slot.doctor_id) : "",
+    }));
+  };
+
+  const closeRescheduleModal = () => {
+    if (rescheduleSubmitting) return;
+    setRescheduleOpen(false);
+    resetReschedulePickerState();
+  };
+
   const handleConfirmReschedule = async () => {
-    if (!appointment?.appointment_id || !selectedRescheduleSlot?.slot_id) {
-      toast.error("Vui lòng chọn khung giờ mới");
+    if (!appointment?.appointment_id) return;
+    if (!editFormData.slotId) {
+      toast.error("Vui lòng chọn ngày, khung giờ và bác sĩ.");
       return;
     }
     const currentSlotId = appointment?.DoctorSlots?.slot_id;
@@ -261,7 +364,7 @@ const AppointmentDetail = () => {
     if (
       !isCancelledAppointment &&
       currentSlotId &&
-      String(selectedRescheduleSlot.slot_id) === String(currentSlotId)
+      String(editFormData.slotId) === String(currentSlotId)
     ) {
       toast.error("Vui lòng chọn khung giờ khác với lịch hiện tại");
       return;
@@ -269,12 +372,12 @@ const AppointmentDetail = () => {
     setRescheduleSubmitting(true);
     try {
       await rescheduleAppointment(appointment.appointment_id, {
-        new_slot_id: selectedRescheduleSlot.slot_id,
-        doctor_id: selectedRescheduleSlot.doctor_id,
+        new_slot_id: editFormData.slotId,
+        doctor_id: editFormData.doctorId || undefined,
       });
       toast.success("Đã đặt lại lịch thành công");
       setRescheduleOpen(false);
-      setSelectedRescheduleSlot(null);
+      resetReschedulePickerState();
       await refreshAppointment();
     } catch (err) {
       console.error(err);
@@ -310,28 +413,6 @@ const AppointmentDetail = () => {
       </div>
     );
   }
-
-  const sortedRescheduleSlots = [...rescheduleSlots].sort((a, b) => {
-    const d = (a.slot_date || "").localeCompare(b.slot_date || "");
-    if (d !== 0) return d;
-    return (a.start_time || "").localeCompare(b.start_time || "");
-  });
-
-  const slotDoctorLabel = (slot) => {
-    const u = slot?.Doctors?.Users;
-    const name = Array.isArray(u) ? u[0]?.full_name : u?.full_name;
-    return name || "Bác sĩ";
-  };
-
-  const formatSlotRowDate = (d) =>
-    d
-      ? new Date(d).toLocaleDateString("vi-VN", {
-        weekday: "short",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
-      : "—";
 
   return (
     <div className="w-full min-h-full box-border bg-[#f8f9fa] px-4 sm:px-6 lg:px-8 py-6 md:py-8 font-sans text-slate-800 antialiased">
@@ -553,91 +634,150 @@ const AppointmentDetail = () => {
           role="dialog"
           aria-modal="true"
           aria-labelledby="reschedule-modal-title"
-          onClick={() => !rescheduleSubmitting && setRescheduleOpen(false)}
+          onClick={() => closeRescheduleModal()}
         >
           <div
-            className="bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(15,23,42,0.2)] max-w-lg w-full max-h-[85vh] flex flex-col border border-slate-200/90"
+            className="bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(15,23,42,0.2)] max-w-xl w-full max-h-[90vh] flex flex-col border border-slate-200/90"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-3">
+            <div
+              className={`px-5 py-4 border-b flex items-start justify-between gap-3 shrink-0 ${rescheduleSlotsLoading ? "bg-gray-50" : "bg-indigo-50/80"
+                }`}
+            >
               <div>
                 <h2 id="reschedule-modal-title" className="text-lg font-bold text-slate-900">
                   Đặt lại lịch khám
                 </h2>
                 <p className="text-sm text-slate-500 mt-1">
-                  Chọn khung giờ trống trong khoa — lịch sẽ chuyển về trạng thái chờ xác nhận.
+                  Chọn ngày có lịch trống → khung giờ → bác sĩ. Lịch sẽ chuyển về trạng thái chờ xác nhận.
                 </p>
               </div>
               <button
                 type="button"
                 disabled={rescheduleSubmitting}
-                onClick={() => setRescheduleOpen(false)}
-                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+                onClick={closeRescheduleModal}
+                className="p-2 rounded-lg text-slate-400 hover:bg-white/80 hover:text-slate-700 disabled:opacity-50"
                 aria-label="Đóng"
               >
                 <i className="fa-solid fa-xmark text-lg"></i>
               </button>
             </div>
 
-            <div className="px-5 py-3 overflow-y-auto flex-1 min-h-0">
+            <div className="px-5 py-4 overflow-y-auto flex-1 min-h-0">
               {rescheduleSlotsLoading ? (
                 <div className="flex justify-center py-12">
                   <LoadingSpinner />
                 </div>
-              ) : sortedRescheduleSlots.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-8">
-                  Hiện không còn khung giờ trống phù hợp. Vui lòng thử lại sau hoặc liên hệ lễ tân.
-                </p>
               ) : (
-                <ul className="space-y-2">
-                  {sortedRescheduleSlots.map((slot) => {
-                    const selected =
-                      selectedRescheduleSlot && selectedRescheduleSlot.slot_id === slot.slot_id;
-                    return (
-                      <li key={slot.slot_id}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedRescheduleSlot(slot)}
-                          className={`w-full text-left rounded-lg border px-3 py-3 transition-colors ${selected
-                            ? "border-sky-300 bg-sky-50 ring-1 ring-sky-200/80"
-                            : "border-slate-200 hover:border-slate-300 bg-white"
-                            }`}
-                        >
-                          <div className="flex justify-between gap-2 items-start">
-                            <span className="font-semibold text-slate-900 text-sm">
-                              {formatSlotRowDate(slot.slot_date)}
-                            </span>
-                            <span className="text-sm font-bold text-[#4A90E2] shrink-0 tabular-nums">
-                              {slot.start_time} – {slot.end_time}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-600 mt-1">
-                            <i className="fa-solid fa-user-doctor mr-1"></i>
-                            BS. {slotDoctorLabel(slot)}
-                          </p>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <div className="space-y-5 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                  <p className="text-xs text-indigo-800/80">
+                    Ưu tiên theo thời gian: chọn ngày có lịch trống → chọn khung giờ → chọn bác sĩ.
+                  </p>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">
+                      1. Chọn ngày
+                    </label>
+                    {rescheduleIncludeDates.length === 0 ? (
+                      <p className="mt-2 text-amber-800 text-sm">
+                        Không còn khung giờ trống trong khoa này. Vui lòng thử lại sau hoặc liên hệ lễ tân.
+                      </p>
+                    ) : (
+                      <div className="mt-2 flex justify-center">
+                        <DatePicker
+                          selected={parseYMD(editFormData.date)}
+                          onChange={handleRescheduleCalendarChange}
+                          includeDates={rescheduleIncludeDates}
+                          locale={vi}
+                          dateFormat="dd/MM/yyyy"
+                          popperPlacement="bottom"
+                          inline
+                          calendarClassName="!border-0 !shadow-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">
+                      2. Chọn khung giờ
+                    </label>
+                    {!editFormData.date ? (
+                      <p className="mt-2 text-gray-400 text-sm">Chọn ngày ở bước 1.</p>
+                    ) : uniqueStartTimes.length === 0 ? (
+                      <p className="mt-2 text-gray-500 text-sm">Không có giờ trống trong ngày này.</p>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {uniqueStartTimes.map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => handlePickStartTime(t)}
+                            className={`px-3 py-2 rounded-lg border text-sm font-semibold transition-colors ${editFormData.startTime === t
+                              ? "bg-indigo-600 text-white border-indigo-600"
+                              : "bg-white border-gray-200 text-gray-800 hover:bg-indigo-50 hover:border-indigo-200"
+                              }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-indigo-600 uppercase tracking-wide">
+                      3. Chọn bác sĩ
+                    </label>
+                    {!editFormData.startTime ? (
+                      <p className="mt-2 text-gray-400 text-sm">Chọn khung giờ ở bước 2.</p>
+                    ) : doctorsForSelectedTime.length === 0 ? (
+                      <p className="mt-2 text-gray-500 text-sm">Không có bác sĩ cho khung giờ này.</p>
+                    ) : (
+                      <ul className="mt-2 space-y-2">
+                        {doctorsForSelectedTime.map((slot) => {
+                          const picked = String(editFormData.slotId) === String(slot.slot_id);
+                          const u = slot.Doctors?.Users;
+                          const name = (Array.isArray(u) ? u[0]?.full_name : u?.full_name) || "Bác sĩ";
+                          return (
+                            <li key={slot.slot_id}>
+                              <button
+                                type="button"
+                                onClick={() => handlePickDoctorSlot(slot)}
+                                className={`w-full text-left rounded-xl border px-4 py-3 transition-all ${picked
+                                  ? "border-indigo-600 bg-indigo-100 ring-2 ring-indigo-400"
+                                  : "border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/50"
+                                  }`}
+                              >
+                                <span className="font-semibold text-gray-900">BS. {name}</span>
+                                <span className="block text-xs text-gray-500 mt-0.5">
+                                  {slot.start_time} – {slot.end_time}
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
-            <div className="px-5 py-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+            <div className="px-5 py-4 border-t border-slate-100 bg-gray-50 flex flex-col-reverse sm:flex-row gap-2 sm:justify-end shrink-0">
               <button
                 type="button"
                 disabled={rescheduleSubmitting}
-                onClick={() => setRescheduleOpen(false)}
-                className="px-4 py-2.5 rounded-lg border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 disabled:opacity-50"
+                onClick={closeRescheduleModal}
+                className="px-4 py-2.5 rounded-lg border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-white disabled:opacity-50"
               >
-                Hủy
+                Hủy bỏ
               </button>
               <button
                 type="button"
-                disabled={rescheduleSubmitting || !selectedRescheduleSlot || rescheduleSlotsLoading}
+                disabled={rescheduleSubmitting || !editFormData.slotId || rescheduleSlotsLoading}
                 onClick={handleConfirmReschedule}
-                className="px-4 py-2.5 rounded-lg text-white text-sm font-semibold disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
-                style={{ backgroundColor: PRIMARY }}
+                className="px-4 py-2.5 rounded-lg bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 shadow-lg"
               >
                 {rescheduleSubmitting ? (
                   <>
@@ -647,7 +787,7 @@ const AppointmentDetail = () => {
                 ) : (
                   <>
                     <i className="fa-solid fa-check"></i>
-                    Xác nhận đổi lịch
+                    Lưu lịch mới
                   </>
                 )}
               </button>
