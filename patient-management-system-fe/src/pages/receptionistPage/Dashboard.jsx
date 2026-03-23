@@ -96,7 +96,6 @@ const Dashboard = () => {
 
                 const response = await getListAppointments({ date: dateString });
                 const responseData = response.data?.data || response?.data || response || [];
-                console.log(responseData);
                 setAppointments(Array.isArray(responseData) ? responseData : []);
             } catch (error) {
                 console.error("Lỗi fetch:", error);

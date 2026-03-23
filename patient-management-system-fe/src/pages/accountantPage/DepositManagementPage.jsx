@@ -44,7 +44,6 @@ const DepositManagementPage = () => {
     try {
       setLoading(true);
       const res = await getPendingDeposits();
-      console.log(res.data);
       const mapped = (res.data || []).map((d, idx) => ({
         id: d.appointment_id,
         code: `DP${String(idx + 1).padStart(3, '0')}`,
