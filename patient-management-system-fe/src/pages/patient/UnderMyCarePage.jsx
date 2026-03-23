@@ -272,8 +272,12 @@ const UnderMyCarePage = () => {
                                     >
                                         <div className="relative bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] hover:border-blue-200/60 transition-all duration-500 p-5">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/15 flex-shrink-0">
-                                                    {initials}
+                                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/15 flex-shrink-0 overflow-hidden">
+                                                    {child.avatar_url ? (
+                                                        <img src={child.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        initials
+                                                    )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <h3 className="text-[15px] font-bold text-gray-800">{child.full_name || 'Chưa cập nhật'}</h3>
@@ -321,7 +325,7 @@ const UnderMyCarePage = () => {
                                             {/* Action Buttons */}
                                             <div className="mt-4 pt-4 border-t border-gray-100/60 flex justify-center">
                                                 <button
-                                                    onClick={() => navigate(`/patient/medical-records?patient_id=${childUserId}`)}
+                                                    onClick={() => navigate(`/patient/medical-records?patient_id=${childUserId}&name=${encodeURIComponent(child.full_name || '')}`)}
                                                     className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
                                                 >
                                                     <i className="fa-solid fa-file-medical"></i> Xem bệnh án

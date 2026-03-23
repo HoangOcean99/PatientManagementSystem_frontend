@@ -28,6 +28,7 @@ const MedicalRecordsPage = () => {
     const [records, setRecords] = useState([]);
     const [searchParams] = useSearchParams();
     const dependentId = searchParams.get('patient_id');
+    const dependentName = searchParams.get('name');
     const targetUserId = dependentId || userId;
 
     useEffect(() => {
@@ -243,7 +244,7 @@ const MedicalRecordsPage = () => {
                             <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Hồ sơ y tế</span>
                         </div>
                         <h1 className="text-2xl font-extrabold text-gray-900">
-                            Kết quả bệnh án {dependentId && <span className="text-blue-600 text-lg font-bold ml-2">(Người phụ thuộc)</span>}
+                            Kết quả bệnh án {dependentId && <span className="text-blue-600 text-lg font-bold ml-2">({dependentName || 'Người phụ thuộc'})</span>}
                         </h1>
                     </div>
 

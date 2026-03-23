@@ -14,7 +14,7 @@ const Header = () => {
             if (session?.user) {
                 const tempAvatar = session.user.user_metadata?.picture || '';
                 setAvatar(tempAvatar);
-                
+
                 const userId = session.user.id;
                 const res = await getUserById(userId);
                 if (res?.data?.data?.avatar_url) {
