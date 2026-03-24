@@ -5,6 +5,8 @@ import {
     CalendarDays, Activity, Video, CreditCard, Clock, ShieldCheck,
     Zap, Baby, Heart, Stethoscope, Dna, BrainCircuit, Mic, PlusSquare
 } from 'lucide-react';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import baseApi from '../../api/baseApi';
 
 // === CSS TÙY CHỈNH: IMPORT FONTS, SÓNG NƯỚC & LẬT THẺ 3D ===
 const customStyles = `
@@ -131,13 +133,45 @@ const DepartmentCard = ({ icon: Icon, name, shortDesc, description, services }) 
 
 const LandingPage = () => {
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isServerReady, setIsServerReady] = useState(false);
     const navigate = useNavigate();
+
+    // Ping server trước khi render trang
+    useEffect(() => {
+        baseApi.healthCheck()
+            .catch(() => {})
+            .finally(() => setIsServerReady(true));
+    }, []);
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 20);
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    if (!isServerReady) {
+        return (
+            <div
+                className="fixed inset-0 flex flex-col items-center justify-center gap-4"
+                style={{
+                    backgroundColor: '#f8fafc',
+                    backgroundImage: `linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px)`,
+                    backgroundSize: '40px 40px',
+                    fontFamily: '"Nunito", system-ui, sans-serif'
+                }}
+            >
+                <style>{customStyles}</style>
+                <div className="flex items-center gap-2 mb-2">
+                    <HeartPulse size={36} className="text-blue-500" />
+                    <span className="text-2xl font-bold text-slate-700" style={{ fontFamily: '"Quicksand", sans-serif' }}>
+                        MedSchedule
+                    </span>
+                </div>
+                <LoadingSpinner />
+                <p className="text-slate-500 text-sm font-medium animate-pulse mt-2">Đang kết nối tới máy chủ...</p>
+            </div>
+        );
+    }
 
     const departmentsData = [
         {

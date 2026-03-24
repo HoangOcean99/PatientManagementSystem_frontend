@@ -195,18 +195,17 @@ const LoginPage = () => {
                             </div>
                             <button
                                 disabled={isLoadingLogin}
-                                className={`w-full font-bold py-4 rounded-2xl transition-all shadow-xl active:scale-[0.98] text-sm
-                                ${isLoadingLogin
-                                        ? "bg-gray-500 cursor-not-allowed text-white"
+                                className={`w-full font-bold py-4 rounded-2xl transition-all shadow-xl active:scale-[0.98] text-sm flex items-center justify-center
+                                    ${isLoadingLogin
+                                        ? "bg-gray-500 cursor-not-allowed"
                                         : "bg-gray-800 hover:bg-black text-white"}
-    `}
+                                    `}
                             >
-                                {isLoadingLogin
-                                    ? <div className="relative flex-1">
-                                        {isLoadingLogin && <LoadingSpinner />}
-                                    </div>
-                                    : <span>Đăng nhập vào tài khoản trẻ</span>
-                                }
+                                {isLoadingLogin ? (
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                    <span>Đăng nhập vào tài khoản trẻ</span>
+                                )}
                             </button>
                         </form>
                     </div>

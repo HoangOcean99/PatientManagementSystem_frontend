@@ -282,9 +282,9 @@ const RegisterKidPage = () => {
                                     ${isLoading ? "bg-gray-500 cursor-not-allowed text-white"
                                         : "bg-gray-800 hover:bg-black text-white"}`}
                             >
-                                {isLoading ? <div className="relative flex-1">
-                                    <LoadingSpinner />
-                                </div> :
+                                {isLoading ?
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    :
                                     <div>Gửi mã OTP xác nhận</div>
                                 }
                             </button>
