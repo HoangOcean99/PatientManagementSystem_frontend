@@ -131,9 +131,76 @@ const DepartmentCard = ({ icon: Icon, name, shortDesc, description, services }) 
     );
 };
 
+const InfoModal = ({ isOpen, onClose, title, icon: Icon, content }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div 
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"
+                onClick={onClose}
+            />
+            <div className="relative w-full max-w-2xl bg-white rounded-[2rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-white/20">
+                {/* Header with Gradient */}
+                <div className="bg-gradient-to-r from-[#76c2f5] to-[#9f8de9] px-8 py-6 flex items-center justify-between text-white">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                            <Icon size={24} className="text-white" strokeWidth={2.5} />
+                        </div>
+                        <h3 className="text-2xl font-bold tracking-tight" style={{ fontFamily: '"Quicksand", sans-serif' }}>
+                            {title}
+                        </h3>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 text-white transition-all hover:rotate-90"
+                    >
+                        <span className="text-2xl">✕</span>
+                    </button>
+                </div>
+
+                {/* Content Area */}
+                <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    <div className="space-y-6">
+                        {content}
+                    </div>
+                </div>
+
+                {/* Footer and Close Button */}
+                <div className="px-8 py-6 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                    <button
+                        onClick={onClose}
+                        className="bg-gradient-to-r from-[#76c2f5] to-[#9f8de9] text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-blue-300/50 transition-all active:scale-95 flex items-center gap-2"
+                    >
+                        <span>Tôi đã hiểu</span>
+                        <CheckCircle2 size={18} />
+                    </button>
+                </div>
+            </div>
+            
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: #e2e8f0;
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #cbd5e1;
+                }
+            `}</style>
+        </div>
+    );
+};
+
 const LandingPage = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isServerReady, setIsServerReady] = useState(false);
+    const [activeModal, setActiveModal] = useState(null); // 'terms', 'privacy', or null
     const navigate = useNavigate();
 
     // Ping server trước khi render trang
@@ -399,8 +466,18 @@ const LandingPage = () => {
                     </div>
                     <div className="flex gap-8 text-sm font-bold text-slate-600">
                         <a href="#home" className="hover:text-blue-600">Trang chủ</a>
-                        <a href="#" className="hover:text-blue-600">Điều khoản</a>
-                        <a href="#" className="hover:text-blue-600">Bảo mật</a>
+                        <button 
+                            onClick={() => setActiveModal('terms')}
+                            className="hover:text-blue-600 transition-colors"
+                        >
+                            Điều khoản
+                        </button>
+                        <button 
+                            onClick={() => setActiveModal('privacy')}
+                            className="hover:text-blue-600 transition-colors"
+                        >
+                            Bảo mật
+                        </button>
                     </div>
                     <p className="text-slate-400 text-sm font-medium">
                         <a
@@ -412,6 +489,71 @@ const LandingPage = () => {
                     </p>
                 </div>
             </footer>
+
+            {/* Modals */}
+            <InfoModal
+                isOpen={activeModal === 'terms'}
+                onClose={() => setActiveModal(null)}
+                title="Điều khoản sử dụng"
+                icon={PlusSquare}
+                content={
+                    <>
+                        <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                            <h4 className="font-extrabold text-[#2f9ce5] mb-2 flex items-center gap-2">
+                                <span className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-xs shadow-sm">1</span>
+                                Chấp nhận điều khoản
+                            </h4>
+                            <p className="text-slate-600 pl-8">Bằng việc truy cập và sử dụng dịch vụ MedSchedule, bạn mặc định đồng ý tuân thủ toàn bộ các điều khoản và điều kiện được nêu tại văn bản này.</p>
+                        </div>
+                        <div className="p-5 bg-purple-50/50 rounded-2xl border border-purple-100/50">
+                            <h4 className="font-extrabold text-[#9181de] mb-2 flex items-center gap-2">
+                                <span className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-xs shadow-sm">2</span>
+                                Phạm vi dịch vụ
+                            </h4>
+                            <p className="text-slate-600 pl-8">MedSchedule là nền tảng trung gian kết nối và đặt lịch. Chúng tôi không thực hiện các hoạt động chuyên môn y tế trực tiếp tại nền tảng này.</p>
+                        </div>
+                        <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/50">
+                            <h4 className="font-extrabold text-slate-700 mb-2 flex items-center gap-2">
+                                <span className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-xs shadow-sm">3</span>
+                                Bảo mật & Trách nhiệm
+                            </h4>
+                            <p className="text-slate-600 pl-8">Bạn có trách nhiệm bảo mật thông tin tài khoản cá nhân. Mọi hoạt động phát sinh từ tài khoản của bạn sẽ được coi là do chính bạn thực hiện.</p>
+                        </div>
+                    </>
+                }
+            />
+
+            <InfoModal
+                isOpen={activeModal === 'privacy'}
+                onClose={() => setActiveModal(null)}
+                title="Chính sách bảo mật"
+                icon={ShieldCheck}
+                content={
+                    <>
+                        <div className="p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                            <h4 className="font-extrabold text-emerald-600 mb-2 flex items-center gap-2">
+                                <ShieldCheck size={20} />
+                                Bảo vệ dữ liệu cá nhân
+                            </h4>
+                            <p className="text-slate-600">Chúng tôi cam kết bảo vệ thông tin cá nhân và dữ liệu y tế của bạn với tiêu chuẩn mã hóa cao nhất hiện nay (AES-256).</p>
+                        </div>
+                        <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                            <h4 className="font-extrabold text-blue-600 mb-2 flex items-center gap-2">
+                                <Activity size={20} />
+                                Mục đích thu thập
+                            </h4>
+                            <p className="text-slate-600">Thông tin được thu thập chỉ nhằm mục đích xác thực danh tính khi đặt lịch và cung cấp cho bác sĩ hồ sơ cần thiết trước khi thăm khám.</p>
+                        </div>
+                        <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200/50">
+                            <h4 className="font-extrabold text-slate-700 mb-2 flex items-center gap-2">
+                                <Video size={20} />
+                                Quyền riêng tư y tế
+                            </h4>
+                            <p className="text-slate-600">Dữ liệu bệnh án của bạn sẽ không bao giờ được chia sẻ cho bên thứ ba vì mục đích thương mại nếu không được sự đồng ý bằng văn bản của chính bạn.</p>
+                        </div>
+                    </>
+                }
+            />
         </div>
     );
 };
