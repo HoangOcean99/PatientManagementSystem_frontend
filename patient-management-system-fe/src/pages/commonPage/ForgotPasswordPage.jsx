@@ -239,7 +239,12 @@ const ForgotPasswordPage = () => {
                         <p className="text-gray-400 text-xs font-semibold">
                             Bạn gặp khó khăn khi khôi phục tài khoản?
                             <br />
-                            <span className="text-blue-600 cursor-pointer hover:underline">Liên hệ bộ phận hỗ trợ</span>
+                            <a
+                                href="tel:0968178905"
+                                className="text-blue-600 cursor-pointer hover:underline"
+                            >
+                                Liên hệ bộ phận hỗ trợ
+                            </a>
                         </p>
                     </div>
                 </div>

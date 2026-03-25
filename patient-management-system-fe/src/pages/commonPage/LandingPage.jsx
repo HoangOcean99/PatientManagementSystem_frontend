@@ -139,7 +139,7 @@ const LandingPage = () => {
     // Ping server trước khi render trang
     useEffect(() => {
         baseApi.healthCheck()
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => setIsServerReady(true));
     }, []);
 
@@ -161,14 +161,7 @@ const LandingPage = () => {
                 }}
             >
                 <style>{customStyles}</style>
-                <div className="flex items-center gap-2 mb-2">
-                    <HeartPulse size={36} className="text-blue-500" />
-                    <span className="text-2xl font-bold text-slate-700" style={{ fontFamily: '"Quicksand", sans-serif' }}>
-                        MedSchedule
-                    </span>
-                </div>
                 <LoadingSpinner />
-                <p className="text-slate-500 text-sm font-medium animate-pulse mt-2">Đang kết nối tới máy chủ...</p>
             </div>
         );
     }
@@ -409,7 +402,14 @@ const LandingPage = () => {
                         <a href="#" className="hover:text-blue-600">Điều khoản</a>
                         <a href="#" className="hover:text-blue-600">Bảo mật</a>
                     </div>
-                    <p className="text-slate-400 text-sm font-medium">medschedule2026@gmail.com</p>
+                    <p className="text-slate-400 text-sm font-medium">
+                        <a
+                            href="mailto:medschedule2026@gmail.com?subject=Hỗ trợ khôi phục tài khoản&body=Chào admin,"
+                            className="hover:underline"
+                        >
+                            medschedule2026@gmail.com
+                        </a>
+                    </p>
                 </div>
             </footer>
         </div>
