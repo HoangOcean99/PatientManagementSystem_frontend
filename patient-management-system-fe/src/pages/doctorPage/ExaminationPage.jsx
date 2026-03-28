@@ -632,9 +632,10 @@ const ExaminationPage = () => {
       if (appointment) {
         const servicePrice = Number(appointment.total_price || 0);
         invoiceItems.push({
-          name: `Phí khám: ${appointment.service_name || 'Khám chuyên khoa'}`,
+          item_name: `Phí khám: ${appointment.service_name || 'Khám chuyên khoa'}`,
           quantity: 1,
-          price: servicePrice,
+          subtotal: servicePrice,
+          unit_price: servicePrice
         });
         totalAmount += servicePrice;
       }
@@ -645,9 +646,10 @@ const ExaminationPage = () => {
         const service = labServices.find((s) => s.lab_service_id === lab.lab_service_id);
         const price = Number(service?.price || 0);
         invoiceItems.push({
-          name: `Xét nghiệm: ${lab.lab_service_name || 'Dịch vụ CLS'}`,
+          item_name: `Xét nghiệm: ${lab.lab_service_name || 'Dịch vụ CLS'}`,
           quantity: 1,
-          price: price,
+          subtotal: price,
+          unit_price: price
         });
         totalAmount += price;
       });
@@ -655,8 +657,9 @@ const ExaminationPage = () => {
       const invoiceData = {
         patient_id: patient.patient_id,
         appointment_id: appointment.appointment_id,
-        total_price: totalAmount,
-        payment_status: 'pending',
+        total_amount: totalAmount,
+        payment_status: 'partial',
+        payment_method: 'transfer',
         items: invoiceItems,
       };
 
