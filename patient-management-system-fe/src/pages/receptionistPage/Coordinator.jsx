@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { getListAppointments, assignAppointmentToRoom } from '../../api/appointmentApi';
 import { getListActiveRooms } from '../../api/roomApi';
 import { getAllDepartments } from '../../api/departmentsApi';
@@ -157,7 +158,12 @@ const Coordinator = () => {
 
     const handleAssignClick = async (roomId) => {
         if (!selectedAppointmentId) {
-            alert("Vui lòng chọn appointment để gán!");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Chưa chọn cuộc hẹn',
+                text: 'Vui lòng chọn một cuộc hẹn từ danh sách trước khi gán phòng!',
+                confirmButtonColor: '#3085d6',
+            });
             return;
         }
 
@@ -202,10 +208,20 @@ const Coordinator = () => {
             );
 
             setSelectedAppointmentId(null);
-            alert("Gán bệnh nhân vào phòng thành công!");
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công',
+                text: 'Gán bệnh nhân vào phòng thành công!',
+                timer: 2000,
+                showConfirmButton: false
+            });
         } catch (error) {
             console.error("Lỗi khi gán:", error);
-            alert(error.response?.data?.message || "Có lỗi xảy ra khi gán!");
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: error.response?.data?.message || "Có lỗi xảy ra khi gán!",
+            });
         }
     };
 
@@ -345,7 +361,7 @@ const Coordinator = () => {
                                                         {appt.status}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 text-center">
+                                                {/* <td className="px-6 py-4 text-center">
                                                     <div className="flex items-center justify-center gap-3">
                                                         <button
                                                             className="w-10 h-10 rounded-xl bg-purple-50 text-[#7857DB] hover:bg-[#7857DB] hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
@@ -360,7 +376,7 @@ const Coordinator = () => {
                                                             <i className="fa-solid fa-user-plus text-sm"></i>
                                                         </button>
                                                     </div>
-                                                </td>
+                                                </td> */}
                                             </tr>
                                         ))
                                     ) : (
@@ -506,6 +522,16 @@ const Coordinator = () => {
                                                 <span className="inline-block w-28 text-center bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
                                             )}
                                         </div>
+                                        {room.room_status?.toLowerCase().replace(/\s/g, '') === 'readytoexame' &&
+                                            !room.assignedAppointment &&
+                                            selectedAppointmentId && (
+                                                <button
+                                                    onClick={() => handleAssignClick(room.room_id)}
+                                                    className="bg-[#1c4e11] hover:bg-[#2a751a] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer shadow-sm"
+                                                >
+                                                    Gán ngay
+                                                </button>
+                                            )}
                                     </div>
                                 </div>
                             ))
