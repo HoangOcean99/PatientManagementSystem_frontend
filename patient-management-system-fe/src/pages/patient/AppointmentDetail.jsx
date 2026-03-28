@@ -609,23 +609,22 @@ const AppointmentDetail = () => {
                     Hủy lịch hẹn
                   </button>
                 ) : null}
-                {((appointment?.Invoices?.payment_status === 'unpaid') || (!appointment?.Invoices && balance > 0)) &&
-                  statusLower !== "cancelled" && statusLower !== "completed" && (
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/patient/payment/${id}`, {
-                        state: {
-                          appointment: appointment,
-                          service: appointment.ClinicServices
-                        }
-                      })}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-bold shadow-sm hover:opacity-90 transition-all active:scale-95 transition-colors"
-                      style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
-                    >
-                      <i className="fa-solid fa-credit-card"></i>
-                      Đặt cọc ngay
-                    </button>
-                  )}
+                {(appointment?.Invoices?.payment_status === 'unpaid') && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/patient/payment/${id}`, {
+                      state: {
+                        appointment: appointment,
+                        service: appointment.ClinicServices
+                      }
+                    })}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-white text-sm font-bold shadow-sm hover:opacity-90 transition-all active:scale-95 transition-colors"
+                    style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                  >
+                    <i className="fa-solid fa-credit-card"></i>
+                    Đặt cọc ngay
+                  </button>
+                )}
                 {canRescheduleAppointment ? (
                   <button
                     type="button"
