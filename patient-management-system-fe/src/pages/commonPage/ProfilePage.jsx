@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as Icons from "lucide-react";
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { dataURLtoFile } from "../../helpers/imageUtils";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -148,6 +149,7 @@ const ProfilePage = ({ role = "user", initialData = {}, handleUpdateUser }) => {
     const [stream, setStream] = useState(null);
     const [avatarFile, setAvatarFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
 
     useEffect(() => {
         if (showCamera && videoRef.current && stream) {
@@ -236,13 +238,32 @@ const ProfilePage = ({ role = "user", initialData = {}, handleUpdateUser }) => {
             [name]: value
         }));
     };
+    const validateForm = () => {
+        const fields = profileFields[role] || profileFields.user;
+        for (const field of fields) {
+            if (!formData[field.name]?.toString().trim() && !field.disabled) {
+                toast.error(`Vui lòng điền trường: ${field.label}`);
+                return false;
+            }
+            if (field.name === "phone_number") {
+                const phoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/;
+                if (!phoneRegex.test(formData[field.name])) {
+                    toast.error("Số điện thoại không hợp lệ!");
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+
     const handleSave = async () => {
+        if (!validateForm()) return;
         try {
             setIsLoading(true);
             await handleUpdateUser(formData, avatarFile);
             toast.success('Cập nhật thông tin thành công')
         } catch (err) {
-            toast.success('Cập nhật thông tin thất bại')
+            toast.error('Cập nhật thông tin thất bại')
         } finally {
             setIsLoading(false);
         }
@@ -285,19 +306,27 @@ const ProfilePage = ({ role = "user", initialData = {}, handleUpdateUser }) => {
                 <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center">
 
                     {/* Phần hiển thị Avatar */}
-                    <div className="relative group">
+                    <div className="relative group/avatar cursor-pointer transition-all duration-300 active:scale-95" onClick={() => setIsImagePreviewOpen(true)}>
                         {/* Avatar Display */}
-                        <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center border-4 border-white shadow-md overflow-hidden">
+                        <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center border-4 border-white shadow-md overflow-hidden group-hover/avatar:ring-4 group-hover/avatar:ring-blue-100 transition-all">
                             {formData.avatar_url ? (
                                 <img src={formData.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                             ) : (
                                 <Icons.User size={64} className="text-blue-300" />
                             )}
+
+                            {/* Overlay icon on hover */}
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+                                <Icons.Maximize2 className="text-white drop-shadow-lg" size={24} />
+                            </div>
                         </div>
 
                         {/* Nút Camera chính */}
                         <button
-                            onClick={() => setShowImageOptions(!showImageOptions)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowImageOptions(!showImageOptions);
+                            }}
                             className="absolute bottom-0 right-0 p-2 bg-blue-600 rounded-full shadow-lg border-2 border-white text-white hover:bg-blue-700 transition-all"
                         >
                             <Icons.Camera size={18} />
@@ -407,6 +436,48 @@ const ProfilePage = ({ role = "user", initialData = {}, handleUpdateUser }) => {
                     </div>
                 )}
             </div>
+
+            {/* Lightbox Preview */}
+            <AnimatePresence>
+                {isImagePreviewOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
+                        onClick={() => setIsImagePreviewOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.5, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                            className="relative max-w-full max-h-full"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {formData.avatar_url ? (
+                                <img
+                                    src={formData.avatar_url}
+                                    alt="Profile Full View"
+                                    className="w-[41vw] h-[90vh] rounded-3xl object-contain shadow-2xl border-4 border-white/10"
+                                />
+                            ) : (
+                                <div className="p-20 bg-white/10 rounded-3xl border border-white/20 flex flex-col items-center gap-4">
+                                    <Icons.User size={120} className="text-white/20" />
+                                    <p className="text-white/40 font-medium italic">Chưa có ảnh đại diện</p>
+                                </div>
+                            )}
+
+                            <button
+                                onClick={() => setIsImagePreviewOpen(false)}
+                                className="absolute -top-4 -right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all text-gray-800"
+                            >
+                                <Icons.X size={20} />
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </main>
     );
 };

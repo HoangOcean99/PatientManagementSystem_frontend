@@ -5,7 +5,7 @@ import { getAllPatients } from '../../api/patientApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import toast from 'react-hot-toast';
-import { updateUserRoleApi } from '../../api/userApi';
+import { updateUserRoleApi, updateUserStatusApi } from '../../api/userApi';
 import Swal from 'sweetalert2';
 import Pagination from '../../components/common/Pagination';
 
@@ -41,7 +41,9 @@ const calcAge = (dateStr) => {
 };
 
 /* ─── Patient Row Card ─── */
-const PatientRow = ({ patient, index, order, onEdit, onRoleChange }) => {
+const PatientRow = ({ patient, index, order, onEdit, onRoleChange, onStatusChange }) => {
+    const status = patient.Users?.status || 'active';
+    const isActive = status === 'active';
     const g = GENDER_MAP[patient.Users?.gender] || GENDER_MAP.other;
     const age = calcAge(patient.Users?.dob);
     const name = patient.Users?.full_name || 'Chưa cập nhật';
@@ -139,7 +141,19 @@ const PatientRow = ({ patient, index, order, onEdit, onRoleChange }) => {
                             <option value="receptionist">Lễ tân</option>
                             <option value="accountant">Kế toán</option>
                         </select>
-                        {patient.Users?.status === 'active' && (
+                        {onStatusChange && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onStatusChange(patient.Users?.user_id || patient.user_id, isActive ? 'inactive' : 'active'); }}
+                                className={`hidden md:inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-all active:scale-95 border ${isActive
+                                    ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-600 hover:text-white'
+                                    : 'bg-green-50 text-green-700 border-green-100 hover:bg-green-600 hover:text-white'
+                                    }`}
+                            >
+                                <i className={`fa-solid ${isActive ? 'fa-user-slash' : 'fa-user-check'}`}></i>
+                                {isActive ? 'Chặn' : 'Kích hoạt'}
+                            </button>
+                        )}
+                        {isActive && (
                             <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                 Hoạt động
@@ -221,6 +235,33 @@ const PatientListPage = () => {
         }
     };
 
+    const handleStatusChange = async (userId, newStatus) => {
+        const isBanning = newStatus === 'inactive';
+        const result = await Swal.fire({
+            title: isBanning ? 'Chặn tài khoản?' : 'Kích hoạt tài khoản?',
+            text: isBanning
+                ? "Người dùng này sẽ không thể đăng nhập vào hệ thống sau khi bị chặn."
+                : "Người dùng này sẽ có thể đăng nhập lại vào hệ thống.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: isBanning ? '#d33' : '#3085d6',
+            cancelButtonColor: '#aaa',
+            confirmButtonText: isBanning ? 'Chặn ngay' : 'Kích hoạt',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await updateUserStatusApi(userId, newStatus);
+            toast.success(isBanning ? 'Đã chặn tài khoản' : 'Đã kích hoạt tài khoản');
+            refetch();
+        } catch (err) {
+            console.error(err);
+            toast.error('Lỗi khi cập nhật trạng thái');
+        }
+    };
+
     const filtered = useMemo(() => {
         return patients.filter((p) => {
             const combined = `${p.patient_id} ${p.Users?.full_name || ''} ${p.Users?.phone_number || ''}`.toLowerCase();
@@ -241,7 +282,7 @@ const PatientListPage = () => {
     }), [patients]);
 
     return (
-        <div className="min-h-screen font-sans relative overflow-y-auto" style={{ width: '100vw', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
+        <div className="min-h-screen font-sans relative overflow-y-auto" style={{ width: '100%', background: 'linear-gradient(160deg, #eff6ff 0%, #f8fafc 50%, #eef2ff 100%)' }}>
             {scrollbarStyles}
 
             {/* ─── Header ─── */}
@@ -344,6 +385,7 @@ const PatientListPage = () => {
                                         order={(currentPage - 1) * pageSize + idx + 1}
                                         onEdit={(p) => navigate(`/admin/patients/${p.patient_id}/edit`, { state: { patient: p } })}
                                         onRoleChange={handleRoleChange}
+                                        onStatusChange={handleStatusChange}
                                     />
                                 ))}
                             </AnimatePresence>
@@ -352,7 +394,7 @@ const PatientListPage = () => {
                         {/* Pagination */}
                         {totalPages > 1 && (
                             <div className="flex items-center justify-center mt-10">
-                                <Pagination 
+                                <Pagination
                                     currentPage={currentPage}
                                     totalPages={totalPages}
                                     onPageChange={setCurrentPage}

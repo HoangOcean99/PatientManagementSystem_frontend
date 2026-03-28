@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import scrollbarStyles from '../../helpers/styleCss/ScrollbarStyles';
 import toast from 'react-hot-toast';
-import { getAllAdmins, getAllReceptionists, getAllAccountants, updateUserRoleApi } from '../../api/userApi';
+import { getAllAdmins, getAllReceptionists, getAllAccountants, updateUserRoleApi, updateUserStatusApi } from '../../api/userApi';
 import Swal from 'sweetalert2';
 import Pagination from '../../components/common/Pagination';
+import { supabase } from '../../../supabaseClient';
 
 // ===== HELPERS =====
 const ROLE_CONFIG = {
@@ -64,7 +65,10 @@ const GENDER_MAP = {
 };
 
 // ===== STAFF ROW CARD =====
-const StaffRow = ({ staff, index, order, roleConfig, onEdit, onRoleChange }) => {
+const StaffRow = ({ staff, index, order, roleConfig, role, currentId, onEdit, onRoleChange, onStatusChange }) => {
+    const isSelf = staff?.user_id === currentId;
+    const status = staff?.Users?.status || staff?.status || 'active';
+    const isActive = status === 'active';
     const g = GENDER_MAP[staff?.gender] || GENDER_MAP.other;
     const age = calcAge(staff?.dob);
     const name = staff?.full_name || 'Chưa cập nhật';
@@ -146,9 +150,10 @@ const StaffRow = ({ staff, index, order, roleConfig, onEdit, onRoleChange }) => 
 
                     <div className="flex items-center gap-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
                         <select
-                            value={roleConfig?.idField?.replace('_id', '')}
+                            value={role}
                             onChange={(e) => onRoleChange(staff.user_id, e.target.value)}
-                            className="bg-gray-50 hover:bg-white border border-gray-200 text-gray-700 font-medium text-[11px] rounded-lg p-1.5 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-sm transition-all outline-none"
+                            disabled={isSelf}
+                            className={`bg-gray-50 hover:bg-white border border-gray-200 text-gray-700 font-medium text-[11px] rounded-lg p-1.5 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-sm transition-all outline-none ${isSelf ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             <option value="admin">Quản trị viên</option>
                             <option value="receptionist">Lễ tân</option>
@@ -156,7 +161,19 @@ const StaffRow = ({ staff, index, order, roleConfig, onEdit, onRoleChange }) => 
                             <option value="doctor">Bác sĩ</option>
                             <option value="patient">Bệnh nhân</option>
                         </select>
-                        {staff?.status === 'active' && (
+                        {onStatusChange && !isSelf && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onStatusChange(staff.user_id, isActive ? 'inactive' : 'active'); }}
+                                className={`hidden md:inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-all active:scale-95 border ${isActive
+                                    ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-600 hover:text-white'
+                                    : 'bg-green-50 text-green-700 border-green-100 hover:bg-green-600 hover:text-white'
+                                    }`}
+                            >
+                                <i className={`fa-solid ${isActive ? 'fa-user-slash' : 'fa-user-check'}`}></i>
+                                {isActive ? 'Chặn' : 'Kích hoạt'}
+                            </button>
+                        )}
+                        {isActive && (
                             <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                 Hoạt động
@@ -187,9 +204,18 @@ const StaffListingPage = () => {
 
     const [staff, setStaff] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentId, setCurrentId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) setCurrentId(user.id);
+        };
+        fetchUser();
+    }, []);
 
     useEffect(() => {
         const fetchStaff = async () => {
@@ -244,6 +270,33 @@ const StaffListingPage = () => {
         } catch (err) {
             console.error(err);
             toast.error('Lỗi khi cập nhật chức danh');
+        }
+    };
+
+    const handleStatusChange = async (userId, newStatus) => {
+        const isBanning = newStatus === 'inactive';
+        const result = await Swal.fire({
+            title: isBanning ? 'Chặn tài khoản?' : 'Kích hoạt tài khoản?',
+            text: isBanning
+                ? "Nhân viên này sẽ không thể đăng nhập vào hệ thống sau khi bị chặn."
+                : "Nhân viên này sẽ có thể đăng nhập lại vào hệ thống.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: isBanning ? '#d33' : '#3085d6',
+            cancelButtonColor: '#aaa',
+            confirmButtonText: isBanning ? 'Chặn ngay' : 'Kích hoạt',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await updateUserStatusApi(userId, newStatus);
+            toast.success(isBanning ? 'Đã chặn tài khoản' : 'Đã kích hoạt tài khoản');
+            refetch();
+        } catch (err) {
+            console.error(err);
+            toast.error('Lỗi khi cập nhật trạng thái');
         }
     };
 
@@ -366,8 +419,11 @@ const StaffListingPage = () => {
                                         index={idx}
                                         order={(currentPage - 1) * pageSize + idx + 1}
                                         roleConfig={roleConfig}
+                                        role={role}
+                                        currentId={currentId}
                                         onEdit={(s) => navigate(`/admin/staffs/${role}/${s.user_id}`)}
                                         onRoleChange={handleRoleChange}
+                                        onStatusChange={handleStatusChange}
                                     />
                                 ))}
                             </AnimatePresence>
@@ -376,7 +432,7 @@ const StaffListingPage = () => {
                         {/* Pagination */}
                         {totalPages > 1 && (
                             <div className="flex items-center justify-center mt-10">
-                                <Pagination 
+                                <Pagination
                                     currentPage={currentPage}
                                     totalPages={totalPages}
                                     onPageChange={setCurrentPage}

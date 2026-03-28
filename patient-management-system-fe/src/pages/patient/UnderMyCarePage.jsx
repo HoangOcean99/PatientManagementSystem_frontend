@@ -129,7 +129,7 @@ const UnderMyCarePage = () => {
             setCancelingId(appointmentId);
             await cancelAppointment(appointmentId);
             toast.success('Hủy lịch thành công!');
-            
+
             // Refresh in-place
             const res = await getListAppointmentsByStatus(activeTab);
             const allApps = res.data?.data || res.data || [];
@@ -224,7 +224,7 @@ const UnderMyCarePage = () => {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                         
+
                             <button
                                 onClick={() => navigate('/patient/under-my-care/key')}
                                 className="px-5 py-2.5 rounded-xl font-bold text-white transition-all active:scale-95 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 hover:-translate-y-0.5 cursor-pointer flex items-center gap-2 text-sm"
@@ -256,13 +256,6 @@ const UnderMyCarePage = () => {
                         </div>
                         <h3 className="text-xl font-bold text-gray-800">Chưa có người phụ thuộc</h3>
                         <p className="text-gray-400 mt-2 text-sm max-w-sm mx-auto">Thêm con em hoặc người thân vào danh sách quản lý</p>
-                        <button
-                            onClick={() => setShowForm(true)}
-                            className="mt-6 font-bold text-emerald-600 hover:text-emerald-700 px-5 py-2 bg-emerald-50 hover:bg-emerald-100 rounded-xl cursor-pointer transition-colors"
-                        >
-                            <i className="fa-solid fa-user-plus mr-2 text-sm"></i>
-                            Thêm người phụ thuộc
-                        </button>
                     </motion.div>
                 ) : (
                     <div className="flex flex-col gap-3">
@@ -332,7 +325,7 @@ const UnderMyCarePage = () => {
                                                     )}
                                                 </button>
                                             </div>
-                                            
+
                                             {/* Action Buttons */}
                                             <div className="mt-4 pt-4 border-t border-gray-100/60 flex justify-center">
                                                 <button
@@ -567,17 +560,16 @@ const UnderMyCarePage = () => {
                                                 className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 z-10 cursor-pointer ${activeTab === tab.id
                                                     ? "bg-white text-[#5ba4f8] shadow-sm"
                                                     : "text-white hover:bg-white/10"
-                                                }`}
+                                                    }`}
                                             >
                                                 {tab.label}
                                             </button>
                                             {index < array.length - 1 && (
                                                 <div
-                                                    className={`h-5 w-px self-center transition-colors duration-300 mx-1 ${
-                                                        activeTab === array[index].id || activeTab === array[index + 1].id
+                                                    className={`h-5 w-px self-center transition-colors duration-300 mx-1 ${activeTab === array[index].id || activeTab === array[index + 1].id
                                                             ? "bg-transparent"
                                                             : "bg-white/30"
-                                                    }`}
+                                                        }`}
                                                 ></div>
                                             )}
                                         </React.Fragment>
@@ -608,15 +600,14 @@ const UnderMyCarePage = () => {
                                                         <i className="fa-regular fa-clock mr-2"></i>
                                                         {app.DoctorSlots?.start_time?.slice(0, 5)} - {app.DoctorSlots?.end_time?.slice(0, 5)}
                                                     </div>
-                                                    <span className={`text-[11px] font-bold uppercase ${
-                                                        app.status === 'pending' ? 'text-sky-500' :
-                                                        app.status === 'confirmed' ? 'text-[#5ba4f8]' :
-                                                        app.status === 'cancelled' ? 'text-gray-500' :
-                                                        'text-green-500'
-                                                    }`}>
+                                                    <span className={`text-[11px] font-bold uppercase ${app.status === 'pending' ? 'text-sky-500' :
+                                                            app.status === 'confirmed' ? 'text-[#5ba4f8]' :
+                                                                app.status === 'cancelled' ? 'text-gray-500' :
+                                                                    'text-green-500'
+                                                        }`}>
                                                         {app.status === 'pending' ? 'Chờ xác nhận' :
-                                                         app.status === 'confirmed' ? 'Đã xác nhận' :
-                                                         app.status === 'cancelled' ? 'Bỏ lỡ' : 'Hoàn thành'}
+                                                            app.status === 'confirmed' ? 'Đã xác nhận' :
+                                                                app.status === 'cancelled' ? 'Bỏ lỡ' : 'Hoàn thành'}
                                                     </span>
                                                 </div>
 

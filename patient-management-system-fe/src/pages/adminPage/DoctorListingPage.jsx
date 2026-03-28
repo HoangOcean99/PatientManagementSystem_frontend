@@ -6,7 +6,7 @@ import { getAllDoctors, searchDoctors } from '../../api/doctorApi';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 import DoctorDetailsAdminPage from './DoctorDetailsAdminPage';
-import { updateUserRoleApi } from '../../api/userApi';
+import { updateUserRoleApi, updateUserStatusApi } from '../../api/userApi';
 import Swal from 'sweetalert2';
 import Pagination from '../../components/common/Pagination';
 
@@ -112,6 +112,33 @@ const DoctorListingPage = () => {
         } catch (err) {
             console.error(err);
             toast.error('Lỗi khi cập nhật chức danh');
+        }
+    };
+
+    const handleStatusChange = async (userId, newStatus) => {
+        const isBanning = newStatus === 'inactive';
+        const result = await Swal.fire({
+            title: isBanning ? 'Chặn tài khoản?' : 'Kích hoạt tài khoản?',
+            text: isBanning 
+                ? "Người dùng này sẽ không thể đăng nhập vào hệ thống sau khi bị chặn."
+                : "Người dùng này sẽ có thể đăng nhập lại vào hệ thống.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: isBanning ? '#d33' : '#3085d6',
+            cancelButtonColor: '#aaa',
+            confirmButtonText: isBanning ? 'Chặn ngay' : 'Kích hoạt',
+            cancelButtonText: 'Hủy'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await updateUserStatusApi(userId, newStatus);
+            toast.success(isBanning ? 'Đã chặn tài khoản' : 'Đã kích hoạt tài khoản');
+            fetchDoctors();
+        } catch (err) {
+            console.error(err);
+            toast.error('Lỗi khi cập nhật trạng thái');
         }
     };
 
@@ -318,6 +345,7 @@ const DoctorListingPage = () => {
                                     doctor={doctor}
                                     isAdminView={isAdminView}
                                     onRoleChange={handleRoleChange}
+                                    onStatusChange={handleStatusChange}
                                 />
                             ))}
                         </div>

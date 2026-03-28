@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
     HeartPulse, Play, CheckCircle2, ArrowRight,
     CalendarDays, Activity, Video, CreditCard, Clock, ShieldCheck,
-    Zap, Baby, Heart, Stethoscope, Dna, BrainCircuit, Mic, PlusSquare
+    Zap, Baby, Heart, Stethoscope, Dna, BrainCircuit, Mic, PlusSquare,
+    Menu, X
 } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import baseApi from '../../api/baseApi';
@@ -136,7 +137,7 @@ const InfoModal = ({ isOpen, onClose, title, icon: Icon, content }) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div 
+            <div
                 className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity"
                 onClick={onClose}
             />
@@ -177,7 +178,7 @@ const InfoModal = ({ isOpen, onClose, title, icon: Icon, content }) => {
                     </button>
                 </div>
             </div>
-            
+
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
@@ -201,6 +202,7 @@ const LandingPage = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isServerReady, setIsServerReady] = useState(false);
     const [activeModal, setActiveModal] = useState(null); // 'terms', 'privacy', or null
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const navigate = useNavigate();
 
     // Ping server trước khi render trang
@@ -299,15 +301,15 @@ const LandingPage = () => {
         >
             <style>{customStyles}</style>
 
-            <nav className={`fixed w-full z-50 transition-all duration-300 bg-gradient-to-r from-[#76c2f5] to-[#9f8de9] text-white ${isScrolled ? 'shadow-md py-4' : 'py-6'}`}>
+            <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled || isMenuOpen ? 'bg-gradient-to-r from-[#76c2f5] to-[#9f8de9] shadow-md py-4' : 'bg-gradient-to-r from-[#76c2f5] to-[#9f8de9] lg:bg-transparent lg:text-white py-6'}`}>
                 <div className="max-w-7xl mx-auto px-6 lg:px-12 flex justify-between items-center">
                     {/* Logo & Tên */}
-                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0, 0)}>
-                        <HeartPulse size={28} className="text-white" />
-                        <span className="text-2xl font-bold tracking-tight text-white" style={{ fontFamily: '"Quicksand", sans-serif' }}>MedSchedule</span>
+                    <div className="flex items-center gap-2 cursor-pointer z-50" onClick={() => { window.scrollTo(0, 0); setIsMenuOpen(false); }}>
+                        <HeartPulse size={28} className={isScrolled || isMenuOpen ? "text-white" : "text-white lg:text-blue-600"} />
+                        <span className={`text-2xl font-bold tracking-tight ${isScrolled || isMenuOpen ? "text-white" : "text-white lg:text-slate-900"}`} style={{ fontFamily: '"Quicksand", sans-serif' }}>MedSchedule</span>
                     </div>
 
-                    {/* Menu Items */}
+                    {/* Menu Items Desktop */}
                     <div className="hidden lg:flex items-center gap-10">
                         {[
                             { name: 'Trang chủ', id: 'home' },
@@ -318,12 +320,12 @@ const LandingPage = () => {
                             <a
                                 key={item.id}
                                 href={`#${item.id}`}
-                                className="text-sm font-bold text-white/90 hover:text-white transition-colors"
+                                className={`text-sm font-bold transition-colors ${isScrolled ? 'text-white/90 hover:text-white' : 'text-slate-600 hover:text-blue-600'}`}
                                 onClick={(e) => {
-                                    e.preventDefault(); // Ngăn chặn hành vi nhảy trang mặc định
+                                    e.preventDefault();
                                     const targetSection = document.getElementById(item.id);
                                     if (targetSection) {
-                                        targetSection.scrollIntoView({ behavior: 'smooth' }); // Cuộn mượt mà
+                                        targetSection.scrollIntoView({ behavior: 'smooth' });
                                     }
                                 }}
                             >
@@ -332,11 +334,67 @@ const LandingPage = () => {
                         ))}
                     </div>
 
-                    {/* Nút Đăng nhập */}
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => navigate('/login')} className="hidden md:block text-sm font-bold text-white hover:text-blue-100 transition-colors">
+                    {/* Nút Đăng nhập & Mobile Toggle */}
+                    <div className="flex items-center gap-4 z-50">
+                        <button onClick={() => navigate('/login')} className={`hidden md:block text-sm font-bold transition-colors ${isScrolled || isMenuOpen ? 'text-white hover:text-blue-100' : 'text-white lg:text-blue-600 lg:hover:text-blue-700'}`}>
                             Đăng nhập
                         </button>
+
+                        <button
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className={`lg:hidden p-2 rounded-xl transition-all ${isScrolled || isMenuOpen ? 'text-white hover:bg-white/10' : 'text-white lg:text-slate-900 lg:hover:bg-slate-100'}`}
+                        >
+                            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Mobile Menu Overlay */}
+                <div className={`fixed inset-0 bg-white z-40 transition-all duration-500 lg:hidden ${isMenuOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
+                    <div className="flex flex-col h-full pt-24 px-8 pb-12 overflow-y-auto">
+                        <div className="flex flex-col gap-6">
+                            {[
+                                { name: 'Trang chủ', id: 'home' },
+                                { name: 'Chuyên khoa', id: 'chuyen-khoa' },
+                                { name: 'Giải pháp', id: 'giai-phap' },
+                                { name: 'Cơ sở', id: 'co-so' },
+                            ].map((item) => (
+                                <a
+                                    key={item.id}
+                                    href={`#${item.id}`}
+                                    className="text-2xl font-bold text-slate-900 border-b border-slate-100 pb-4 flex justify-between items-center group"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        setIsMenuOpen(false);
+                                        setTimeout(() => {
+                                            const targetSection = document.getElementById(item.id);
+                                            if (targetSection) {
+                                                targetSection.scrollIntoView({ behavior: 'smooth' });
+                                            }
+                                        }, 500);
+                                    }}
+                                >
+                                    <span style={{ fontFamily: '"Quicksand", sans-serif' }}>{item.name}</span>
+                                    <ArrowRight size={20} className="text-blue-600 opacity-0 group-hover:opacity-100 transition-all" />
+                                </a>
+                            ))}
+                        </div>
+
+                        <div className="mt-auto pt-8">
+                            <button
+                                onClick={() => {
+                                    setIsMenuOpen(false);
+                                    navigate('/login');
+                                }}
+                                className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-200 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                            >
+                                Đăng nhập ngay
+                                <Zap size={18} fill="currentColor" />
+                            </button>
+                            <p className="text-center text-slate-400 text-sm mt-6 font-medium">
+                                © 2026 MedSchedule. Care with ❤️
+                            </p>
+                        </div>
                     </div>
                 </div>
             </nav>
@@ -404,9 +462,6 @@ const LandingPage = () => {
                                 </div>
                                 <h4 className="text-lg font-bold text-slate-900 mb-2" style={{ fontFamily: '"Quicksand", sans-serif' }}>{benefit.title}</h4>
                                 <p className="text-slate-600 font-medium">{benefit.desc}</p>
-                                <div className="mt-6 flex items-center text-sm font-bold text-slate-900 hover:text-blue-600 cursor-pointer">
-                                    Chi tiết <ArrowRight size={16} className="ml-1" />
-                                </div>
                             </div>
                         ))}
                     </div>
@@ -466,13 +521,13 @@ const LandingPage = () => {
                     </div>
                     <div className="flex gap-8 text-sm font-bold text-slate-600">
                         <a href="#home" className="hover:text-blue-600">Trang chủ</a>
-                        <button 
+                        <button
                             onClick={() => setActiveModal('terms')}
                             className="hover:text-blue-600 transition-colors"
                         >
                             Điều khoản
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveModal('privacy')}
                             className="hover:text-blue-600 transition-colors"
                         >

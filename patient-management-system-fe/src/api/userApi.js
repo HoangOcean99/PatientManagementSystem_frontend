@@ -79,3 +79,7 @@ export const updateAccountant = (id, data) => updateUserByRole('accountant', id,
 export const updateUserRoleApi = async (id, role) => {
     return axiosClient.put(`/users/${id}/role`, { role });
 };
+
+export const updateUserStatusApi = async (id, status) => {
+    return axiosClient.put(`/users/${id}/status`, { status });
+};

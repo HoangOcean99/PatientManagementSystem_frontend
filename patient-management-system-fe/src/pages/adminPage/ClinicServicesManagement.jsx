@@ -28,7 +28,16 @@ const ClinicServicesManagement = () => {
             name: "name",
             label: "Tên dịch vụ",
             type: "text",
-            required: true
+            required: true,
+            validate: (value, formData) => {
+                const isEditing = !!formData.service_id;
+                const fieldName = value?.toString().trim().toLowerCase();
+                const exists = clinicServices?.some(s => 
+                    s.name.toLowerCase() === fieldName && 
+                    (!isEditing || s.service_id !== formData.service_id)
+                );
+                return exists ? "Tên dịch vụ đã tồn tại trong khoa này" : null;
+            }
         },
         {
             name: "description",
@@ -42,12 +51,14 @@ const ClinicServicesManagement = () => {
             label: "Giá dịch vụ",
             type: "number",
             required: true,
+            min: 0
         },
         {
             name: "duration_minutes",
             label: "Thời gian dịch vụ",
             type: "number",
             required: true,
+            min: 0
         },
         {
             name: "is_active",
@@ -59,7 +70,6 @@ const ClinicServicesManagement = () => {
                 { label: 'Dừng hoạt động', value: false }
             ]
         },
-
     ];
 
     useEffect(() => {

@@ -15,11 +15,11 @@ const RELATIONSHIP_OPTIONS = [
 const KeyCodePage = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('enter'); // 'enter' | 'invite'
-    
+
     // Enter Code State (Accept Invite)
     const [code, setCode] = useState('');
     const [linking, setLinking] = useState(false);
-    
+
     // Generate Code State (Invite By Email)
     const [email, setEmail] = useState('');
     const [relationship, setRelationship] = useState('father');
@@ -87,16 +87,16 @@ const KeyCodePage = () => {
             {/* Content */}
             <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/70 backdrop-blur-sm rounded-3xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] overflow-hidden">
-                    
+
                     <div className="flex border-b border-gray-100">
-                        <button 
+                        <button
                             onClick={() => setActiveTab('enter')}
                             className={`flex-1 py-4 text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'enter' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30' : 'text-gray-500 hover:bg-gray-50'}`}
                         >
                             <i className="fa-solid fa-keyboard"></i>
                             Nhận lời mời
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab('invite')}
                             className={`flex-1 py-4 text-sm font-bold flex items-center justify-center gap-2 transition-all ${activeTab === 'invite' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30' : 'text-gray-500 hover:bg-gray-50'}`}
                         >
@@ -118,17 +118,6 @@ const KeyCodePage = () => {
                                     </div>
 
                                     <div className="space-y-5 max-w-sm mx-auto">
-                                        <div className="space-y-1.5">
-                                            <label className="text-sm font-bold text-gray-600">Mã liên kết</label>
-                                            <input
-                                                type="text"
-                                                value={code}
-                                                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                                                placeholder="VD: A3F1B2"
-                                                maxLength={6}
-                                                className="w-full h-14 px-5 rounded-2xl border-2 border-gray-200 bg-white text-lg tracking-[0.2em] font-bold text-center text-gray-800 outline-none focus:border-indigo-400 focus:bg-indigo-50/30 transition-all uppercase placeholder:normal-case placeholder:tracking-normal placeholder:font-normal placeholder:text-gray-300"
-                                            />
-                                        </div>
 
                                         <div className="space-y-1.5 flex justify-center w-full">
                                             <div className="w-full">

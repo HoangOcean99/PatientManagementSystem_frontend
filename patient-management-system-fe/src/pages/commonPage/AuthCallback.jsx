@@ -8,9 +8,14 @@ export default function AuthCallback() {
     const navigate = useNavigate();
 
     useEffect(() => {
+        console.log("AuthCallback: Component mounted");
+
+
         const { data: listener } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                if (!session) return;
+                if (!session) {
+                    return;
+                }
                 try {
                     const res = await axiosClient.post('/auth/sync-user-google');
                     const user = res.data.user;
@@ -25,7 +30,14 @@ export default function AuthCallback() {
                     }
                     toast.success("Đăng nhập thành công!");
                 } catch (err) {
-                    console.error(err);
+                    console.error("Sync error:", err);
+                    if (err.response?.status === 403) {
+                        await supabase.auth.signOut();
+                        toast.error(err.response.data.message || "Tài khoản của bạn đã bị cấm");
+                        navigate('/login');
+                    } else {
+                        toast.error("Đăng nhập thất bại. Vui lòng thử lại.");
+                    }
                 }
             }
         );

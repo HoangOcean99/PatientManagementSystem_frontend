@@ -43,7 +43,7 @@ const LoginPage = () => {
             // Check if user actually exists in the Users table (not deleted)
             const { data: userProfile, error: profileError } = await supabase
                 .from('Users')
-                .select('user_id')
+                .select('user_id, status')
                 .eq('user_id', authResult.user.id)
                 .single();
 
@@ -51,6 +51,13 @@ const LoginPage = () => {
                 await supabase.auth.signOut();
                 setErrorMessage('Tài khoản của trẻ không tồn tại hoặc đã bị xóa.');
                 toast.error("Đăng nhập không thành công!");
+                return;
+            }
+
+            if (userProfile.status === 'inactive') {
+                await supabase.auth.signOut();
+                setErrorMessage('Tài khoản của bạn đã bị cấm.');
+                toast.error("Tài khoản của bạn đã bị cấm!");
                 return;
             }
 

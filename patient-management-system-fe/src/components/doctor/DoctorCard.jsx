@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const DoctorCard = ({ doctor, isAdminView = false, onRoleChange }) => {
+const DoctorCard = ({ doctor, isAdminView = false, onRoleChange, onStatusChange }) => {
     const navigate = useNavigate();
 
     if (!doctor) return null;
@@ -127,6 +127,19 @@ const DoctorCard = ({ doctor, isAdminView = false, onRoleChange }) => {
                             <i className="fa-solid fa-pen-to-square group-hover/btn:scale-110 transition-transform"></i>
                             <span className="hidden xl:inline">Chỉnh sửa</span>
                         </button>
+
+                        {onStatusChange && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onStatusChange(userData.user_id, isActive ? 'inactive' : 'active'); }}
+                                className={`w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 group/status-btn active:scale-95 ${isActive
+                                    ? 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white border border-red-200'
+                                    : 'bg-green-50 text-green-700 hover:bg-green-600 hover:text-white border border-green-200'
+                                    }`}
+                            >
+                                <i className={`fa-solid ${isActive ? 'fa-user-slash' : 'fa-user-check'} group-hover/status-btn:scale-110 transition-transform`}></i>
+                                <span>{isActive ? 'Chặn tài khoản' : 'Kích hoạt'}</span>
+                            </button>
+                        )}
                     </>
                 )}
             </div>
