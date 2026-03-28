@@ -9,10 +9,11 @@ import { ItemsLabSideBar } from "../../components/sidebar/ItemsLabSideBar";
 import { ItemsReceptionistSideBar } from "../../components/sidebar/ItemsReceptionistSideBar";
 import { ItemsAccountantSideBar } from "../../components/sidebar/ItemsAccountantSideBar";
 import { useAuth } from "../../components/security/AuthContext";
+import ChatBot from "../../components/common/ChatBot";
 
 export default function MainPage() {
     const location = useLocation();
-    const { user } = useAuth();
+    const { user, isMinor } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     let items = [];
 
@@ -21,9 +22,12 @@ export default function MainPage() {
     } else if (location.pathname.startsWith("/doctor")) {
         items = ItemsDoctorSideBar;
     } else if (location.pathname.startsWith("/patient")) {
-        const isChildAccount = user?.email?.endsWith('@app.com');
-        items = isChildAccount
-            ? ItemsPatientSideBar.filter(item => item.linkPage !== "/patient/under-my-care")
+        items = isMinor
+            ? ItemsPatientSideBar.filter(item =>
+                item.linkPage !== "/patient/under-my-care" &&
+                item.linkPage !== "/patient/booking" &&
+                item.linkPage !== "/patient/billing"
+            )
             : ItemsPatientSideBar;
     } else if (location.pathname.startsWith("/lab")) {
         items = ItemsLabSideBar;
@@ -50,6 +54,8 @@ export default function MainPage() {
                     <Outlet />
                 </main>
             </div>
+
+            <ChatBot />
         </div>
     );
 }

@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [userId, setUserId] = useState(null);
     const [userRole, setUserRole] = useState(null);
+    const [isMinor, setIsMinor] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -32,22 +33,24 @@ export const AuthProvider = ({ children }) => {
 
             const { data: profile } = await supabase
                 .from("Users")
-                .select("role")
+                .select("role, is_minor")
                 .eq("user_id", session.user.id)
                 .single();
 
             setUserRole(profile?.role ?? null);
+            setIsMinor(profile?.is_minor ?? false);
         } else {
             setUser(null);
             setUserId(null);
             setUserRole(null);
+            setIsMinor(false);
         }
 
         setLoading(false);
     };
 
     return (
-        <AuthContext.Provider value={{ user, userId, userRole, loading }}>
+        <AuthContext.Provider value={{ user, userId, userRole, isMinor, loading }}>
             {children}
         </AuthContext.Provider>
     );

@@ -25,17 +25,17 @@ const DoctorProfileSettingsPage = () => {
         doctor_id: d.doctor_id || '',
         user_id: d.doctor_id || '',
         full_name: d.Users?.full_name || '',
-        email: d.Users?.email || prev.email,
+        email: d.Users?.email || prev?.email || '',
         phone_number: d.Users?.phone_number || '',
         specialization: d.specialization || '',
         bio: d.bio || '',
         avatar_url: d.Users?.avatar_url || '',
         department_id: d.department_id || '',
-        departmentName: d.Departments.name || '',
+        departmentName: d.Departments?.name || '',
         room_id: d.room_id || '',
-        dob: d.Users.dob || '',
-        gender: d.Users.gender || '',
-        address: d.Users.address || '',
+        dob: d.Users?.dob || '',
+        gender: d.Users?.gender || '',
+        address: d.Users?.address || '',
         roomName: d.Rooms?.room_number || ''
       }));
     } catch (err) {
