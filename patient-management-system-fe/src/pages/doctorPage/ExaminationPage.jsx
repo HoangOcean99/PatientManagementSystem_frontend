@@ -624,16 +624,51 @@ const ExaminationPage = () => {
     try {
       setCompleting(true);
 
-      // Lưu data trước
+      // 1. Chuẩn bị invoiceData để gửi kèm
+      const invoiceItems = [];
+      let totalAmount = 0;
+
+      // Thêm phí khám chính từ appointment
+      if (appointment) {
+        const servicePrice = Number(appointment.total_price || 0);
+        invoiceItems.push({
+          name: `Phí khám: ${appointment.service_name || 'Khám chuyên khoa'}`,
+          quantity: 1,
+          price: servicePrice,
+        });
+        totalAmount += servicePrice;
+      }
+
+      // Thêm các phí xét nghiệm (lọc bỏ draft)
+      const nonDraftLabs = labOrders.filter((l) => l.status !== 'draft');
+      nonDraftLabs.forEach((lab) => {
+        const service = labServices.find((s) => s.lab_service_id === lab.lab_service_id);
+        const price = Number(service?.price || 0);
+        invoiceItems.push({
+          name: `Xét nghiệm: ${lab.lab_service_name || 'Dịch vụ CLS'}`,
+          quantity: 1,
+          price: price,
+        });
+        totalAmount += price;
+      });
+
+      const invoiceData = {
+        patient_id: patient.patient_id,
+        appointment_id: appointment.appointment_id,
+        total_price: totalAmount,
+        payment_status: 'pending',
+        items: invoiceItems,
+      };
+
+      // 2. Lưu data trước (symptoms, diagnosis, prescriptions)
       const updatePayload = buildPayload();
       await medicalRecordApi.updateMedicalRecord(recordId, updatePayload);
 
-      // Hoàn tất
+      // 3. Hoàn tất (Gửi kèm invoiceData để backend tạo hóa đơn tự động)
       const completePayload = {
         record_id: recordId,
-        appointment_id: appointment.appointment_id,
         doctor_id: appointment.doctor_id,
-
+        invoiceData: invoiceData,
       };
       await medicalRecordApi.completeExamination(completePayload);
 
