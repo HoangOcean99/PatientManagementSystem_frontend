@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Swal from 'sweetalert2';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { vi } from 'date-fns/locale';
@@ -129,10 +130,20 @@ const Dashboard = () => {
                 prev.map(item => item.appointment_id === id ? { ...item, status: 'checked_in' } : item)
             );
 
-            setShowModal(false); // Đóng hộp thoại
-            alert("Bệnh nhân đã Check-in thành công!");
+            setShowModal(false);
+            Swal.fire({
+                icon: 'success',
+                title: 'Check-in thành công',
+                text: 'Bệnh nhân đã được xác nhận có mặt.',
+                timer: 2000,
+                showConfirmButton: false
+            });
         } catch (error) {
-            alert("Có lỗi xảy ra khi Check-in");
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi Check-in',
+                text: 'Có lỗi xảy ra khi thực hiện Check-in.',
+            });
         }
     };
 
@@ -167,12 +178,26 @@ const Dashboard = () => {
     const handleCancelAppointment = async () => {
         if (!selectedApt?.appointment_id) return;
         if (!canCancelAppointment(selectedApt.status)) {
-            alert('Chỉ lịch hẹn ở trạng thái pending hoặc confirmed mới có thể hủy.');
+            Swal.fire({
+                icon: 'info',
+                title: 'Không thể hủy',
+                text: 'Chỉ lịch hẹn ở trạng thái pending hoặc confirmed mới có thể hủy.',
+            });
             return;
         }
 
-        const confirmed = window.confirm('Bạn có chắc chắn muốn hủy lịch hẹn này không?');
-        if (!confirmed) return;
+        const result = await Swal.fire({
+            title: 'Xác nhận hủy',
+            text: 'Bạn có chắc chắn muốn hủy lịch hẹn này không?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Hủy lịch',
+            cancelButtonText: 'Giữ lại'
+        });
+        
+        if (!result.isConfirmed) return;
 
         try {
             await cancelAppointment(selectedApt.appointment_id);
@@ -185,9 +210,19 @@ const Dashboard = () => {
                 )
             );
             setSelectedApt((prev) => (prev ? { ...prev, status: 'cancelled' } : prev));
-            alert('Hủy lịch hẹn thành công!');
+            Swal.fire({
+                icon: 'success',
+                title: 'Đã hủy',
+                text: 'Hủy lịch hẹn thành công!',
+                timer: 2000,
+                showConfirmButton: false
+            });
         } catch (error) {
-            alert(error?.response?.data?.message || 'Có lỗi xảy ra khi hủy lịch hẹn.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Thất bại',
+                text: error?.response?.data?.message || 'Có lỗi xảy ra khi hủy lịch hẹn.',
+            });
         }
     };
 
@@ -214,7 +249,11 @@ const Dashboard = () => {
     const loadRescheduleSlots = async () => {
         const deptId = selectedApt?.ClinicServices?.Departments?.department_id;
         if (deptId == null || deptId === '') {
-            alert('Không xác định được chuyên khoa của lịch hẹn.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi dữ liệu',
+                text: 'Không xác định được chuyên khoa của lịch hẹn.',
+            });
             return;
         }
         setRescheduleSlotsLoading(true);
@@ -238,7 +277,11 @@ const Dashboard = () => {
             console.error('Lỗi tải slot trống:', error);
             setRescheduleSlots([]);
             setEditFormData({ date: '', startTime: '', slotId: '', doctorId: '' });
-            alert(error.response?.data?.message || 'Không tải được lịch trống của khoa.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi tải lịch',
+                text: error.response?.data?.message || 'Không tải được lịch trống của khoa.',
+            });
         } finally {
             setRescheduleSlotsLoading(false);
         }
@@ -246,7 +289,11 @@ const Dashboard = () => {
 
     const startEditing = () => {
         if (!canRescheduleAppointment(selectedApt?.status)) {
-            alert('Chỉ lịch hẹn ở trạng thái pending, cancel/cancelled, confirmed hoặc completed mới được đặt lại lịch.');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Hành động không hợp lệ',
+                text: 'Chỉ lịch hẹn ở trạng thái pending, cancel/cancelled, confirmed hoặc completed mới được đặt lại lịch.',
+            });
             return;
         }
         setIsEditing(true);
@@ -307,7 +354,12 @@ const Dashboard = () => {
 
     const handleSaveReschedule = async () => {
         if (!editFormData.slotId) {
-            return alert('Vui lòng chọn ngày, khung giờ và bác sĩ.');
+            Swal.fire({
+                icon: 'info',
+                title: 'Thiếu thông tin',
+                text: 'Vui lòng chọn ngày, khung giờ và bác sĩ.',
+            });
+            return;
         }
 
         try {
@@ -316,13 +368,23 @@ const Dashboard = () => {
                 doctor_id: editFormData.doctorId || undefined,
             });
 
-            alert("Đổi lịch và bác sĩ thành công!");
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công',
+                text: 'Đổi lịch và bác sĩ thành công!',
+                timer: 2000,
+                showConfirmButton: false
+            });
             setIsEditing(false);
             resetReschedulePickerState();
             setShowModal(false);
             await refreshAppointmentsForDate();
         } catch (error) {
-            alert(error.response?.data?.message || "Lỗi khi đổi lịch");
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi đổi lịch',
+                text: error.response?.data?.message || "Lỗi khi đổi lịch",
+            });
         }
     };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { getListAppointments, assignAppointmentToRoom } from '../../api/appointmentApi';
 import { getListActiveRooms } from '../../api/roomApi';
 import { getAllDepartments } from '../../api/departmentsApi';
@@ -48,9 +49,9 @@ const Coordinator = () => {
             const responseRooms = await getListActiveRooms();
             const responseRoomsData = responseRooms.data?.data || responseRooms.data || responseRooms || [];
             const currentActiveRooms = Array.isArray(responseRoomsData) ? responseRoomsData : [];
+            console.log("currentActiveRooms: ", currentActiveRooms);
             setActiveRooms(currentActiveRooms);
 
-            // 2. Lịch hẹn theo ngày (giống Receptionist Dashboard: getList + date)
             const response = await getListAppointments({ date: selectedDate });
             const responseData = response.data?.data || response?.data || response || [];
 
@@ -62,17 +63,13 @@ const Coordinator = () => {
                 })
                 : [];
 
-            // 3. TÁCH LÀM 2 BẢNG
-            // Bảng trên (Chờ khám): Chỉ lấy những ai 'checked_in'
             const waitingList = sortedData.filter(appt =>
                 appt.status?.toLowerCase() === 'checked_in'
             );
 
-            // Bảng dưới (Vừa điều phối): Lấy những ai 'assigned' hoặc 'examining'
             const assignedList = sortedData.filter(appt =>
                 ['assigned', 'examining', 'examining'].includes(appt.status?.toLowerCase())
             ).map(appt => {
-                // Tìm số phòng tương ứng để hiển thị
                 const room = currentActiveRooms.find(r => r.room_id === appt.room_id);
                 return { ...appt, assigned_room: room ? room.room_number : "N/A" };
             });
@@ -157,7 +154,12 @@ const Coordinator = () => {
 
     const handleAssignClick = async (roomId) => {
         if (!selectedAppointmentId) {
-            alert("Vui lòng chọn appointment để gán!");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Chưa chọn cuộc hẹn',
+                text: 'Vui lòng chọn một cuộc hẹn từ danh sách trước khi gán phòng!',
+                confirmButtonColor: '#3085d6',
+            });
             return;
         }
 
@@ -202,12 +204,25 @@ const Coordinator = () => {
             );
 
             setSelectedAppointmentId(null);
-            alert("Gán bệnh nhân vào phòng thành công!");
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công',
+                text: 'Gán bệnh nhân vào phòng thành công!',
+                timer: 2000,
+                showConfirmButton: false
+            });
         } catch (error) {
             console.error("Lỗi khi gán:", error);
-            alert(error.response?.data?.message || "Có lỗi xảy ra khi gán!");
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: error.response?.data?.message || "Có lỗi xảy ra khi gán!",
+            });
         }
     };
+    useEffect(() => {
+        console.log("filteredRooms: ", filteredRooms);
+    }, [filteredRooms])
 
     if (loading) {
         return <div className="p-8 text-center text-gray-500">Đang tải dữ liệu...</div>;
@@ -476,6 +491,8 @@ const Coordinator = () => {
                         </button>
                     </div>
 
+
+
                     <div className="p-6 pt-0 space-y-4 overflow-y-auto">
                         {filteredRooms.length > 0 ? (
                             getSortedRooms(filteredRooms).map((room) => (
@@ -494,9 +511,10 @@ const Coordinator = () => {
                                             </div>
                                         </div>
                                         <div className="flex-shrink-0">
-                                            {normalizeStatus(room.status) == 'readytoexam' || normalizeStatus(room.status) == 'ready to exam' || room.status == 'READY_TO_EXAM' ? (
+                                            {console.log("status: ", normalizeStatus(room.room_status))}
+                                            {normalizeStatus(room.room_status) == 'readytoexam' ? (
                                                 <span className="inline-block w-28 text-center bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
-                                            ) : room.status?.toLowerCase() == 'examining' ? (
+                                            ) : room.room_status?.toLowerCase() == 'examining' ? (
                                                 <span className="inline-block w-28 text-center bg-[#D38B6B] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Đang Khám</span>
                                             ) : room.room_status == 'on' ? (
                                                 <span className="inline-block w-28 text-center bg-[#C84040] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Trống</span>
@@ -506,6 +524,16 @@ const Coordinator = () => {
                                                 <span className="inline-block w-28 text-center bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
                                             )}
                                         </div>
+                                        {room.room_status?.toLowerCase().replace(/\s/g, '') === 'readytoexame' &&
+                                            !room.assignedAppointment &&
+                                            selectedAppointmentId && (
+                                                <button
+                                                    onClick={() => handleAssignClick(room.room_id)}
+                                                    className="bg-[#1c4e11] hover:bg-[#2a751a] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer shadow-sm"
+                                                >
+                                                    Gán ngay
+                                                </button>
+                                            )}
                                     </div>
                                 </div>
                             ))
