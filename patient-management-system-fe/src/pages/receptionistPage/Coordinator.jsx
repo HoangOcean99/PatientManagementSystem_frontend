@@ -141,9 +141,9 @@ const Coordinator = () => {
 
             const rank = (s) => {
                 const status = s?.toLowerCase().replace(/\s/g, '');
-                if (status === 'readytoexame' || status === 'readytoexam') return 0;
-                if (status === 'examining' || status === 'in_use') return 1;
-                if (status === 'on' || status === 'empty') return 2;
+                if (status === 'readytoexame') return 0;
+                if (status === 'examining') return 1;
+                if (status === 'on') return 2;
                 return 3;
             };
 
@@ -494,13 +494,13 @@ const Coordinator = () => {
                                             </div>
                                         </div>
                                         <div className="flex-shrink-0">
-                                            {normalizeStatus(room.status) === 'readytoexam' || normalizeStatus(room.status) === 'ready to exam' || room.status === 'READY_TO_EXAM' ? (
+                                            {normalizeStatus(room.status) == 'readytoexam' || normalizeStatus(room.status) == 'ready to exam' || room.status == 'READY_TO_EXAM' ? (
                                                 <span className="inline-block w-28 text-center bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
-                                            ) : room.status?.toLowerCase() === 'examining' || room.status === 'IN_USE' ? (
+                                            ) : room.status?.toLowerCase() == 'examining' ? (
                                                 <span className="inline-block w-28 text-center bg-[#D38B6B] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Đang Khám</span>
-                                            ) : room.room_status === 'on' ? (
+                                            ) : room.room_status == 'on' ? (
                                                 <span className="inline-block w-28 text-center bg-[#C84040] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Trống</span>
-                                            ) : room.room_status === 'done' ? (
+                                            ) : room.room_status == 'done' ? (
                                                 <span className="inline-block w-28 text-center bg-gray-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Hoàn tất</span>
                                             ) : (
                                                 <span className="inline-block w-28 text-center bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
