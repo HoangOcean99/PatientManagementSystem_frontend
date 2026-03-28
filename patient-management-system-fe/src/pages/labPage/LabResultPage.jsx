@@ -149,18 +149,17 @@ const LabResultPage = () => {
     }
   };
 
-  // Lưu nháp → PATCH /lab-orders/:id { result_summary, result_file_url, status: 'processing' }
+  // Lưu nháp → PATCH /lab-orders/:id { result_summary, result_file_url }
   const handleSaveDraft = async () => {
     try {
       setSaving(true);
       const payload = {
         result_summary: resultSummary.trim(),
         result_file_url: resultFileUrl.trim(),
-        status: 'processing',
       };
 
       await labOrderApi.updateLabOrder(labOrderId, payload);
-      setLabOrder((prev) => ({ ...prev, status: 'processing', ...payload }));
+      setLabOrder((prev) => ({ ...prev, ...payload }));
       setMessage({ type: 'success', text: 'Đã lưu nháp kết quả xét nghiệm.' });
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
