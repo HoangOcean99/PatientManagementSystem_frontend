@@ -217,42 +217,42 @@ const AppointmentDetailPage = () => {
 
                     {/* Bottom Row: Diagnosis + Prescriptions */}
                     {(record?.diagnosis || prescriptions.length > 0) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                        {/* Diagnosis */}
-                        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-6">
-                            <h3 className="text-base font-bold text-gray-800 mb-3">Chẩn đoán/Kết luận</h3>
-                            <p className="text-sm text-gray-600 leading-relaxed">{record?.diagnosis || 'Chưa có chẩn đoán'}</p>
-                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                            {/* Diagnosis */}
+                            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-6">
+                                <h3 className="text-base font-bold text-gray-800 mb-3">Chẩn đoán/Kết luận</h3>
+                                <p className="text-sm text-gray-600 leading-relaxed">{record?.diagnosis || 'Chưa có chẩn đoán'}</p>
+                            </div>
 
-                        {/* Prescriptions — uses Prescriptions fields */}
-                        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-6">
-                            <h3 className="text-base font-bold text-gray-800 mb-3">Danh sách thuốc được kê</h3>
-                            {prescriptions.length === 0 ? (
-                                <p className="text-sm text-gray-500">Không có đơn thuốc.</p>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="border-b border-gray-200">
-                                                <th className="text-left py-2 font-semibold text-gray-500 text-xs">Thuốc</th>
-                                                <th className="text-left py-2 font-semibold text-gray-500 text-xs">Liều lượng</th>
-                                                <th className="text-left py-2 font-semibold text-gray-500 text-xs">Hướng dẫn</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {prescriptions.map((p) => (
-                                                <tr key={p.prescription_id} className="border-b border-gray-50">
-                                                    <td className="py-2.5 text-gray-700 font-medium">{p.medication_name}</td>
-                                                    <td className="py-2.5 text-gray-600">{p.dosage}</td>
-                                                    <td className="py-2.5 text-gray-500">{p.instructions}</td>
+                            {/* Prescriptions — uses Prescriptions fields */}
+                            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/80 shadow-[0_4px_24px_rgba(0,0,0,0.06)] p-6">
+                                <h3 className="text-base font-bold text-gray-800 mb-3">Danh sách thuốc được kê</h3>
+                                {prescriptions.length === 0 ? (
+                                    <p className="text-sm text-gray-500">Không có đơn thuốc.</p>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="border-b border-gray-200">
+                                                    <th className="text-left py-2 font-semibold text-gray-500 text-xs">Thuốc</th>
+                                                    <th className="text-left py-2 font-semibold text-gray-500 text-xs">Liều lượng</th>
+                                                    <th className="text-left py-2 font-semibold text-gray-500 text-xs">Hướng dẫn</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
+                                            </thead>
+                                            <tbody>
+                                                {prescriptions.map((p) => (
+                                                    <tr key={p.prescription_id} className="border-b border-gray-50">
+                                                        <td className="py-2.5 text-gray-700 font-medium">{p.medication_name}</td>
+                                                        <td className="py-2.5 text-gray-600">{p.dosage}</td>
+                                                        <td className="py-2.5 text-gray-500">{p.instructions}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    </div>
                     )}
 
                     {/* Costs — uses InvoiceItems */}

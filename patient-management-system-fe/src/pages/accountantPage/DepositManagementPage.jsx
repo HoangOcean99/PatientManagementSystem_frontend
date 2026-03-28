@@ -15,6 +15,10 @@ import {
   confirmDeposit,
   searchApptsForDeposit
 } from '../../api/accountantApi';
+import {
+  cancelAppointment,
+  cancelAppointmentByStaff
+} from '../../api/appointmentApi';
 import { toast, Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import './DepositManagementPage.css';
@@ -100,6 +104,32 @@ const DepositManagementPage = () => {
       fetchDeposits();
     } catch {
       toast.error('Có lỗi xảy ra!');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCancel = async (id) => {
+    const result = await Swal.fire({
+      title: 'Hủy lịch hẹn?',
+      text: "Bạn có chắc chắn muốn hủy lịch hẹn này không? Hành động này không thể hoàn tác.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Có, hủy lịch',
+      cancelButtonText: 'Không'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      setIsProcessing(true);
+      await cancelAppointmentByStaff(id);
+      toast.success('Hủy lịch thành công');
+      fetchDeposits();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra!');
     } finally {
       setIsProcessing(false);
     }
@@ -196,6 +226,13 @@ const DepositManagementPage = () => {
                             onClick={() => handleConfirm(dep.id, dep.amount)}
                           >
                             Xác nhận
+                          </button>
+                          <button
+                            className="dep-act dep-act--cancel"
+                            disabled={dep.status !== 'pending' || isProcessing}
+                            onClick={() => handleCancel(dep.id)}
+                          >
+                            Hủy lịch
                           </button>
                         </div>
                       </td>

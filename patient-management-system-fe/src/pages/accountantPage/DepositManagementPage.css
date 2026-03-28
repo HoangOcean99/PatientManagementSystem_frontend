@@ -205,6 +205,16 @@
 
 .dep-act--confirm:hover:not(:disabled) { background: #0ea5e9; color: #fff; }
 
+.dep-act--cancel {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.dep-act--cancel:hover:not(:disabled) {
+  background: #ef4444;
+  color: #fff;
+}
+
 .dep-act--refund {
   background: transparent;
   color: #64748b;

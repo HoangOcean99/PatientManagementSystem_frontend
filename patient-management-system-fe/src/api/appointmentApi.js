@@ -25,6 +25,11 @@ export const cancelAppointment = async (appointment_id) => {
   return axiosClient.patch(url);
 };
 
+export const cancelAppointmentByStaff = async (appointment_id) => {
+  const url = `/appointment/staff-cancel/${appointment_id}`;
+  return axiosClient.patch(url);
+};
+
 export const updateAppointmentStatus = async (appointment_id, data) => {
   const url = `/appointment/updateStatus/${appointment_id}`;
   return axiosClient.patch(url, data);

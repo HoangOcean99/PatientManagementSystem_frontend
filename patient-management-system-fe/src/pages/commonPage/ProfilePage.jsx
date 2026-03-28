@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as Icons from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from "react-router-dom";
 import toast from 'react-hot-toast';
 import { dataURLtoFile } from "../../helpers/imageUtils";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { useAuth } from "../../components/security/AuthContext";
 
 const EditableField = ({
     label,
@@ -68,6 +70,8 @@ const EditableField = ({
 };
 
 const ProfilePage = ({ role = "user", initialData = {}, handleUpdateUser }) => {
+    const navigate = useNavigate();
+    const { isMinor, userId } = useAuth();
 
     const profileFields = {
 
@@ -290,13 +294,24 @@ const ProfilePage = ({ role = "user", initialData = {}, handleUpdateUser }) => {
                     </p>
                 </div>
 
-                <button
-                    onClick={handleSave}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow hover:bg-blue-700"
-                >
-                    <Icons.Check size={18} />
-                    Lưu thông tin
-                </button>
+                <div className="flex items-center gap-3">
+                    {isMinor && (
+                        <button
+                            onClick={() => navigate(`/patient/change-password/${userId}`)}
+                            className="flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-xl font-bold shadow hover:bg-amber-600 transition-all active:scale-95"
+                        >
+                            <Icons.Key size={18} />
+                            Đổi mật khẩu
+                        </button>
+                    )}
+                    <button
+                        onClick={handleSave}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow hover:bg-blue-700 transition-all active:scale-95"
+                    >
+                        <Icons.Check size={18} />
+                        Lưu thông tin
+                    </button>
+                </div>
             </div>
 
             {/* Layout */}

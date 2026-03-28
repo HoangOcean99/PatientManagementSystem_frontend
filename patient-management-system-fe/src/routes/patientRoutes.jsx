@@ -12,6 +12,7 @@ const KeyCodePage = lazy(() => import('../pages/patient/KeyCodePage'));
 const BillingPage = lazy(() => import('../pages/patient/BillingPage'));
 const MedicalRecordsPage = lazy(() => import('../pages/patient/MedicalRecordsPage'));
 const AppointmentDetailPage = lazy(() => import('../pages/patient/AppointmentDetailPage'));
+const ChangePasswordPage = lazy(() => import('../pages/patient/ChangePasswordPage'));
 import ProtectedRoute from '../components/security/ProtectedRoute';
 
 const patientRoutes = [
@@ -116,6 +117,14 @@ const patientRoutes = [
         element: (
             <ProtectedRoute allowedRoles={["patient"]}>
                 <AppointmentDetailPage />
+            </ProtectedRoute>
+        )
+    },
+    {
+        path: '/patient/change-password/:userId',
+        element: (
+            <ProtectedRoute allowedRoles={["patient"]}>
+                <ChangePasswordPage />
             </ProtectedRoute>
         )
     },

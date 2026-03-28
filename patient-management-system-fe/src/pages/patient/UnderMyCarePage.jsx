@@ -329,7 +329,7 @@ const UnderMyCarePage = () => {
                                             {/* Action Buttons */}
                                             <div className="mt-4 pt-4 border-t border-gray-100/60 flex justify-center">
                                                 <button
-                                                    onClick={() => navigate(`/patient/medical-records?patient_id=${childUserId}&name=${encodeURIComponent(child.full_name || '')}`)}
+                                                    onClick={(e) => { e.stopPropagation(); navigate(`/patient/medical-records?patient_id=${childUserId}&name=${encodeURIComponent(child.full_name || '')}`); }}
                                                     className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
                                                 >
                                                     <i className="fa-solid fa-file-medical"></i> Xem bệnh án
@@ -567,8 +567,8 @@ const UnderMyCarePage = () => {
                                             {index < array.length - 1 && (
                                                 <div
                                                     className={`h-5 w-px self-center transition-colors duration-300 mx-1 ${activeTab === array[index].id || activeTab === array[index + 1].id
-                                                            ? "bg-transparent"
-                                                            : "bg-white/30"
+                                                        ? "bg-transparent"
+                                                        : "bg-white/30"
                                                         }`}
                                                 ></div>
                                             )}
@@ -601,9 +601,9 @@ const UnderMyCarePage = () => {
                                                         {app.DoctorSlots?.start_time?.slice(0, 5)} - {app.DoctorSlots?.end_time?.slice(0, 5)}
                                                     </div>
                                                     <span className={`text-[11px] font-bold uppercase ${app.status === 'pending' ? 'text-sky-500' :
-                                                            app.status === 'confirmed' ? 'text-[#5ba4f8]' :
-                                                                app.status === 'cancelled' ? 'text-gray-500' :
-                                                                    'text-green-500'
+                                                        app.status === 'confirmed' ? 'text-[#5ba4f8]' :
+                                                            app.status === 'cancelled' ? 'text-gray-500' :
+                                                                'text-green-500'
                                                         }`}>
                                                         {app.status === 'pending' ? 'Chờ xác nhận' :
                                                             app.status === 'confirmed' ? 'Đã xác nhận' :

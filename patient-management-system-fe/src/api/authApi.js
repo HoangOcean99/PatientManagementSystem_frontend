@@ -59,6 +59,10 @@ export const resetPassword = async (token, newPassword) => {
     });
     return res;
 }
+export const changePassword = (userId, data) => {
+    return axiosClient.post(`/auth/change-password/${userId}`, data);
+};
+
 export const signOut = async () => {
     const res = await axiosClient.post('/auth/sign-out');
     return res;
