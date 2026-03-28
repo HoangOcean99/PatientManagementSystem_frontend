@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
 import { getListAppointments, assignAppointmentToRoom } from '../../api/appointmentApi';
 import { getListActiveRooms } from '../../api/roomApi';
 import { getAllDepartments } from '../../api/departmentsApi';
@@ -71,7 +70,7 @@ const Coordinator = () => {
 
             // Bảng dưới (Vừa điều phối): Lấy những ai 'assigned' hoặc 'examining'
             const assignedList = sortedData.filter(appt =>
-                ['assigned', 'examing', 'examining'].includes(appt.status?.toLowerCase())
+                ['assigned', 'examining', 'examining'].includes(appt.status?.toLowerCase())
             ).map(appt => {
                 // Tìm số phòng tương ứng để hiển thị
                 const room = currentActiveRooms.find(r => r.room_id === appt.room_id);
@@ -143,7 +142,7 @@ const Coordinator = () => {
             const rank = (s) => {
                 const status = s?.toLowerCase().replace(/\s/g, '');
                 if (status === 'readytoexame' || status === 'readytoexam') return 0;
-                if (status === 'examing' || status === 'in_use') return 1;
+                if (status === 'examining' || status === 'in_use') return 1;
                 if (status === 'on' || status === 'empty') return 2;
                 return 3;
             };
@@ -158,12 +157,7 @@ const Coordinator = () => {
 
     const handleAssignClick = async (roomId) => {
         if (!selectedAppointmentId) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Chưa chọn cuộc hẹn',
-                text: 'Vui lòng chọn một cuộc hẹn từ danh sách trước khi gán phòng!',
-                confirmButtonColor: '#3085d6',
-            });
+            alert("Vui lòng chọn appointment để gán!");
             return;
         }
 
@@ -188,14 +182,14 @@ const Coordinator = () => {
                 }, ...filteredPrev];
             });
 
-            // 2. Cập nhật trạng thái phòng thành Đang Khám (Examing)
+            // 2. Cập nhật trạng thái phòng thành Đang Khám (examining)
             setActiveRooms(prevRooms =>
                 prevRooms.map(room => {
                     return room.room_id === roomId
                         ? {
                             ...room,
-                            status: 'examing',       // Cho logic API
-                            room_status: 'examing',  // Cho logic Render UI
+                            status: 'examining',
+                            room_status: 'examining',
                             assignedAppointment: selectedAppt
                         }
                         : room;
@@ -208,20 +202,10 @@ const Coordinator = () => {
             );
 
             setSelectedAppointmentId(null);
-            Swal.fire({
-                icon: 'success',
-                title: 'Thành công',
-                text: 'Gán bệnh nhân vào phòng thành công!',
-                timer: 2000,
-                showConfirmButton: false
-            });
+            alert("Gán bệnh nhân vào phòng thành công!");
         } catch (error) {
             console.error("Lỗi khi gán:", error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi',
-                text: error.response?.data?.message || "Có lỗi xảy ra khi gán!",
-            });
+            alert(error.response?.data?.message || "Có lỗi xảy ra khi gán!");
         }
     };
 
@@ -361,7 +345,7 @@ const Coordinator = () => {
                                                         {appt.status}
                                                     </span>
                                                 </td>
-                                                {/* <td className="px-6 py-4 text-center">
+                                                <td className="px-6 py-4 text-center">
                                                     <div className="flex items-center justify-center gap-3">
                                                         <button
                                                             className="w-10 h-10 rounded-xl bg-purple-50 text-[#7857DB] hover:bg-[#7857DB] hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
@@ -376,7 +360,7 @@ const Coordinator = () => {
                                                             <i className="fa-solid fa-user-plus text-sm"></i>
                                                         </button>
                                                     </div>
-                                                </td> */}
+                                                </td>
                                             </tr>
                                         ))
                                     ) : (
@@ -512,7 +496,7 @@ const Coordinator = () => {
                                         <div className="flex-shrink-0">
                                             {normalizeStatus(room.status) === 'readytoexam' || normalizeStatus(room.status) === 'ready to exam' || room.status === 'READY_TO_EXAM' ? (
                                                 <span className="inline-block w-28 text-center bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
-                                            ) : room.status?.toLowerCase() === 'examing' || room.status === 'IN_USE' ? (
+                                            ) : room.status?.toLowerCase() === 'examining' || room.status === 'IN_USE' ? (
                                                 <span className="inline-block w-28 text-center bg-[#D38B6B] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Đang Khám</span>
                                             ) : room.room_status === 'on' ? (
                                                 <span className="inline-block w-28 text-center bg-[#C84040] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Trống</span>
@@ -522,16 +506,6 @@ const Coordinator = () => {
                                                 <span className="inline-block w-28 text-center bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
                                             )}
                                         </div>
-                                        {room.room_status?.toLowerCase().replace(/\s/g, '') === 'readytoexame' &&
-                                            !room.assignedAppointment &&
-                                            selectedAppointmentId && (
-                                                <button
-                                                    onClick={() => handleAssignClick(room.room_id)}
-                                                    className="bg-[#1c4e11] hover:bg-[#2a751a] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer shadow-sm"
-                                                >
-                                                    Gán ngay
-                                                </button>
-                                            )}
                                     </div>
                                 </div>
                             ))
