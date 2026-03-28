@@ -360,7 +360,7 @@ const Coordinator = () => {
                                                         {appt.status}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 text-center">
+                                                {/* <td className="px-6 py-4 text-center">
                                                     <div className="flex items-center justify-center gap-3">
                                                         <button
                                                             className="w-10 h-10 rounded-xl bg-purple-50 text-[#7857DB] hover:bg-[#7857DB] hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
@@ -375,7 +375,7 @@ const Coordinator = () => {
                                                             <i className="fa-solid fa-user-plus text-sm"></i>
                                                         </button>
                                                     </div>
-                                                </td>
+                                                </td> */}
                                             </tr>
                                         ))
                                     ) : (
