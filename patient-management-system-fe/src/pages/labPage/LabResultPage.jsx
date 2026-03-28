@@ -13,10 +13,12 @@ import {
   FiAlertCircle,
   FiLoader,
   FiX,
+  FiDownload,
+  FiFile,
 } from 'react-icons/fi';
-import labOrderApi from '../../api/labOrderApi';
 import './LabResultPage.css';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import labOrderApi from '../../api/labOrderApi';
 
 // ===== HELPERS =====
 const getInitials = (name) =>
@@ -66,6 +68,8 @@ const LabResultPage = () => {
   const [resultSummary, setResultSummary] = useState('');
   const [resultFileUrl, setResultFileUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [message, setMessage] = useState(null);
 
   // Fetch lab order detail on mount
@@ -131,6 +135,18 @@ const LabResultPage = () => {
 
   // ===== HANDLERS =====
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.name.match(/\.(xlsx|xls)$/)) {
+        setMessage({ type: 'error', text: 'Vui lòng chọn file Excel (.xlsx hoặc .xls).' });
+        setTimeout(() => setMessage(null), 3000);
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
   // Bắt đầu xét nghiệm → PATCH /lab-orders/:id { status: 'processing' }
   const handleStartProcessing = async () => {
     try {
@@ -149,30 +165,38 @@ const LabResultPage = () => {
     }
   };
 
-  // Lưu nháp → PATCH /lab-orders/:id { result_summary, result_file_url }
+  // Lưu nháp → PATCH /lab-orders/:id { result_summary, result_file }
   const handleSaveDraft = async () => {
     try {
       setSaving(true);
-      const payload = {
-        result_summary: resultSummary.trim(),
-        result_file_url: resultFileUrl.trim(),
-      };
+      setUploading(true);
 
-      await labOrderApi.updateLabOrder(labOrderId, payload);
-      setLabOrder((prev) => ({ ...prev, ...payload }));
+      const formData = new FormData();
+      formData.append('result_summary', resultSummary.trim());
+      if (selectedFile) {
+        formData.append('result_file', selectedFile);
+      }
+
+      const response = await labOrderApi.updateLabOrder(labOrderId, formData);
+      const updatedData = response.data?.data || response.data;
+
+      setLabOrder((prev) => ({ ...prev, ...updatedData }));
+      setResultFileUrl(updatedData.result_file_url);
+      setSelectedFile(null);
       setMessage({ type: 'success', text: 'Đã lưu nháp kết quả xét nghiệm.' });
       setTimeout(() => setMessage(null), 3000);
     } catch (err) {
       console.error('Lỗi khi lưu nháp:', err);
-      const msg = err.response?.data?.message || 'Không thể lưu nháp.';
+      const msg = err.response?.data?.message || err.message || 'Không thể lưu nháp.';
       setMessage({ type: 'error', text: msg });
       setTimeout(() => setMessage(null), 3000);
     } finally {
       setSaving(false);
+      setUploading(false);
     }
   };
 
-  // Hoàn tất → PATCH /lab-orders/:id { result_summary, result_file_url, status: 'completed' }
+  // Hoàn tất → PATCH /lab-orders/:id { result_summary, result_file, status: 'completed' }
   const handleComplete = async () => {
     if (!resultSummary.trim()) {
       setMessage({ type: 'error', text: 'Vui lòng nhập kết quả xét nghiệm trước khi hoàn tất.' });
@@ -182,23 +206,31 @@ const LabResultPage = () => {
 
     try {
       setSaving(true);
-      const payload = {
-        result_summary: resultSummary.trim(),
-        result_file_url: resultFileUrl.trim(),
-        status: 'completed',
-      };
+      setUploading(true);
 
-      await labOrderApi.updateLabOrder(labOrderId, payload);
-      setLabOrder((prev) => ({ ...prev, status: 'completed', ...payload }));
+      const formData = new FormData();
+      formData.append('result_summary', resultSummary.trim());
+      formData.append('status', 'completed');
+      if (selectedFile) {
+        formData.append('result_file', selectedFile);
+      }
+
+      const response = await labOrderApi.updateLabOrder(labOrderId, formData);
+      const updatedData = response.data?.data || response.data;
+
+      setLabOrder((prev) => ({ ...prev, status: 'completed', ...updatedData }));
+      setResultFileUrl(updatedData.result_file_url);
+      setSelectedFile(null);
       setMessage({ type: 'success', text: 'Hoàn tất xét nghiệm! Kết quả đã được gửi cho bác sĩ chỉ định.' });
       setTimeout(() => setMessage(null), 4000);
     } catch (err) {
       console.error('Lỗi khi hoàn tất:', err);
-      const msg = err.response?.data?.message || 'Không thể hoàn tất xét nghiệm.';
+      const msg = err.response?.data?.message || err.message || 'Không thể hoàn tất xét nghiệm.';
       setMessage({ type: 'error', text: msg });
       setTimeout(() => setMessage(null), 3000);
     } finally {
       setSaving(false);
+      setUploading(false);
     }
   };
 
@@ -394,20 +426,100 @@ const LabResultPage = () => {
 
                 {/* result_file_url */}
                 <div className="lr-field">
-                  <label className="lr-field__label" htmlFor="resultFileUrl">
-                    <FiUpload size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                    File kết quả (URL)
+                  <label className="lr-field__label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>
+                      <FiUpload size={13} style={{ marginRight: 4, verticalAlign: 'middle' }} />
+                      File kết quả xét nghiệm (.xlsx)
+                    </span>
+                    <a
+                      href="https://iechlwjalclhmnpjdafj.supabase.co/storage/v1/object/public/Template/Template-lab.xlsx"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="lr-template-link"
+                      style={{
+                        color: '#2563EB',
+                        textDecoration: 'none',
+                        fontSize: '11px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontWeight: '700',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        background: '#EFF6FF',
+                        border: '1px solid #DBEAFE'
+                      }}
+                      download
+                    >
+                      <FiDownload size={12} />
+                      Tải file mẫu (Template)
+                    </a>
                   </label>
-                  <input
-                    id="resultFileUrl"
-                    type="url"
-                    className="lr-input"
-                    placeholder="https://example.com/result.pdf"
-                    value={resultFileUrl}
-                    onChange={(e) => setResultFileUrl(e.target.value)}
-                    disabled={!isEditable}
-                  />
-                  <p className="lr-field__hint">Đường dẫn tới file kết quả (PDF, hình ảnh...)</p>
+
+                  <div className="lr-upload-area" style={{
+                    border: '1.5px dashed #E2E8F0',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    textAlign: 'center',
+                    background: '#F8FAFC',
+                    position: 'relative'
+                  }}>
+                    <input
+                      id="resultFile"
+                      type="file"
+                      accept=".xlsx, .xls"
+                      className="lr-file-input"
+                      onChange={handleFileChange}
+                      disabled={!isEditable || uploading}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        opacity: 0,
+                        cursor: isEditable ? 'pointer' : 'not-allowed'
+                      }}
+                    />
+
+                    <div style={{ position: 'relative', zIndex: 10 }}>
+                      {!selectedFile && !resultFileUrl && (
+                        <div style={{ color: '#94A3B8', fontSize: '13px' }}>
+                          <FiUpload size={24} style={{ marginBottom: 8, opacity: 0.5 }} />
+                          <p>Nhấp để chọn file Excel kết quả</p>
+                        </div>
+                      )}
+
+                      {selectedFile && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#2563EB', fontWeight: '600' }}>
+                          <FiFile size={18} />
+                          <span style={{ fontSize: '13px', }}>{selectedFile.name}</span>
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedFile(null); }}
+                            style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: '4px' }}
+                          >
+                            <FiX size={14} />
+                          </button>
+                        </div>
+                      )}
+
+                      {!selectedFile && resultFileUrl && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#10B981', fontWeight: '600' }}>
+                          <FiCheckCircle size={18} />
+                          <a href={resultFileUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', fontSize: '13px', textDecoration: 'underline' }}>
+                            Xem file đã tải lên
+                          </a>
+                          {isEditable && (
+                            <span style={{ color: '#94A3B8', fontSize: '11px', fontWeight: 'normal' }}>(Nhấp để thay đổi)</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {uploading && (
+                    <p style={{ fontSize: '11px', color: '#2563EB', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <FiLoader size={12} className="lr-spin" /> Đang tải file lên...
+                    </p>
+                  )}
+                  <p className="lr-field__hint">Định dạng hỗ trợ: .xlsx, .xls</p>
                 </div>
               </div>
             </motion.div>

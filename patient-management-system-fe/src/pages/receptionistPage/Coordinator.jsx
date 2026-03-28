@@ -214,10 +214,10 @@ const Coordinator = () => {
     }
 
     return (
-        <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8" style={{ width: '100%' }} >
+        <main className="flex-1 overflow-y-auto bg-gray-50/30 p-4 sm:p-6 lg:p-8">
             {/* THANH CÔNG CỤ BỘ LỌC */}
-            <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6 bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-6">
                     <div className="flex flex-col gap-1">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ngày làm việc</span>
                         <div className="flex items-center gap-1 flex-wrap">
@@ -275,10 +275,10 @@ const Coordinator = () => {
                 </div>
             </div>
 
-            <div className="flex gap-6" style={{ width: '100%' }}>
+            <div className="flex flex-col lg:flex-row gap-6">
 
                 {/* ================= CỘT TRÁI ================= */}
-                <div className="flex-[8] flex flex-col gap-6">
+                <div className="w-full lg:flex-[8] flex flex-col gap-6">
 
                     {/* KHỐI 1: DANH SÁCH CHỜ */}
                     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
@@ -341,14 +341,24 @@ const Coordinator = () => {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="bg-[#D38B6B] text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">
+                                                    <span className="inline-block w-28 text-center bg-[#D38B6B] text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">
                                                         {appt.status}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <div className="flex items-center justify-center gap-4">
-                                                        <button className="text-[#7857DB] hover:text-purple-800"><i className="fa-regular fa-eye"></i></button>
-                                                        <button className="text-[#4DBE9E] hover:text-teal-700"><i className="fa-solid fa-user-plus"></i></button>
+                                                    <div className="flex items-center justify-center gap-3">
+                                                        <button
+                                                            className="w-10 h-10 rounded-xl bg-purple-50 text-[#7857DB] hover:bg-[#7857DB] hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
+                                                            title="Xem chi tiết"
+                                                        >
+                                                            <i className="fa-regular fa-eye text-sm"></i>
+                                                        </button>
+                                                        <button
+                                                            className="w-10 h-10 rounded-xl bg-emerald-50 text-[#4DBE9E] hover:bg-[#4DBE9E] hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
+                                                            title="Gán phòng"
+                                                        >
+                                                            <i className="fa-solid fa-user-plus text-sm"></i>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -431,13 +441,18 @@ const Coordinator = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">
+                                                    <span className="inline-block w-28 text-center bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide border border-green-200">
                                                         {appt.status}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <div className="flex items-center justify-center gap-4">
-                                                        <button className="text-[#7857DB] hover:text-purple-800"><i className="fa-regular fa-eye"></i></button>
+                                                    <div className="flex items-center justify-center">
+                                                        <button
+                                                            className="w-10 h-10 rounded-xl bg-purple-50 text-[#7857DB] hover:bg-[#7857DB] hover:text-white transition-all duration-300 flex items-center justify-center shadow-sm"
+                                                            title="Xem chi tiết"
+                                                        >
+                                                            <i className="fa-regular fa-eye text-sm"></i>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -450,7 +465,7 @@ const Coordinator = () => {
                 </div>
 
                 {/* ================= CỘT PHẢI ================= */}
-                <div className="flex-[4] bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col">
+                <div className="w-full lg:flex-[4] bg-white rounded-2xl border border-gray-200 shadow-sm flex flex-col h-fit lg:sticky lg:top-0">
                     <div className="p-6 pb-4 flex justify-between items-start border-b border-gray-100 mb-4">
                         <div>
                             <h2 className="text-xl font-bold text-gray-900">Danh sách Bàn trực</h2>
@@ -465,58 +480,32 @@ const Coordinator = () => {
                         {filteredRooms.length > 0 ? (
                             getSortedRooms(filteredRooms).map((room) => (
                                 <div key={room.room_id} className="border border-[#E5E7EB] rounded-xl p-5 hover:shadow-md transition-shadow bg-white">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-start gap-4">
-                                            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                                    <div className="flex justify-between items-start gap-3 mb-4">
+                                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                                            <div className="w-12 h-12 rounded-xl bg-gray-100 flex-shrink-0 flex items-center justify-center text-gray-400">
                                                 <i className="fa-solid fa-user-doctor text-xl"></i>
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-gray-900 flex items-center gap-2 truncate">
                                                     Phòng {room.room_number} <span className="text-gray-400 text-xs font-normal">• {room.doctor?.specialization || "Khoa"}</span>
                                                 </p>
-                                                <p className="text-base font-bold text-gray-900 mt-0.5">{room.doctor?.Users?.full_name || "Chưa gán bác sĩ"}</p>
-                                                <p className="text-xs text-gray-500 mt-0.5">{room.doctor?.Users?.email || "N/A"}</p>
+                                                <p className="text-base font-bold text-gray-900 mt-0.5 truncate">{room.doctor?.Users?.full_name || "Chưa gán bác sĩ"}</p>
+                                                <p className="text-xs text-gray-500 mt-0.5 truncate">{room.doctor?.Users?.email || "N/A"}</p>
                                             </div>
                                         </div>
-                                        {normalizeStatus(room.status) === 'readytoexam' || normalizeStatus(room.status) === 'ready to exam' || room.status === 'READY_TO_EXAM' ? (
-                                            <span className="bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
-                                        ) : room.status?.toLowerCase() === 'examing' || room.status === 'IN_USE' ? (
-                                            <span className="bg-[#D38B6B] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Đang Khám</span>
-                                        ) : room.room_status === 'on' ? (
-                                            <span className="bg-[#C84040] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Trống</span>
-                                        ) : room.room_status === 'done' ? (
-                                            <span className=" bg-gray-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Hoàn tất</span>
-                                        ) : (
-                                            <span className="bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
-                                        )}
-                                    </div>
-                                    <div className={`border-t border-[#E5E7EB] pt-3 flex justify-between items-end`}>
-                                        <div className="flex-1">
-                                            <p className="text-[10px] font-bold text-gray-500 uppercase mb-2">Đang gán cho:</p>
-                                            {room.assignedAppointment ? (
-                                                <div>
-                                                    <p className="text-sm font-semibold text-gray-900">
-                                                        {room.assignedAppointment.Patients?.Users?.full_name || "Chưa cập nhật"}
-                                                    </p>
-                                                    <span className="text-xs text-[#3D9494] font-semibold">
-                                                        {room.assignedAppointment.ClinicServices?.Departments?.name || "Đa khoa"}
-                                                    </span>
-                                                </div>
+                                        <div className="flex-shrink-0">
+                                            {normalizeStatus(room.status) === 'readytoexam' || normalizeStatus(room.status) === 'ready to exam' || room.status === 'READY_TO_EXAM' ? (
+                                                <span className="inline-block w-28 text-center bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
+                                            ) : room.status?.toLowerCase() === 'examing' || room.status === 'IN_USE' ? (
+                                                <span className="inline-block w-28 text-center bg-[#D38B6B] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Đang Khám</span>
+                                            ) : room.room_status === 'on' ? (
+                                                <span className="inline-block w-28 text-center bg-[#C84040] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Trống</span>
+                                            ) : room.room_status === 'done' ? (
+                                                <span className="inline-block w-28 text-center bg-gray-500 text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Hoàn tất</span>
                                             ) : (
-                                                <span className="text-sm italic text-gray-400">Chưa gán</span>
+                                                <span className="inline-block w-28 text-center bg-[#67D4B6] text-white text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">Sẵn Sàng Khám</span>
                                             )}
                                         </div>
-
-                                        {room.room_status?.toLowerCase().replace(/\s/g, '') === 'readytoexame' &&
-                                            !room.assignedAppointment &&
-                                            selectedAppointmentId && (
-                                                <button
-                                                    onClick={() => handleAssignClick(room.room_id)}
-                                                    className="bg-[#1c4e11] hover:bg-[#2a751a] text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition-colors cursor-pointer shadow-sm"
-                                                >
-                                                    Gán ngay
-                                                </button>
-                                            )}
                                     </div>
                                 </div>
                             ))

@@ -18,7 +18,11 @@ export const labOrderApi = {
         return await axiosClient.get(`/lab-orders/record/${recordId}`);
     },
     updateLabOrder: async (labOrderId, data) => {
-        return await axiosClient.patch(`/lab-orders/${labOrderId}`, data);
+        const config = {};
+        if (data instanceof FormData) {
+            config.headers = { 'Content-Type': 'multipart/form-data' };
+        }
+        return await axiosClient.patch(`/lab-orders/${labOrderId}`, data, config);
     },
 
     // Lab Services
