@@ -7,6 +7,7 @@ import {
     getAvailableDoctorSlots,
     rescheduleAppointment,
     updateAppointmentStatus,
+    cancelAppointment,
 } from '../../api/appointmentApi';
 
 const toYMD = (d) => {
@@ -135,6 +136,61 @@ const Dashboard = () => {
         }
     };
 
+    const canCancelAppointment = (status) => {
+        const normalizedStatus = String(status || '').toLowerCase();
+        return normalizedStatus === 'pending' || normalizedStatus === 'confirmed';
+    };
+
+    const canRescheduleAppointment = (status) => {
+        const normalizedStatus = String(status || '').toLowerCase();
+        const allowedStatuses = ['pending', 'cancel', 'cancelled', 'confirmed', 'completed'];
+        return allowedStatuses.includes(normalizedStatus);
+    };
+
+    const getStatusClassName = (status) => {
+        const normalizedStatus = String(status || '').toLowerCase();
+        const statusColorMap = {
+            pending: 'bg-amber-100 text-amber-700',
+            confirmed: 'bg-emerald-100 text-emerald-700',
+            checked_in: 'bg-blue-100 text-blue-700',
+            checkin: 'bg-blue-100 text-blue-700',
+            checkedin: 'bg-blue-100 text-blue-700',
+            completed: 'bg-violet-100 text-violet-700',
+            cancelled: 'bg-rose-100 text-rose-700',
+            no_show: 'bg-slate-200 text-slate-700',
+            in_progress: 'bg-cyan-100 text-cyan-700',
+        };
+
+        return statusColorMap[normalizedStatus] || 'bg-gray-100 text-gray-700';
+    };
+
+    const handleCancelAppointment = async () => {
+        if (!selectedApt?.appointment_id) return;
+        if (!canCancelAppointment(selectedApt.status)) {
+            alert('Chỉ lịch hẹn ở trạng thái pending hoặc confirmed mới có thể hủy.');
+            return;
+        }
+
+        const confirmed = window.confirm('Bạn có chắc chắn muốn hủy lịch hẹn này không?');
+        if (!confirmed) return;
+
+        try {
+            await cancelAppointment(selectedApt.appointment_id);
+
+            setAppointments((prev) =>
+                prev.map((item) =>
+                    item.appointment_id === selectedApt.appointment_id
+                        ? { ...item, status: 'cancelled' }
+                        : item
+                )
+            );
+            setSelectedApt((prev) => (prev ? { ...prev, status: 'cancelled' } : prev));
+            alert('Hủy lịch hẹn thành công!');
+        } catch (error) {
+            alert(error?.response?.data?.message || 'Có lỗi xảy ra khi hủy lịch hẹn.');
+        }
+    };
+
     const rescheduleIncludeDates = useMemo(() => {
         const keys = [...new Set(rescheduleSlots.map((s) => s.slot_date).filter(Boolean))].sort();
         return keys.map((k) => parseYMD(k)).filter(Boolean);
@@ -189,6 +245,10 @@ const Dashboard = () => {
     };
 
     const startEditing = () => {
+        if (!canRescheduleAppointment(selectedApt?.status)) {
+            alert('Chỉ lịch hẹn ở trạng thái pending, cancel/cancelled, confirmed hoặc completed mới được đặt lại lịch.');
+            return;
+        }
         setIsEditing(true);
         setEditFormData({ date: '', startTime: '', slotId: '', doctorId: '' });
         setRescheduleSlots([]);
@@ -430,9 +490,7 @@ const Dashboard = () => {
                                 <td className="px-6 py-4 text-gray-600">{apt.ClinicServices?.name}</td>
                                 <td className="px-6 py-4 font-medium">{apt.Doctors?.Users?.full_name}</td>
                                 <td className="px-6 py-4">
-                                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${apt.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                                        apt.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
-                                        }`}>
+                                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusClassName(apt.status)}`}>
                                         {apt.status}
                                     </span>
                                 </td>
@@ -631,12 +689,22 @@ const Dashboard = () => {
                                 </>
                             ) : (
                                 <>
-                                    <button
-                                        onClick={startEditing}
-                                        className="flex-1 border-2 border-indigo-600 text-indigo-600 py-3 rounded-xl font-bold hover:bg-indigo-50"
-                                    >
-                                        Đổi lịch khám
-                                    </button>
+                                    {canCancelAppointment(selectedApt.status) && (
+                                        <button
+                                            onClick={handleCancelAppointment}
+                                            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-bold shadow-lg"
+                                        >
+                                            Hủy lịch hẹn
+                                        </button>
+                                    )}
+                                    {canRescheduleAppointment(selectedApt.status) && (
+                                        <button
+                                            onClick={startEditing}
+                                            className="flex-1 border-2 border-indigo-600 text-indigo-600 py-3 rounded-xl font-bold hover:bg-indigo-50"
+                                        >
+                                            Đổi lịch khám
+                                        </button>
+                                    )}
                                     {selectedApt.status === 'confirmed' && (
                                         <button
                                             onClick={() => handleCheckIn(selectedApt.appointment_id)}

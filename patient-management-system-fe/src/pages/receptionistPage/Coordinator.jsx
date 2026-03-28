@@ -1,10 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { getTodayCheckedInAppointments } from '../../api/appointmentApi';
+import { getListAppointments, assignAppointmentToRoom } from '../../api/appointmentApi';
 import { getListActiveRooms } from '../../api/roomApi';
-import { assignAppointmentToRoom } from '../../api/appointmentApi';
 import { getAllDepartments } from '../../api/departmentsApi';
 
+const getToday = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+};
+
+const shiftDate = (dateStr, days) => {
+    const d = new Date(`${dateStr}T12:00:00`);
+    d.setDate(d.getDate() + days);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+};
+
+const formatDateDisplay = (dateStr) => {
+    const d = new Date(`${dateStr}T12:00:00`);
+    return d.toLocaleDateString('vi-VN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+};
+
 const Coordinator = () => {
+    const [selectedDate, setSelectedDate] = useState(getToday());
+    const isViewingToday = selectedDate === getToday();
+
     const [appointments, setAppointments] = useState([]);
     const [activeRooms, setActiveRooms] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -14,29 +38,20 @@ const Coordinator = () => {
     // State lưu lịch sử gán (hiển thị ở Khối 2)
     const [assignedHistory, setAssignedHistory] = useState([]);
 
-    // State cho bộ lọc
-    const [tempSelectedDept, setTempSelectedDept] = useState("all");
-    const [appliedDept, setAppliedDept] = useState("all");
-
-    const handleApplyFilter = () => setAppliedDept(tempSelectedDept);
-
-    const handleResetFilter = () => {
-        setTempSelectedDept("all");
-        setAppliedDept("all");
-    };
+    const [departmentFilter, setDepartmentFilter] = useState("all");
 
     const fetchData = async () => {
         try {
             setLoading(true);
 
-            // 1. Lấy dữ liệu Phòng
+            // 1. Phòng đang hoạt động (is_active — API getListActive)
             const responseRooms = await getListActiveRooms();
             const responseRoomsData = responseRooms.data?.data || responseRooms.data || responseRooms || [];
             const currentActiveRooms = Array.isArray(responseRoomsData) ? responseRoomsData : [];
             setActiveRooms(currentActiveRooms);
 
-            // 2. Lấy dữ liệu Lịch hẹn
-            const response = await getTodayCheckedInAppointments();
+            // 2. Lịch hẹn theo ngày (giống Receptionist Dashboard: getList + date)
+            const response = await getListAppointments({ date: selectedDate });
             const responseData = response.data?.data || response?.data || response || [];
 
             const sortedData = Array.isArray(responseData)
@@ -87,7 +102,7 @@ const Coordinator = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [selectedDate]);
 
     // Lấy department_id từ appointment (API không flatten field này lên root)
     const getAppointmentDepartmentId = (appt) =>
@@ -95,23 +110,23 @@ const Coordinator = () => {
         appt?.ClinicServices?.department_id ??
         appt?.ClinicServices?.Departments?.department_id;
 
-    const matchesAppliedDepartment = (entityDeptId) => {
-        if (appliedDept === "all") return true;
+    const matchesDepartmentFilter = (entityDeptId) => {
+        if (departmentFilter === "all") return true;
         if (entityDeptId === undefined || entityDeptId === null) return false;
-        return String(entityDeptId) === String(appliedDept);
+        return String(entityDeptId) === String(departmentFilter);
     };
 
     // CÁC BIẾN LỌC ĐỂ RENDER
     const filteredAppointments = appointments.filter((appt) =>
-        matchesAppliedDepartment(getAppointmentDepartmentId(appt))
+        matchesDepartmentFilter(getAppointmentDepartmentId(appt))
     );
 
     const filteredAssignedHistory = assignedHistory.filter((appt) =>
-        matchesAppliedDepartment(getAppointmentDepartmentId(appt))
+        matchesDepartmentFilter(getAppointmentDepartmentId(appt))
     );
 
     const filteredRooms = activeRooms.filter((room) =>
-        matchesAppliedDepartment(room.department_id)
+        matchesDepartmentFilter(room.department_id)
     );
 
     const normalizeStatus = (status) => {
@@ -201,13 +216,54 @@ const Coordinator = () => {
     return (
         <main className="flex-1 overflow-y-auto bg-gray-50/30 p-8" style={{ width: '100%' }} >
             {/* THANH CÔNG CỤ BỘ LỌC */}
-            <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                <div className="flex gap-4">
+            <div className="flex flex-wrap items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ngày làm việc</span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={() => setSelectedDate((prev) => shiftDate(prev, -1))}
+                                className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                                title="Ngày trước"
+                                aria-label="Ngày trước"
+                            >
+                                <i className="fa-solid fa-chevron-left text-sm"></i>
+                            </button>
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setSelectedDate((prev) => shiftDate(prev, 1))}
+                                className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                                title="Ngày sau"
+                                aria-label="Ngày sau"
+                            >
+                                <i className="fa-solid fa-chevron-right text-sm"></i>
+                            </button>
+                            {!isViewingToday && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedDate(getToday())}
+                                    className="text-sm font-semibold text-[#6B66FF] hover:text-[#5a55d6] px-2"
+                                >
+                                    Hôm nay
+                                </button>
+                            )}
+                        </div>
+                        <p className="text-xs text-gray-500 max-w-[min(100%,280px)]">{formatDateDisplay(selectedDate)}</p>
+                    </div>
                     <div className="relative">
+                        <label className="sr-only" htmlFor="coordinator-dept-filter">Khoa</label>
                         <select
+                            id="coordinator-dept-filter"
                             className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer w-48"
-                            value={tempSelectedDept}
-                            onChange={(e) => setTempSelectedDept(e.target.value)}
+                            value={departmentFilter}
+                            onChange={(e) => setDepartmentFilter(e.target.value)}
                         >
                             <option value="all">Tất cả khoa</option>
                             {departments?.map(dept => (
@@ -216,25 +272,6 @@ const Coordinator = () => {
                         </select>
                         <i className="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"></i>
                     </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    <button className="text-gray-300 hover:text-gray-500 transition-colors px-2">
-                        <i className="fa-solid fa-border-all text-xl"></i>
-                    </button>
-                    <button
-                        onClick={handleApplyFilter}
-                        className="flex items-center gap-2 bg-[#6B66FF] hover:bg-[#5a55d6] text-white px-5 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-                    >
-                        <i className="fa-solid fa-filter text-xs"></i>
-                        Áp dụng bộ lọc
-                    </button>
-                    <button
-                        onClick={handleResetFilter}
-                        className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-5 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-                    >
-                        Đặt lại
-                    </button>
                 </div>
             </div>
 
