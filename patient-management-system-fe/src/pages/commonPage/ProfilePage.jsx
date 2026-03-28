@@ -321,9 +321,12 @@ const ProfilePage = ({ role = "user", initialData = {}, handleUpdateUser }) => {
                 <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center text-center">
 
                     {/* Phần hiển thị Avatar */}
-                    <div className="relative group/avatar cursor-pointer transition-all duration-300 active:scale-95" onClick={() => setIsImagePreviewOpen(true)}>
+                    <div className="relative group group/avatar transition-all duration-300">
                         {/* Avatar Display */}
-                        <div className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center border-4 border-white shadow-md overflow-hidden group-hover/avatar:ring-4 group-hover/avatar:ring-blue-100 transition-all">
+                        <div 
+                            className="w-32 h-32 bg-blue-50 rounded-full flex items-center justify-center border-4 border-white shadow-md overflow-hidden group-hover/avatar:ring-4 group-hover/avatar:ring-blue-100 transition-all cursor-pointer active:scale-95"
+                            onClick={() => setIsImagePreviewOpen(true)}
+                        >
                             {formData.avatar_url ? (
                                 <img src={formData.avatar_url} alt="avatar" className="w-full h-full object-cover" />
                             ) : (
@@ -349,8 +352,12 @@ const ProfilePage = ({ role = "user", initialData = {}, handleUpdateUser }) => {
 
                         {/* Menu lựa chọn (Chỉ hiện khi nhấn nút Camera) */}
                         {showImageOptions && (
-                            <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-10 animate-in fade-in zoom-in duration-200">
+                            <div 
+                                className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in duration-200"
+                                onClick={(e) => e.stopPropagation()}
+                            >
                                 <button
+                                    type="button"
                                     onClick={() => {
                                         startCamera();
                                         setShowImageOptions(false);
@@ -360,6 +367,7 @@ const ProfilePage = ({ role = "user", initialData = {}, handleUpdateUser }) => {
                                     Chụp ảnh mới
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={() => { fileInputRef.current.click(); setShowImageOptions(false); }}
                                     className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-gray-50 text-gray-700 font-medium"
                                 >
