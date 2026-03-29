@@ -97,6 +97,8 @@ const BillingPage = () => {
     const filtered = filter === 'all' ? invoices : invoices.filter(i => i.payment_status === filter);
     const selected = invoices.find(i => i.invoice_id === selectedId) || null;
 
+    console.log('select', selected)
+
     const handlePayment = async (invoiceId) => {
         if (!invoiceId) return;
         try {
@@ -223,7 +225,7 @@ const BillingPage = () => {
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs text-gray-400">{formatDate(inv.issued_at)}</span>
-                                                <span className="font-bold text-sky-600 text-sm">{formatCurrency(inv.total_amount)}</span>
+                                                <span className="font-bold text-sky-600 text-sm">{formatCurrency(inv.total_amount - (inv.Appointments?.deposit_paid || 0))}</span>
                                             </div>
                                         </div>
                                     );
@@ -289,9 +291,23 @@ const BillingPage = () => {
                                         </table>
                                     </div>
 
-                                    <div className="flex items-center justify-between mt-6 pt-4 border-t-2 border-gray-100">
-                                        <span className="text-lg font-bold text-gray-800">Tổng cộng:</span>
-                                        <span className="text-2xl font-extrabold text-red-500">{formatCurrency(selected.total_amount)}</span>
+                                    <div className="mt-6 pt-4 border-t-2 border-gray-100 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600 font-medium">Tổng phí dịch vụ:</span>
+                                            <span className="text-lg font-bold text-gray-800">{formatCurrency(selected.total_amount)}</span>
+                                        </div>
+                                        {(selected.Appointments?.deposit_paid > 0) && (
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-emerald-600 font-medium">Đã đặt cọc:</span>
+                                                <span className="text-lg font-bold text-emerald-600">-{formatCurrency(selected.Appointments.deposit_paid)}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+                                            <span className="text-lg font-bold text-gray-900">Cần thanh toán:</span>
+                                            <span className="text-2xl font-extrabold text-red-500">
+                                                {formatCurrency(selected.total_amount - (selected.Appointments?.deposit_paid || 0))}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
 
